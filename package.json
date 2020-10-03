@@ -1,0 +1,23 @@
+{
+  "name": "nmx-contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/bitchangers/eth-smart-contracts.git"
+  },
+  "author": "igurev@nominex.io",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/bitchangers/eth-smart-contracts#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.2.0",
+    "truffle": "^5.1.46"
+  }
+}
