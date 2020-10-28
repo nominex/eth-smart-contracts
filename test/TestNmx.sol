@@ -9,7 +9,7 @@ contract TestNmx {
   function testInitialBalanceUsingDeployedContract() public {
     Nmx nmx = Nmx(DeployedAddresses.Nmx());
 
-    uint expected = 200000000;
+    uint expected = (200000000 - 10) * (10**18);
 
     Assert.equal(nmx.balanceOf(tx.origin), expected, "Owner should have 200000000 Nmx initially");
   }
@@ -18,7 +18,7 @@ contract TestNmx {
   function testInitialBalanceWithNewNmx() public {
     Nmx nmx = new Nmx();
 
-    uint expected = 200000000;
+    uint expected = 200000000 * (10**18);
 
     Assert.equal(nmx.balanceOf(address(this)), expected, "Current contract should have 200000000 Nmx initially");
   }

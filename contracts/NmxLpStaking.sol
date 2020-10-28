@@ -12,8 +12,9 @@ contract NmxLpStaking {
         uint permanentReward;
     }
 
-    IERC20 nmxLp;
+    IERC20 public nmxLp;
     IERC20 nmx;
+
     address rewardPool;
     mapping(address => StakingInfo) public stakingData;
     uint public stakingRate = (uint(900) * (10 ** 18) / (24 * 60 * 60 * 1000));
@@ -30,7 +31,10 @@ contract NmxLpStaking {
 	}
 
     function stake(uint amount) public {
-        require(amount > 0);
+        require(amount > 0, 'amount must be positive');
+        uint allowance = nmxLp.allowance(msg.sender, address(this));
+        require( allowance > 0, 'nmxLp.allowance must be positive');
+        // require( false, 'allowance passed');
         bool transferred = nmxLp.transferFrom(msg.sender, address(this), amount);
         require(!!transferred);
         StakingInfo storage userStakingInfo = stakingData[msg.sender];
@@ -86,6 +90,18 @@ contract NmxLpStaking {
         bool transferred = nmx.transferFrom(rewardPool, msg.sender, reward);
         require(transferred);
         userStakingInfo.claimedReward += reward;
+    }
+
+    function testGas(uint count) public {
+        uint a = 38479;
+        uint b = 38473892;
+        uint test = profitability; 
+        for (uint i = 0; i < count; ++i) {
+            test = test * 1580483;
+            test = test / b;
+            test = test + a;
+        }
+        profitability = test;
     }
 
 }

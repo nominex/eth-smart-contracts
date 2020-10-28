@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Nmx is ERC20 {
 
-	uint32 private constant TOTAL_SUPPLY = 200000000;
+	uint private constant TOTAL_SUPPLY = 200000000 * (10**18);
 	
 	bytes32 public DOMAIN_SEPARATOR;
 	bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
