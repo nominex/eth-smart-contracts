@@ -8,7 +8,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "build": "mkdir -p dist && truffle compile && cp -r build dist && cp lib/dist-package.json dist/package.json",
+    "test": "truffle test",
+    "clean": "rm -rf dist && rm -rf build"
   },
   "repository": {
     "type": "git",

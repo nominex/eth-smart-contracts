@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.25 <0.7.0;
 
-import "contracts/Nmx.sol";
+import "./Nmx.sol";
 
 contract NmxLpStaking {
+
+    event Stake(address indexed staker, uint256 amount);
+    event Unstake(address indexed staker, uint256 amount);
+    event Claim(address indexed staker);
 
     struct StakingInfo {
         uint amount;
