@@ -28,6 +28,9 @@ dist/
 # JetBrains IDE
 .idea/
 
+# Vusial Studio Code
+.vscode/
+
 # Unit test reports
 TEST*.xml
 
