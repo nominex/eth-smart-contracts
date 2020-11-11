@@ -7,6 +7,7 @@ contract StakingPoolManager is Ownable {
 
     event StakingActivated(address indexed token);
     event StakingStopped(address indexed token);
+    event StakingScheduleChanged();
 
     struct DailyPoolRateScheduleItem {
         uint timestamp;
