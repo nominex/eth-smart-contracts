@@ -2,8 +2,9 @@
 pragma solidity >=0.4.25 <0.7.0;
 
 import "./Nmx.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NmxLpStaking {
+contract StakingPool is Ownable {
 
     event Stake(address indexed staker, uint256 amount);
     event Unstake(address indexed staker, uint256 amount);
@@ -28,11 +29,15 @@ contract NmxLpStaking {
 
 
 
-	constructor(address nmxLpAddress, address nmxAddress, address rewardPoolAddress) public {
+	constructor(address nmxLpAddress, address rewardToken) public {
         nmxLp = IERC20(nmxLpAddress);
         nmx = IERC20(nmxAddress);
         rewardPool = rewardPoolAddress;
 	}
+
+    function notifyPoolCountChanged(uint poolCount) public onlyOwner {
+        //TODO: implement
+    }
 
     function stake(uint amount) public {
         require(amount > 0, 'amount must be positive');
