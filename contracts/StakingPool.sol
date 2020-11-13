@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.25 <0.7.0;
+pragma solidity >=0.6.12 <0.7.0;
+pragma experimental ABIEncoderV2;
 
-import "./Nmx.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./RewardSchedule.sol";
 
 contract StakingPool is Ownable {
 
     event Stake(address indexed staker, uint256 amount);
     event Unstake(address indexed staker, uint256 amount);
     event Claim(address indexed staker);
+
+    address public rewardToken;
+    address public stakingToken;
 
     struct StakingInfo {
         uint amount;
@@ -17,52 +22,46 @@ contract StakingPool is Ownable {
         uint permanentReward;
     }
 
-    IERC20 public nmxLp;
-    IERC20 nmx;
+    mapping(address => StakingInfo) public stakingInfoByAddress;
 
-    address rewardPool;
-    mapping(address => StakingInfo) public stakingData;
-    uint public stakingRate = (uint(900) * (10 ** 18) / (24 * 60 * 60 * 1000));
+    RewardSchedule public rewardSchedule;
+
     uint profitability = 0;
     uint profitabilityTimestamp = 0;
     uint totalStaked = 0;
 
 
-
-	constructor(address nmxLpAddress, address rewardToken) public {
-        nmxLp = IERC20(nmxLpAddress);
-        nmx = IERC20(nmxAddress);
-        rewardPool = rewardPoolAddress;
+	constructor(address _rewardToken, address _stakingToken) public {
+        rewardToken = _rewardToken;
+        stakingToken = _stakingToken;
 	}
 
-    function notifyPoolCountChanged(uint poolCount) public onlyOwner {
-        //TODO: implement
+    function setRewardSchedule(RewardSchedule memory _rewardSchedule) public onlyOwner {
+        ScheduleLib.copyFromMemoryToStorage(_rewardSchedule, rewardSchedule);
     }
 
     function stake(uint amount) public {
-        require(amount > 0, 'amount must be positive');
-        uint allowance = nmxLp.allowance(msg.sender, address(this));
-        require( allowance > 0, 'nmxLp.allowance must be positive');
-        // require( false, 'allowance passed');
-        bool transferred = nmxLp.transferFrom(msg.sender, address(this), amount);
+        uint allowance = IERC20(stakingToken).allowance(msg.sender, address(this));
+        require( allowance >= amount, 'allowance must be not less than amount');
+        bool transferred = IERC20(stakingToken).transferFrom(msg.sender, address(this), amount);
         require(!!transferred);
-        StakingInfo storage userStakingInfo = stakingData[msg.sender];
-        changeStakedAmount(int(amount));
-        changeUserStakeAmount(userStakingInfo, int(amount));
+        StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
+        changeStakedAmount(amount);
+        changeUserStakeAmount(userStakingInfo, amount);
     }
 
     function unstake(uint amount) public {
         require(amount > 0);
-        StakingInfo storage userStakingInfo = stakingData[msg.sender];
+        StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
         require(userStakingInfo.amount > amount);
-        bool transferred = nmxLp.transfer(msg.sender, amount);
+        bool transferred = IERC20(stakingToken).transfer(msg.sender, amount);
         require(transferred == true);
 
-        changeStakedAmount(-int(amount));
-        changeUserStakeAmount(userStakingInfo, -int(amount));
+        changeStakedAmount(-amount);
+        changeUserStakeAmount(userStakingInfo, -amount);
     }
 
-    function changeStakedAmount(int change) private {
+    function changeStakedAmount(uint change) private {
         profitability = getProfitobility(block.timestamp);
         totalStaked += uint(change);
         profitabilityTimestamp = block.timestamp;
@@ -70,14 +69,14 @@ contract StakingPool is Ownable {
 
     function getProfitobility(uint timestamp) private view returns (uint) {
         if (totalStaked > 0) {
-            return profitability + (timestamp - profitabilityTimestamp) * stakingRate / totalStaked;
+            return profitability + (timestamp - profitabilityTimestamp) * getCurrentStakingRate() / totalStaked;
         }
         return profitability;
     } 
 
-    function changeUserStakeAmount(StakingInfo storage userStakingInfo, int amount) private {
+    function changeUserStakeAmount(StakingInfo storage userStakingInfo, uint amount) private {
         userStakingInfo.permanentReward = getTotalReward(userStakingInfo, profitability);
-        userStakingInfo.amount += uint(amount);
+        userStakingInfo.amount += amount;
         userStakingInfo.initialProfitability = profitability;
     }
 
@@ -87,30 +86,34 @@ contract StakingPool is Ownable {
     }
 
     function getUnclaimedReward(uint timestamp) public view returns (uint) {
-        StakingInfo storage userStakingInfo = stakingData[msg.sender];
+        StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
         return getTotalReward(userStakingInfo, getProfitobility(timestamp)) - userStakingInfo.claimedReward;        
     }
 
     function claimReward() public returns (uint) {
-        StakingInfo storage userStakingInfo = stakingData[msg.sender];
+        StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
         uint totalReward = getTotalReward(userStakingInfo, getProfitobility(block.timestamp));
         require(totalReward > userStakingInfo.claimedReward);
         uint reward = totalReward - userStakingInfo.claimedReward;
-        bool transferred = nmx.transferFrom(rewardPool, msg.sender, reward);
+        bool transferred = IERC20(rewardToken).transferFrom(owner(), msg.sender, reward);
         require(transferred);
         userStakingInfo.claimedReward += reward;
     }
 
-    function testGas(uint count) public {
-        uint a = 38479;
-        uint b = 38473892;
-        uint test = profitability; 
-        for (uint i = 0; i < count; ++i) {
-            test = test * 1580483;
-            test = test / b;
-            test = test + a;
-        }
-        profitability = test;
+    function getAmountLeftToDistribute() public view returns (uint) {
+        return 0;
+    }
+
+    function getCurrentStakingRate() public view returns (uint) {
+        return 0;
+    }
+
+    function activate() public onlyOwner {
+        /* TODO: implement */
+    }
+
+    function deactivate() external onlyOwner returns (uint) {
+        return 0;
     }
 
 }
