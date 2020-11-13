@@ -1,16 +1,8 @@
 const fs = require('fs');
 
-const buildFolder = './build/contracts';
-const distFolder = './dist/contracts';
-
-fs.readdir(buildFolder, (err, files) => {
-    if (!files || !files.length) {
-        console.log('Compile contracts first!');
-        return;
-    }
-
-    if (!fs.existsSync(distFolder)) {
-        const pathParts = distFolder.split('/');
+const makeDirIfDoesntExist = (dirName) => {
+    if (!fs.existsSync(dirName)) {
+        const pathParts = dirName.split('/');
 
         pathParts.reduce((acc, pathPart) => {
             if (!acc) {
@@ -26,20 +18,44 @@ fs.readdir(buildFolder, (err, files) => {
             return dir;
         }, '');
     }
+};
+
+const buildFolder = './build/contracts';
+const abiFolder = './dist/abi';
+const contractFolder = './dist/contracts';
+
+fs.readdir(buildFolder, (err, files) => {
+    if (!files || !files.length) {
+        console.log('Compile contracts first!');
+        return;
+    }
+
+    makeDirIfDoesntExist(abiFolder);
+    makeDirIfDoesntExist(contractFolder);
 
     files.forEach(fileName => {
         if (!fileName.includes('.json')) {
             return;
         }
 
-        contract = require(`${buildFolder}/${fileName}`);
+        const contract = require(`${buildFolder}/${fileName}`);
+
         if (contract && contract.abi) {
             console.log(`Processing ${fileName}...`);
 
-            const data = JSON.stringify(contract.abi, null, 2);
-            const destFileName = `${distFolder}/${fileName.split('.json')[0]}-abi.json`;
+            const abiJson = JSON.stringify(contract.abi, null, 2);
+            const abiFileName = `${abiFolder}/${fileName}`;
 
-            fs.writeFile(destFileName, data, (err) => {
+            const contractJson = JSON.stringify(contract, null, 2);
+            const contractFileName = `${contractFolder}/${fileName}`;
+
+            fs.writeFile(abiFileName, abiJson, (err) => {
+                if (err) {
+                    return console.log(err);
+                }
+            });
+
+            fs.writeFile(contractFileName, contractJson, (err) => {
                 if (err) {
                     return console.log(err);
                 }
