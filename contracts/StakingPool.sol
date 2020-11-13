@@ -26,10 +26,17 @@ contract StakingPool is Ownable {
 
     RewardSchedule public rewardSchedule;
 
-    uint profitability = 0;
-    uint profitabilityTimestamp = 0;
-    uint totalStaked = 0;
+    uint currentScheduleItemIndex = 0;
+    uint currentScheduleItemStartTimestamp = 0;
+    uint currentRepeatCount = 0;
+    uint currentRewardRate;
 
+    uint profitability = 0;
+    uint lastUpdateTimestamp = 0;
+    uint totalStaked = 0;
+    
+    uint totalReward = 0;
+    uint claimedReward = 0;
 
 	constructor(address _rewardToken, address _stakingToken) public {
         rewardToken = _rewardToken;
@@ -62,16 +69,87 @@ contract StakingPool is Ownable {
     }
 
     function changeStakedAmount(uint change) private {
-        profitability = getProfitobility(block.timestamp);
-        totalStaked += uint(change);
-        profitabilityTimestamp = block.timestamp;
+        uint lastProfitability = profitability;
+        if (block.timestamp > lastUpdateTimestamp) {
+            (
+                profitability,
+                currentScheduleItemStartTimestamp,
+                currentRewardRate,
+                currentScheduleItemIndex,
+                currentRepeatCount) = getProfitability(block.timestamp);
+            lastUpdateTimestamp = block.timestamp;
+        }
+        /* FIXME: floating multiplication */ 
+        totalReward += (profitability - lastProfitability) * currentRewardRate; 
+        totalStaked += change;
     } 
 
-    function getProfitobility(uint timestamp) private view returns (uint) {
-        if (totalStaked > 0) {
-            return profitability + (timestamp - profitabilityTimestamp) * getCurrentStakingRate() / totalStaked;
+    function getProfitability(uint timestamp) private view returns 
+            (
+                uint newProfitability,
+                uint scheduleItemStartTimestamp,
+                uint rewardRate,
+                uint scheduleItemIndex,
+                uint repeatCount 
+                ) {
+        if (timestamp <= rewardSchedule.distributionStart) {
+            return (0, 0, 0, 0, 0);
         }
-        return profitability;
+        uint processingPeriodStart = lastUpdateTimestamp;
+        if (currentScheduleItemStartTimestamp == 0) {
+            scheduleItemStartTimestamp = rewardSchedule.distributionStart;
+            processingPeriodStart = rewardSchedule.distributionStart;
+            rewardRate = rewardSchedule.items[0].rewardRate;
+        } else {
+            scheduleItemStartTimestamp = currentScheduleItemStartTimestamp;
+            rewardRate = currentRewardRate;
+        }
+
+        scheduleItemIndex = currentScheduleItemIndex;
+        repeatCount = currentRepeatCount;
+
+        require(timestamp >= processingPeriodStart);
+        newProfitability = profitability;
+
+        while (timestamp > processingPeriodStart && scheduleItemIndex < rewardSchedule.items.length) {
+            RewardScheduleItem storage currentItem = rewardSchedule.items[scheduleItemIndex];
+
+            uint timePassedFromScheduleItemStart = timestamp - scheduleItemStartTimestamp;
+            uint processingPeriodEnd;
+            bool processingPeriodFinished = timePassedFromScheduleItemStart >= currentItem.duration;
+            if (!processingPeriodFinished) {
+                processingPeriodEnd = timestamp;
+            } else {
+                processingPeriodEnd = currentItem.duration + scheduleItemStartTimestamp;
+            }
+            uint processingPeriod = processingPeriodEnd - processingPeriodStart;
+
+            /* FIXME: floating multiplication */ 
+            newProfitability += processingPeriod * rewardRate / totalStaked;
+            processingPeriodStart = processingPeriodEnd;
+
+            if (!processingPeriodFinished) {
+                repeatCount++;
+                scheduleItemStartTimestamp = processingPeriodEnd;
+                if (repeatCount >= currentItem.repeatCount) {
+                    repeatCount = 0;
+                    scheduleItemIndex++;
+                    if (scheduleItemIndex >= rewardSchedule.items.length) {
+                        break;
+                    }
+                    RewardScheduleItem storage nextItem = rewardSchedule.items[scheduleItemIndex];
+                    if (nextItem.rewardRate != 0) {
+                        rewardRate = nextItem.rewardRate;
+                    } else {
+                        /* FIXME: floating multiplication */
+                        rewardRate *= nextItem.periodRepeatMultiplier;
+                    }
+                } else {
+                    /* FIXME: floating multiplication */
+                    rewardRate *= currentItem.periodRepeatMultiplier;
+                }
+            }    
+        }
     } 
 
     function changeUserStakeAmount(StakingInfo storage userStakingInfo, uint amount) private {
@@ -80,32 +158,45 @@ contract StakingPool is Ownable {
         userStakingInfo.initialProfitability = profitability;
     }
 
-
     function getTotalReward(StakingInfo storage userStakingInfo, uint currentProfitability) private view returns (uint) {
         return (currentProfitability - userStakingInfo.initialProfitability) * userStakingInfo.amount + userStakingInfo.permanentReward;
     }
 
     function getUnclaimedReward(uint timestamp) public view returns (uint) {
         StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
-        return getTotalReward(userStakingInfo, getProfitobility(timestamp)) - userStakingInfo.claimedReward;        
+        (uint currentProfitability,,,,) = getProfitability(timestamp);
+        return getTotalReward(userStakingInfo, currentProfitability) - userStakingInfo.claimedReward;        
     }
 
-    function claimReward() public returns (uint) {
+    function claimReward() public returns (uint reward) {
         StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
-        uint totalReward = getTotalReward(userStakingInfo, getProfitobility(block.timestamp));
+        (uint currentProfitability,,,,) = getProfitability(block.timestamp);
+        uint userTotalReward = getTotalReward(userStakingInfo, currentProfitability);
         require(totalReward > userStakingInfo.claimedReward);
-        uint reward = totalReward - userStakingInfo.claimedReward;
+        reward = userTotalReward - userStakingInfo.claimedReward;
         bool transferred = IERC20(rewardToken).transferFrom(owner(), msg.sender, reward);
         require(transferred);
         userStakingInfo.claimedReward += reward;
+        claimedReward += reward;
     }
 
     function getAmountLeftToDistribute() public view returns (uint) {
-        return 0;
+        uint lastProfitability = profitability;
+        uint newProfitability = profitability;
+        uint newRewardRate = currentRewardRate;
+        if (block.timestamp > lastUpdateTimestamp) {
+            (newProfitability,,newRewardRate,,) = getProfitability(block.timestamp);
+        }
+        /* FIXME: floating multiplication */ 
+        uint newTotalReward = totalReward + (profitability - lastProfitability) * newRewardRate; 
+        return newTotalReward - claimedReward;
     }
 
-    function getCurrentStakingRate() public view returns (uint) {
-        return 0;
+    function getCurrentStakingRate() public view returns (uint newRewardRate) {
+        newRewardRate = currentRewardRate;
+        if (block.timestamp > lastUpdateTimestamp) {
+            (,,newRewardRate,,) = getProfitability(block.timestamp);
+        }
     }
 
     function activate() public onlyOwner {
