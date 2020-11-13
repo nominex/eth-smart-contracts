@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "./RewardSchedule.sol";
 
 contract StakingPool is Ownable {
@@ -11,6 +12,8 @@ contract StakingPool is Ownable {
     event Stake(address indexed staker, uint256 amount);
     event Unstake(address indexed staker, uint256 amount);
     event Claim(address indexed staker);
+
+    bool public active = true;
 
     address public rewardToken;
     address public stakingToken;
@@ -70,19 +73,32 @@ contract StakingPool is Ownable {
 
     function changeStakedAmount(uint change) private {
         uint lastProfitability = profitability;
-        if (block.timestamp > lastUpdateTimestamp) {
-            (
-                profitability,
-                currentScheduleItemStartTimestamp,
-                currentRewardRate,
-                currentScheduleItemIndex,
-                currentRepeatCount) = getProfitability(block.timestamp);
-            lastUpdateTimestamp = block.timestamp;
-        }
-        /* FIXME: floating multiplication */ 
+        saveStakingState();
         totalReward += (profitability - lastProfitability) * currentRewardRate; 
         totalStaked += change;
     } 
+
+    function saveStakingState() private {
+        if (block.timestamp > lastUpdateTimestamp) {
+            if (active) {
+                (
+                    profitability,
+                    currentScheduleItemStartTimestamp,
+                    currentRewardRate,
+                    currentScheduleItemIndex,
+                    currentRepeatCount) = getProfitability(block.timestamp);
+                lastUpdateTimestamp = block.timestamp;
+            } else {
+                (
+                    ,
+                    currentScheduleItemStartTimestamp,
+                    ,
+                    currentScheduleItemIndex,
+                    currentRepeatCount) = getProfitability(block.timestamp);
+                    currentRewardRate = 0;
+            }
+        } 
+    }
 
     function getProfitability(uint timestamp) private view returns 
             (
@@ -124,7 +140,6 @@ contract StakingPool is Ownable {
             }
             uint processingPeriod = processingPeriodEnd - processingPeriodStart;
 
-            /* FIXME: floating multiplication */ 
             newProfitability += processingPeriod * rewardRate / totalStaked;
             processingPeriodStart = processingPeriodEnd;
 
@@ -141,12 +156,10 @@ contract StakingPool is Ownable {
                     if (nextItem.rewardRate != 0) {
                         rewardRate = nextItem.rewardRate;
                     } else {
-                        /* FIXME: floating multiplication */
-                        rewardRate *= nextItem.periodRepeatMultiplier;
+                        rewardRate = ABDKMath64x64.mulu(nextItem.periodRepeatMultiplier, rewardRate);
                     }
                 } else {
-                    /* FIXME: floating multiplication */
-                    rewardRate *= currentItem.periodRepeatMultiplier;
+                    rewardRate = ABDKMath64x64.mulu(currentItem.periodRepeatMultiplier, rewardRate);
                 }
             }    
         }
@@ -186,8 +199,7 @@ contract StakingPool is Ownable {
         uint newRewardRate = currentRewardRate;
         if (block.timestamp > lastUpdateTimestamp) {
             (newProfitability,,newRewardRate,,) = getProfitability(block.timestamp);
-        }
-        /* FIXME: floating multiplication */ 
+        } 
         uint newTotalReward = totalReward + (profitability - lastProfitability) * newRewardRate; 
         return newTotalReward - claimedReward;
     }
@@ -199,12 +211,17 @@ contract StakingPool is Ownable {
         }
     }
 
-    function activate() public onlyOwner {
-        /* TODO: implement */
+    function deactivate() external onlyOwner returns (uint) {
+        require(active, "Pool is not active");
+        saveStakingState();
+        active = false;
+        return 0;
     }
 
-    function deactivate() external onlyOwner returns (uint) {
-        return 0;
+    function activate() public onlyOwner {
+        require(!active, "Pool is active");
+        saveStakingState();
+        active = true;
     }
 
 }

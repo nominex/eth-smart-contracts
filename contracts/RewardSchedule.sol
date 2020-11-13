@@ -10,7 +10,7 @@ struct RewardScheduleItem {
         uint16 repeatCount;
         uint32 duration;
         uint128 rewardRate;
-        uint128 periodRepeatMultiplier;
+        int128 periodRepeatMultiplier;
 }
 
 struct RewardSchedule {
