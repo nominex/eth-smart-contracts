@@ -40,7 +40,7 @@ module.exports = {
       host: "127.0.0.1",
       port: 7545,
       network_id: "5777",
-      networkCheckTimeout: 10000,
+      networkCheckTimeout: 100000,
       uniswapRouter02: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
       uniswapFactory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
       usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
@@ -61,8 +61,6 @@ module.exports = {
   enableTimeouts: false,
   before_timeout: 120000 // Here is 2min but can be whatever timeout is suitable for you.
  },
-
-//  contracts_build_directory: "./output",
 
 };
 

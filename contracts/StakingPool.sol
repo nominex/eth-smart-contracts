@@ -5,7 +5,7 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
-import "./RewardSchedule.sol";
+import "./ScheduleLib.sol";
 
 contract StakingPool is Ownable {
 
@@ -54,7 +54,7 @@ contract StakingPool is Ownable {
         uint allowance = IERC20(stakingToken).allowance(msg.sender, address(this));
         require( allowance >= amount, "allowance must be not less than amount");
         bool transferred = IERC20(stakingToken).transferFrom(msg.sender, address(this), amount);
-        require(!!transferred);
+        require(transferred == true);
         StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
         changeStakedAmount(amount);
         changeUserStakeAmount(userStakingInfo, amount);
@@ -63,10 +63,9 @@ contract StakingPool is Ownable {
     function unstake(uint amount) external {
         require(amount > 0);
         StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
-        require(userStakingInfo.amount > amount);
+        require(userStakingInfo.amount >= amount, "unstake amount must be less or equal to staked amount");
         bool transferred = IERC20(stakingToken).transfer(msg.sender, amount);
         require(transferred == true);
-
         changeStakedAmount(-amount);
         changeUserStakeAmount(userStakingInfo, -amount);
     }
@@ -157,8 +156,8 @@ contract StakingPool is Ownable {
                 uint scheduleItemIndex,
                 uint repeatCount 
                 ) {
-        if (timestamp <= rewardSchedule.distributionStart) {
-            return (0, 0, 0, 0, 0);
+        if (timestamp <= rewardSchedule.distributionStart || currentScheduleItemIndex >= rewardSchedule.items.length) {
+            return (profitability, currentScheduleItemStartTimestamp, 0, currentScheduleItemIndex, 0);
         }
         uint processingPeriodStart = lastUpdateTimestamp;
         if (currentScheduleItemStartTimestamp == 0) {
@@ -189,7 +188,9 @@ contract StakingPool is Ownable {
             }
             uint processingPeriod = processingPeriodEnd - processingPeriodStart;
 
-            newProfitability += processingPeriod * rewardRate / totalStaked;
+            if (totalStaked > 0) {
+                newProfitability += processingPeriod * rewardRate / totalStaked;
+            }
             processingPeriodStart = processingPeriodEnd;
 
             if (!processingPeriodFinished) {

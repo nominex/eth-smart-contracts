@@ -17,24 +17,27 @@
     "type": "git",
     "url": "git+ssh://git@bitbucket.org/bitchangers/eth-smart-contracts.git"
   },
-  "author": "igurev@nominex.io",
   "license": "ISC",
   "homepage": "https://bitbucket.org/bitchangers/eth-smart-contracts#readme",
   "dependencies": {
     "@ethersproject/address": "^5.0.5",
     "@ethersproject/contracts": "^5.0.5",
-    "@ethersproject/providers": "^5.0.11",
+    "@ethersproject/providers": "^5.0.14",
     "@ethersproject/solidity": "^5.0.5",
     "@openzeppelin/contracts": "^3.2.0",
     "@truffle/contract": "^4.2.30",
-    "@truffle/provisioner": "^0.2.7",
+    "@truffle/provisioner": "^0.2.10",
     "@trufflesuite/web3-provider-engine": "^15.0.13-1",
     "@uniswap/sdk": "^3.0.3",
     "@uniswap/v2-core": "^1.0.1",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "abdk-libraries-solidity": "^2.4.0",
     "ethereumjs-wallet": "^1.0.1",
-    "truffle": "^5.1.46",
-    "web3": "^1.2.1"
+    "remixd": "^0.2.4-alpha.0",
+    "truffle": "^5.1.53",
+    "web3": "^1.3.0"
+  },
+  "devDependencies": {
+    "ganache-core": "^2.13.1"
   }
 }

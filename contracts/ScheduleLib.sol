@@ -23,7 +23,7 @@ library ScheduleLib {
         stg.distributionStart = mem.distributionStart;
         delete stg.items;
         for (uint i = 0; i < mem.items.length; ++i) {
-            stg.items[i] = mem.items[i];
+            stg.items.push(mem.items[i]);
         }
     }
 }

@@ -3,7 +3,7 @@ pragma solidity >=0.6.12 <0.7.0;
 pragma experimental ABIEncoderV2;
 
 import "./StakingPool.sol";
-import "./RewardSchedule.sol";
+import "./ScheduleLib.sol";
 
 contract StakingPoolManager is Ownable {
 
@@ -28,11 +28,11 @@ contract StakingPoolManager is Ownable {
         setSchedule(_rewardSchedule);
 	}
 
-    function addPool(address stakingToken) external onlyOwner {
+    function addPool(address stakingToken) external onlyOwner returns(address poolAddress) {
         StakingPoolInfo storage poolInfo = stakingPools[stakingToken];
         require(poolInfo.poolAddress == address(0), "pool already added");
         stakingTokens.push(stakingToken);
-        address poolAddress = deployStakingContract(stakingToken);
+        poolAddress = deployStakingContract(stakingToken);
         poolInfo.poolAddress = poolAddress;
         doActivatePool(poolInfo, stakingToken);
     }
