@@ -27,12 +27,12 @@ contract StakingPool is Ownable {
     RewardSchedule public rewardSchedule;
 
     uint public currentScheduleItemIndex = 0;
-    uint public currentScheduleItemStartTimestamp = 0;
+    uint public currentScheduleItemStartBlockNumber = 0;
     uint public currentRepeatCount = 0;
     uint public currentRewardRate;
 
     uint public profitability = 0;
-    uint public lastUpdateTimestamp = 0;
+    uint public lastUpdateBlock = 0;
     uint public totalStaked = 0;
     
     uint public totalReward = 0;
@@ -95,7 +95,7 @@ contract StakingPool is Ownable {
 
     function claimReward() external returns (uint reward) {
         StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
-        (uint currentProfitability,,,,) = getProfitability(block.timestamp);
+        (uint currentProfitability,,,,) = getProfitability(block.number);
         uint userTotalReward = getTotalReward(userStakingInfo, currentProfitability);
         require(totalReward > userStakingInfo.claimedReward);
         reward = userTotalReward - userStakingInfo.claimedReward;
@@ -105,9 +105,9 @@ contract StakingPool is Ownable {
         claimedReward += reward;
     }
 
-    function getUnclaimedReward(uint timestamp) external view returns (uint) {
+    function getUnclaimedReward(uint blocknumber) external view returns (uint) {
         StakingInfo storage userStakingInfo = stakingInfoByAddress[msg.sender];
-        (uint currentProfitability,,,,) = getProfitability(timestamp);
+        (uint currentProfitability,,,,) = getProfitability(blocknumber);
         return getTotalReward(userStakingInfo, currentProfitability) - userStakingInfo.claimedReward;        
     }
 
@@ -115,18 +115,14 @@ contract StakingPool is Ownable {
         uint lastProfitability = profitability;
         uint newProfitability = profitability;
         uint newRewardRate = currentRewardRate;
-        if (block.timestamp > lastUpdateTimestamp) {
-            (newProfitability,,newRewardRate,,) = getProfitability(block.timestamp);
-        } 
+        (newProfitability,,newRewardRate,,) = getProfitability(block.number);
         uint newTotalReward = totalReward + (profitability - lastProfitability) * totalStaked / 10e18;
         return newTotalReward - claimedReward;
     }
 
     function getCurrentStakingRate() public view returns (uint newRewardRate) {
         newRewardRate = currentRewardRate;
-        if (block.timestamp > lastUpdateTimestamp) {
-            (,,newRewardRate,,) = getProfitability(block.timestamp);
-        }
+        (,,newRewardRate,,) = getProfitability(block.number);
     }
 
     function changeStakedAmount(uint change) private {
@@ -137,73 +133,71 @@ contract StakingPool is Ownable {
     } 
 
     function saveStakingState() private {
-        if (block.timestamp > lastUpdateTimestamp) {
-            if (active) {
-                (
-                    profitability,
-                    currentScheduleItemStartTimestamp,
-                    currentRewardRate,
-                    currentScheduleItemIndex,
-                    currentRepeatCount) = getProfitability(block.timestamp);
-                lastUpdateTimestamp = block.timestamp;
-            } else {
-                (
-                    ,
-                    currentScheduleItemStartTimestamp,
-                    currentRewardRate,
-                    currentScheduleItemIndex,
-                    currentRepeatCount) = getProfitability(block.timestamp);
-            }
-        } 
+        if (active) {
+            (
+            profitability,
+            currentScheduleItemStartBlockNumber,
+            currentRewardRate,
+            currentScheduleItemIndex,
+            currentRepeatCount) = getProfitability(block.number);
+        } else {
+            (
+            ,
+            currentScheduleItemStartBlockNumber,
+            currentRewardRate,
+            currentScheduleItemIndex,
+            currentRepeatCount) = getProfitability(block.number);
+        }
+        lastUpdateBlock = block.number;
     }
 
-    function getProfitability(uint timestamp) private view returns 
+    function getProfitability(uint blockNumber) private view returns
             (
                 uint newProfitability,
-                uint scheduleItemStartTimestamp,
+                uint scheduleItemStartBlockNumber,
                 uint rewardRate,
                 uint scheduleItemIndex,
                 uint repeatCount 
                 ) {
-        if (timestamp <= rewardSchedule.distributionStart || currentScheduleItemIndex >= rewardSchedule.items.length) {
-            return (profitability, currentScheduleItemStartTimestamp, 0, currentScheduleItemIndex, 0);
+        if (blockNumber <= rewardSchedule.distributionStart || currentScheduleItemIndex >= rewardSchedule.items.length) {
+            return (profitability, currentScheduleItemStartBlockNumber, 0, currentScheduleItemIndex, 0);
         }
-        uint processingPeriodStart = lastUpdateTimestamp;
-        if (currentScheduleItemStartTimestamp == 0) {
-            scheduleItemStartTimestamp = rewardSchedule.distributionStart;
+        uint processingPeriodStart = lastUpdateBlock;
+        if (currentScheduleItemStartBlockNumber == 0) {
+            scheduleItemStartBlockNumber = rewardSchedule.distributionStart;
             processingPeriodStart = rewardSchedule.distributionStart;
             rewardRate = rewardSchedule.items[0].rewardRate;
         } else {
-            scheduleItemStartTimestamp = currentScheduleItemStartTimestamp;
+            scheduleItemStartBlockNumber = currentScheduleItemStartBlockNumber;
             rewardRate = currentRewardRate;
         }
 
         scheduleItemIndex = currentScheduleItemIndex;
         repeatCount = currentRepeatCount;
 
-        require(timestamp >= processingPeriodStart);
+        require(blockNumber >= processingPeriodStart);
         newProfitability = profitability;
 
-        while (timestamp > processingPeriodStart && scheduleItemIndex < rewardSchedule.items.length) {
+        while (blockNumber > processingPeriodStart && scheduleItemIndex < rewardSchedule.items.length) {
             RewardScheduleItem storage scheduleItem = rewardSchedule.items[scheduleItemIndex];
 
-            uint timePassedFromScheduleItemStart = timestamp - scheduleItemStartTimestamp;
-            bool processingPeriodFinished = timePassedFromScheduleItemStart >= scheduleItem.duration;
+            uint blocksAfterScheduleItemStart = blockNumber - scheduleItemStartBlockNumber;
+            bool processingPeriodFinished = blocksAfterScheduleItemStart >= scheduleItem.blockCount;
 
             uint processingPeriodEnd = (!processingPeriodFinished)
-                ? timestamp
-                : scheduleItem.duration + scheduleItemStartTimestamp;
+                ? blockNumber
+                : scheduleItem.blockCount + scheduleItemStartBlockNumber;
 
-            uint processingPeriodDuration = processingPeriodEnd - processingPeriodStart;
+            uint blocksPassed = processingPeriodEnd - processingPeriodStart;
 
             if (totalStaked > 0) {
-                newProfitability += processingPeriodDuration * rewardRate * 10e18 / totalStaked;
+                newProfitability += blocksPassed * rewardRate * 10e18 / totalStaked;
             }
             processingPeriodStart = processingPeriodEnd;
 
             if (processingPeriodFinished) {
                 repeatCount++;
-                scheduleItemStartTimestamp = processingPeriodEnd;
+                scheduleItemStartBlockNumber = processingPeriodEnd;
                 if (repeatCount >= scheduleItem.repeatCount) {
                     repeatCount = 0;
                     scheduleItemIndex++;
