@@ -9,7 +9,7 @@ pragma experimental ABIEncoderV2;
 struct RewardScheduleItem {
         uint16 repeatCount;
         uint32 duration;
-        uint128 rewardRate;
+        uint rewardRate;
         int128 periodRepeatMultiplier;
 }
 
