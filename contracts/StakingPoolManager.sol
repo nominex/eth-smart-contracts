@@ -65,9 +65,6 @@ contract StakingPoolManager is Ownable {
             uint currentBalance = IERC20(rewardToken).balanceOf(address(this));
             if (poolInfo.active) {
                 IERC20(rewardToken).approve(poolInfo.poolAddress, currentBalance);
-            } else {
-                uint amountLeftToDistribute = StakingPool(poolInfo.poolAddress).getAmountLeftToDistribute();
-                IERC20(rewardToken).approve(poolInfo.poolAddress, amountLeftToDistribute);
             }
         }
     }
