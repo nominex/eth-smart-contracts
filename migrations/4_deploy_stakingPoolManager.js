@@ -12,8 +12,18 @@ module.exports = async function(deployer, network, accounts) {
   const schedule = {
     distributionStart: startTime,
     items: [
-      scheduleItem(10, 100, 100, 100)
-  ]};
+      scheduleItem({
+        repeatCount: 10,
+        blockCount: 100,
+        rewardRate: 100,
+        repeatMultiplier: 100,
+        bonusPoolRate: 0,
+        affiliateTeamStakingPoolRate: 0,
+        fundingTeamPoolRate: 0,
+        operationalFundPoolRate: 0,
+        reserveFundPoolRate: 0,
+        premineBonusPoolRate: 0})
+    ]};
   await deployer.deploy(StakingPoolManager, nmx.address, schedule, {from: accounts[0]});
   await StakingPoolManager.deployed();
 };
