@@ -10,7 +10,13 @@ struct RewardScheduleItem {
         uint16 repeatCount;
         uint32 blockCount;
         uint rewardRate;
-        int128 periodRepeatMultiplier;
+        int128 repeatMultiplier;
+        int128 bonusPoolRate;
+        int128 affiliateTeamStakingPoolRate;
+        int128 fundingTeamPoolRate;
+        int128 operationalFundPoolRate;
+        int128 reserveFundPoolRate;
+        int128 premineBonusPoolRate;
 }
 
 struct RewardSchedule {
