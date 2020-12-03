@@ -172,7 +172,7 @@ contract StakingPool is Ownable {
 
     function updateState() private {
 
-        if (block.number <= rewardSchedule.distributionStart ||
+        if (block.number <= rewardSchedule.distributionStartBlock ||
             scheduleItemIndex >= rewardSchedule.items.length ||
             block.number == lastUpdateBlock) {
             return;
@@ -180,8 +180,8 @@ contract StakingPool is Ownable {
 
         uint processingPeriodStart = lastUpdateBlock;
         if (scheduleItemStartBlockNumber == 0) {
-            scheduleItemStartBlockNumber = rewardSchedule.distributionStart;
-            processingPeriodStart = rewardSchedule.distributionStart;
+            scheduleItemStartBlockNumber = rewardSchedule.distributionStartBlock;
+            processingPeriodStart = scheduleItemStartBlockNumber;
             rewardRate = rewardSchedule.items[0].rewardRate;
         }
 
@@ -231,9 +231,10 @@ contract StakingPool is Ownable {
                 } else {
                     rewardRate = ABDKMath64x64.mulu(scheduleItem.repeatMultiplier, rewardRate);
                 }
-            }    
+            }
         }
-    } 
+        lastUpdateBlock = block.number;
+    }
 
     function changeUserStakeAmount(StakingInfo storage stakingInfo, uint amount) private {
         stakingInfo.permanentReward = getTotalReward(stakingInfo);

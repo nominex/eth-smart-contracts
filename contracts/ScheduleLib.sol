@@ -24,13 +24,13 @@ struct RewardScheduleItem {
 }
 
 struct RewardSchedule {
-    uint32 distributionStart;
+    uint64 distributionStartBlock;
     RewardScheduleItem[] items;
 }
 
 library ScheduleLib {
     function copyFromMemoryToStorage(RewardSchedule memory mem, RewardSchedule storage stg) public {
-        stg.distributionStart = mem.distributionStart;
+        stg.distributionStartBlock = mem.distributionStartBlock;
         delete stg.items;
         for (uint i = 0; i < mem.items.length; ++i) {
             stg.items.push(mem.items[i]);

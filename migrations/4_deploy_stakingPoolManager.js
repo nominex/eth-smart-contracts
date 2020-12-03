@@ -10,12 +10,12 @@ module.exports = async function(deployer, network, accounts) {
   const startTime = Math.floor((new Date().getTime())/1000);
   /* TODO: create normal schedule */
   const schedule = {
-    distributionStart: startTime,
+    distributionStartBlock: startTime,
     items: [
       scheduleItem({
         repeatCount: 10,
         blockCount: 100,
-        rewardRate: 100,
+        dailyRewardRate: 100,
         repeatMultiplier: 100,
         bonusPoolRate: 0,
         affiliateTeamStakingPoolRate: 0,
