@@ -57,6 +57,12 @@ contract StakingPoolManager is Ownable {
         emit StakingStopped(stakingToken);
     }
 
+    function setPoolOwner(address stakingToken, NominexPoolIds poolId, address newOwner) external onlyOwner {
+        StakingPoolInfo storage poolInfo = stakingPools[stakingToken];
+        require(poolInfo.poolAddress != address(0), "pool is not added");
+        StakingPool(poolInfo.poolAddress).setPoolOwner(poolId, newOwner);
+    }
+
     function reapprovePools() external {
         for (uint i = 0; i < stakingTokens.length; ++i) {
             /* TODO set allowence for pool */

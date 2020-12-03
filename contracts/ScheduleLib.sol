@@ -6,17 +6,21 @@ pragma experimental ABIEncoderV2;
  * @title RewardScheduleItem
  * @notice Structure defining reward schedule item.
  */
+
+enum NominexPoolIds {
+    BONUS_POOL,
+    AFFILIATE_TEAM_STAKING_POOL,
+    FUNDING_TEAM_POOL,
+    OPERATIONAL_FUND_POOL,
+    RESERVE_FUND_POOL
+}
+
 struct RewardScheduleItem {
         uint16 repeatCount;
         uint32 blockCount;
         uint rewardRate;
         int128 repeatMultiplier;
-        int128 bonusPoolRate;
-        int128 affiliateTeamStakingPoolRate;
-        int128 fundingTeamPoolRate;
-        int128 operationalFundPoolRate;
-        int128 reserveFundPoolRate;
-        int128 premineBonusPoolRate;
+        int128[5] poolRewardRates;
 }
 
 struct RewardSchedule {

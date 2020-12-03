@@ -22,13 +22,6 @@ contract StakingPool is Ownable {
         uint value;
     }
 
-    uint public constant BONUS_POOL = 0;
-    uint public constant AFFILIATE_TEAM_STAKING_POOL = 1;
-    uint public constant FUNDING_TEAM_POOL = 2;
-    uint public constant OPERATIONAL_FUND_POOL = 3;
-    uint public constant RESERVE_FUND_POOL = 4;
-    uint public constant PREMINE_BONUS_POOL = 5;
-
     bool public active = false;
 
     address public rewardToken;
@@ -45,12 +38,7 @@ contract StakingPool is Ownable {
     uint public scheduleItemRepeatCount = 0;
     uint public rewardRate;
 
-    RewardPool public bonusPool;
-    RewardPool public affiliateTeamStakingPool;
-    RewardPool public fundingTeamPool;
-    RewardPool public operationalFundPool;
-    RewardPool public reserveFundPool;
-    RewardPool public premineBonusPool;
+    RewardPool[5] public nominexPools;
 
     uint public profitability = 0;
     uint public lastUpdateBlock = 0;
@@ -94,7 +82,6 @@ contract StakingPool is Ownable {
     }
 
     function unstake(uint amount) external {
-        require(active, "NMXSTK: POOL_INACTIVE");
         StakingInfo storage stakingInfo = stakingInfoByAddress[msg.sender];
         require(stakingInfo.amount >= amount, "NMXSTK: NOT_ENOUGH_STAKED");
         bool transferred = IERC20(stakingToken).transfer(msg.sender, amount);
@@ -159,42 +146,17 @@ contract StakingPool is Ownable {
         emit Reinvest(owner, amount);
     }
 
-    function setPoolOwner(uint poolId, address newPoolOwner) external returns (bool) {
-        if (poolId == BONUS_POOL) {
-            require(owner() == msg.sender || bonusPool.owner == msg.sender, "NMXSTK: NOT_OWNER");
-            bonusPool.owner = newPoolOwner;
-            return true;
-        } else if (poolId == AFFILIATE_TEAM_STAKING_POOL) {
-            require(owner() == msg.sender || affiliateTeamStakingPool.owner == msg.sender, "NMXSTK: NOT_OWNER");
-            affiliateTeamStakingPool.owner = newPoolOwner;
-            return true;
-        } else if (poolId == FUNDING_TEAM_POOL) {
-            require(owner() == msg.sender || fundingTeamPool.owner == msg.sender, "NMXSTK: NOT_OWNER");
-            fundingTeamPool.owner = newPoolOwner;
-            return true;
-        } else if (poolId == OPERATIONAL_FUND_POOL) {
-            require(owner() == msg.sender || operationalFundPool.owner == msg.sender, "NMXSTK: NOT_OWNER");
-            operationalFundPool.owner = newPoolOwner;
-            return true;
-        } else if (poolId == RESERVE_FUND_POOL) {
-            require(owner() == msg.sender || reserveFundPool.owner == msg.sender, "NMXSTK: NOT_OWNER");
-            reserveFundPool.owner = newPoolOwner;
-            return true;
-        } else if (poolId == PREMINE_BONUS_POOL) {
-            require(owner() == msg.sender || premineBonusPool.owner == msg.sender, "NMXSTK: NOT_OWNER");
-            premineBonusPool.owner = newPoolOwner;
-            return true;
-        }
-        return false;
+    function setPoolOwner(NominexPoolIds poolId, address newPoolOwner) external returns (bool) {
+        RewardPool storage pool = nominexPools[uint(poolId)];
+        require(owner() == msg.sender || pool.owner == msg.sender, "NMXSTK: NOT_OWNER");
+        pool.owner = newPoolOwner;
+        return true;
     }
 
     function claimPoolReward() external {
-        claimPoolReward(bonusPool);
-        claimPoolReward(affiliateTeamStakingPool);
-        claimPoolReward(fundingTeamPool);
-        claimPoolReward(operationalFundPool);
-        claimPoolReward(reserveFundPool);
-        claimPoolReward(premineBonusPool);
+        for (uint i = 0; i < nominexPools.length; ++i) {
+            claimPoolReward(nominexPools[i]);
+        }
     }
 
     function getUnclaimedReward() external returns (uint) {
@@ -237,26 +199,13 @@ contract StakingPool is Ownable {
 
             if (totalStaked > 0 && active) {
                 uint reward = blocksPassed * rewardRate;
-                uint bonusPoolReward = ABDKMath64x64.mulu(scheduleItem.bonusPoolRate, reward);
-                bonusPool.value += bonusPoolReward;
-                uint affiliateTeamStakingPoolReward = ABDKMath64x64.mulu(scheduleItem.bonusPoolRate, reward);
-                affiliateTeamStakingPool.value += affiliateTeamStakingPoolReward;
-                uint fundingTeamPoolReward = ABDKMath64x64.mulu(scheduleItem.fundingTeamPoolRate, reward);
-                fundingTeamPool.value += fundingTeamPoolReward;
-                uint operationalFundPoolReward = ABDKMath64x64.mulu(scheduleItem.operationalFundPoolRate, reward);
-                operationalFundPool.value += operationalFundPoolReward;
-                uint reserveFundPoolReward = ABDKMath64x64.mulu(scheduleItem.reserveFundPoolRate, reward);
-                reserveFundPool.value += reserveFundPoolReward;
-                uint premineBonusPoolReward = ABDKMath64x64.mulu(scheduleItem.premineBonusPoolRate, reward);
-                premineBonusPool.value += premineBonusPoolReward;
+                uint personalReward = reward;
 
-                uint personalReward = reward
-                    - bonusPoolReward
-                    - affiliateTeamStakingPoolReward
-                    - fundingTeamPoolReward
-                    - operationalFundPoolReward
-                    - reserveFundPoolReward
-                    - premineBonusPoolReward;
+                for (uint i = 0; i < scheduleItem.poolRewardRates.length; ++i) {
+                    uint poolReward = ABDKMath64x64.mulu(scheduleItem.poolRewardRates[i], reward);
+                    nominexPools[i].value += poolReward;
+                    personalReward -= poolReward;
+                }
 
                 uint delta = personalReward * MULTIPLIER / totalStaked;
                 profitability += delta;

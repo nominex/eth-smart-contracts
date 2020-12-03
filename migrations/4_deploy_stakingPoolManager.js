@@ -21,8 +21,7 @@ module.exports = async function(deployer, network, accounts) {
         affiliateTeamStakingPoolRate: 0,
         fundingTeamPoolRate: 0,
         operationalFundPoolRate: 0,
-        reserveFundPoolRate: 0,
-        premineBonusPoolRate: 0})
+        reserveFundPoolRate: 0})
     ]};
   await deployer.deploy(StakingPoolManager, nmx.address, schedule, {from: accounts[0]});
   await StakingPoolManager.deployed();
