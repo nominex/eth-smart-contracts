@@ -88,6 +88,19 @@ contract('StakingPool', (accounts) => {
     const unstakeBlock = unstakeTxOutcome.receipt.blockNumber;
 
     const stakeDurationMs = msBetweenBlocks(unstakeBlock - stakeBlock);
+    await new Promise((resolve, reject) => {
+      web3.currentProvider.sendAsync({
+        jsonrpc: "2.0",
+        method: "evm_mine",
+        id: 12345
+      }, function(err, result) {
+        if (!err) {
+          resolve(result);
+        } else {
+          reject(err);
+        }
+      });
+    });
 
     await printInfo("done", infoData);
     assert(Math.abs(1 - account1NmxBalance / (dailyRewardRate * stakeDurationMs / (24 * 60 * 60 * 1000))) < 1e-10, "Wrong reward calculation");
