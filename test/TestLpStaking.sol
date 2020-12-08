@@ -2,7 +2,8 @@ pragma solidity >=0.4.25 <0.7.0;
 
 import "truffle/Assert.sol";
 import "truffle/DeployedAddresses.sol";
-import "../contracts/NmxLpStaking.sol";
+import "../contracts/Nmx.sol";
+import "../contracts/StakingPool.sol";
 
 contract TestLpStaking {
 
@@ -11,7 +12,7 @@ contract TestLpStaking {
     /* any ERC20 token for example another instance of nmx */
     Nmx nmxLp = new Nmx();
 
-    NmxLpStaking lpStaking = new NmxLpStaking(address(nmxLp), address(nmx), address(this));
+    StakingPool lpStaking = new StakingPool(address(nmx), address(nmxLp));
     nmx.approve(address(lpStaking), 100000000);
 
     uint expected = 200000000 * (10**18);

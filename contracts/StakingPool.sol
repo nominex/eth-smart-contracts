@@ -38,7 +38,7 @@ contract StakingPool is Ownable {
     uint public scheduleItemRepeatCount = 0;
     uint public rewardRate;
 
-    RewardPool[5] public nominexPools;
+    RewardPool[5] private nominexPools;
 
     uint public profitability = 0;
     uint public lastUpdateBlock = 0;
@@ -154,9 +154,15 @@ contract StakingPool is Ownable {
     }
 
     function claimPoolReward() external {
+        updateState();
         for (uint i = 0; i < nominexPools.length; ++i) {
             claimPoolReward(nominexPools[i]);
         }
+    }
+
+    function getPoolReward(NominexPoolIds poolId) external returns (uint) {
+        updateState();
+        return nominexPools[uint(poolId)].value;
     }
 
     function getUnclaimedReward() external returns (uint) {
@@ -165,7 +171,7 @@ contract StakingPool is Ownable {
         return getTotalReward(stakingInfo) - stakingInfo.claimedReward;
     }
 
-    function getCurrentStakingRate() public returns (uint) {
+    function getCurrentStakingRate() external returns (uint) {
         updateState();
         return rewardRate;
     }

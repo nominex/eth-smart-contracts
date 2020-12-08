@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "mkdir -p dist && truffle compile && cp -r build dist && cp lib/dist-package.json dist/package.json",
-    "test": "truffle test",
+    "test": "truffle test --network=testrpc",
     "clean": "rm -rf dist && rm -rf build",
     "publish": "npm publish dist/"
   },
