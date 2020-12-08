@@ -11,7 +11,8 @@
     "build": "mkdir -p dist && truffle compile && node process-contracts.js && cp lib/dist-package.json dist/package.json",
     "test": "truffle test --network=testrpc",
     "clean": "rm -rf dist && rm -rf build",
-    "publish": "npm publish dist/"
+    "publish": "npm publish dist/",
+    "deploy-pool-test": "truffle exec scripts/deploy-pool.js"
   },
   "repository": {
     "type": "git",
