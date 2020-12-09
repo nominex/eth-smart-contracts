@@ -6,9 +6,8 @@ const Web3Subprovider = require("@trufflesuite/web3-provider-engine/subproviders
 const web3 = require("web3");
 
 // const privateKey = "6ce2fe8a96e142f6268a0040c21a2ff750f908ab1d05119a352c4c1ca452d641";
-const privateKey = "84a2ce9cfc53fca0f39ed7f168294583a350a80ba5c9959f5193d45daa2daad8";
+// const privateKey = "84a2ce9cfc53fca0f39ed7f168294583a350a80ba5c9959f5193d45daa2daad8";
 
-const wallet = new Wallet(new Buffer(privateKey, "hex"));
 
 const uniswapSdk = require('@uniswap/sdk');
 let testrpcProvider = null;
@@ -25,12 +24,30 @@ module.exports = {
       //  port: 7545,
       network_id: "1",
       provider: () => {
+        const privateKey = process.env['ETH_DEPLOYER_PRIVATE_KEY']
+        const wallet = new Wallet(new Buffer(privateKey, "hex"));
         const engine = new ProviderEngine();
         engine.addProvider(new WalletSubprovider(wallet, {}));
         engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://127.0.0.1:7545", {keepAlive: false, timeout: 1000000})));
         engine.on = undefined;
         engine.start();
         return engine;      
+      },
+      networkCheckTimeout: 1000000,
+      unswapRouterV2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+      usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+    },
+    ropsten: {
+      network_id: "3",
+      provider: () => {
+        const privateKey = process.env['ETH_DEPLOYER_PRIVATE_KEY']
+        const wallet = new Wallet(new Buffer(privateKey, "hex"));
+        const engine = new ProviderEngine();
+        engine.addProvider(new WalletSubprovider(wallet, {}));
+        engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("https://eth-ropsten.alchemyapi.io/v2/eCuq8woAYyIUVB5-CbjKxbRw8R16bp2O", {keepAlive: false, timeout: 1000000})));
+        engine.on = undefined;
+        engine.start();
+        return engine;
       },
       networkCheckTimeout: 1000000,
       unswapRouterV2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",

@@ -45,7 +45,9 @@ module.exports = async (callback) => {
         pair.token1.address
       );
       pairAddress = await uniswapFactory.getPair(pair.token0.address, pair.token1.address);
-
+      var accounts = await new Promise((ressolve, reject) => {
+        web3.eth.getAccounts(function(err,res) { if (!err) resolve(res); else reject(err); });
+      });
       const secondTknBalance = await secondTkn.balanceOf.call(accounts[0]);
 
       const router = await IUniswapV2Router02.at(networkCfg.uniswapRouter02);
@@ -89,7 +91,8 @@ module.exports = async (callback) => {
       await poolManager.addPool(pairAddress);
     }
     stakingPoolInfo = await poolManager.stakingPools(pairAddress);
-    config.logger.info(`Stking pool for pair ${pairAddress} has address ${stakingPoolInfo.poolAddress}`);
+    config.logger.info(`Staking pool for pair ${pairAddress} has address ${stakingPoolInfo.poolAddress}`);
+    callback();
   } catch (e) {
     callback(e);
   }

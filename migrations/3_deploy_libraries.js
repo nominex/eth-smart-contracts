@@ -4,6 +4,5 @@ const StakingPool = artifacts.require("StakingPool");
 
 module.exports = async function(deployer, network, accounts) {
   await deployer.deploy(ScheduleLib, accounts[0]);
-  await deployer.deploy(ABDKMath64x64, accounts[0]);
   deployer.link(ScheduleLib, StakingPool);
 };

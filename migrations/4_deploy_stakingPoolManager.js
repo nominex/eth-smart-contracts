@@ -1,4 +1,3 @@
-const web3 = require("web3");
 const { scheduleItem } = require("../lib/utils")
 const Nmx = artifacts.require("Nmx");
 const ScheduleLib = artifacts.require("ScheduleLib");
@@ -7,11 +6,11 @@ const StakingPoolManager = artifacts.require("StakingPoolManager");
 module.exports = async function(deployer, network, accounts) {
   const nmx = await Nmx.deployed();
   await deployer.link(ScheduleLib, StakingPoolManager);
-  const startTime = Math.floor((new Date().getTime())/1000);
-  /* TODO: create normal schedule */
+  const startBlockNumber = await web3.eth.getBlockNumber() + 100;
+  /* TODO: fix eth block count per day */
   const blocksPerDay = 6500;
   const schedule = {
-    distributionStartBlock: startTime,
+    distributionStartBlock: startBlockNumber,
     items: [
       /*1-28*/
       scheduleItem({
