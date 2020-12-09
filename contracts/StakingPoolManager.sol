@@ -96,7 +96,7 @@ contract StakingPoolManager is Ownable {
 
     function deployStakingContract(address stakingToken) private returns (address) {
         bytes32 salt = bytes32(uint(stakingToken));
-        StakingPool stakingPool = new StakingPool{salt: salt}(stakingToken, rewardToken);
+        StakingPool stakingPool = new StakingPool{salt: salt}(rewardToken, stakingToken);
         return address(stakingPool);
     }
 
