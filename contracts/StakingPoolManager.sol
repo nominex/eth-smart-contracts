@@ -23,9 +23,8 @@ contract StakingPoolManager is Ownable {
     event StakingScheduleChanged();
 
     /* TODO: add owner to parameters if we use same contract address in all networks */
-	constructor(address _rewardToken, RewardSchedule memory _rewardSchedule) public {
+	constructor(address _rewardToken) public {
         rewardToken = _rewardToken;
-        setSchedule(_rewardSchedule);
 	}
 
     function addPool(address stakingToken) external onlyOwner returns(address poolAddress) {

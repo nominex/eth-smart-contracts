@@ -206,6 +206,8 @@ module.exports = async function(deployer, network, accounts) {
         reserveFundPoolRate: 0.1
       }),
     ]};
-  await deployer.deploy(StakingPoolManager, nmx.address, schedule, {from: accounts[0]});
-  await StakingPoolManager.deployed();
+  await deployer.deploy(StakingPoolManager, nmx.address, {from: accounts[0]});
+  const stakingPoolManager = await StakingPoolManager.deployed();
+  config.logger.info("Setting staking reward schedule");
+  await stakingPoolManager.setSchedule(schedule, {from: accounts[0]});
 };
