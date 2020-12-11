@@ -34,13 +34,14 @@ module.exports = async (callback) => {
         const nmx = await Nmx.deployed();
         const pairedTkn = await Erc20.at(program.tokenAddress);
 
-        /* TODO: get chain id from web3*/
         let nmxDecimals = await nmx.decimals();
-        const nmxToken = new Token(ChainId.MAINNET, nmx.address, nmxDecimals, await nmx.symbol(), await nmx.name());
+
+        const chainId = (await provider.getNetwork()).chainId;
+        const nmxToken = new Token(chainId, nmx.address, nmxDecimals, await nmx.symbol(), await nmx.name());
         let nmxMultiplier = await toBN(10).pow(nmxDecimals);
 
         let paireTokenDecimals = await pairedTkn.decimals();
-        const pairedToken = new Token(ChainId.MAINNET, pairedTkn.address, paireTokenDecimals, await pairedTkn.symbol(), await pairedTkn.name());
+        const pairedToken = new Token(chainId, pairedTkn.address, paireTokenDecimals, await pairedTkn.symbol(), await pairedTkn.name());
         let pairedTokenMultiplier = await toBN(10).pow(paireTokenDecimals);
 
         const pair = new Pair(new TokenAmount(pairedToken, '1'), new TokenAmount(nmxToken, '1'));
