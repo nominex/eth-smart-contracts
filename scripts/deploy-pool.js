@@ -12,15 +12,16 @@ const {Command} = require('commander');
 
 const program = new Command();
 
-program.option('--tokenAddress <address>', 'token used with nmx to create liquidity pool')
+program.option('--tokenAddress <address>', 'token used with nmx to create liquidity pool');
 program.parse(process.argv);
 
 module.exports = async (callback) => {
 
     const toBN = web3.utils.toBN;
-    const toWei = Web3.utils.toWei;
+    const toWei = web3.utils.toWei;
 
     try {
+        console.log("Creating new staking pool for token " + program.tokenAddress);
         const utils = require("../lib/utils");
         const IUniswapV2Factory = utils.requireContract("@uniswap/v2-core/build/IUniswapV2Factory.json", config);
         const IUniswapV2Router02 = utils.requireContract("@uniswap/v2-periphery/build/IUniswapV2Router02.json", config);
@@ -36,7 +37,7 @@ module.exports = async (callback) => {
 
         let nmxDecimals = await nmx.decimals();
 
-        const chainId = (await provider.getNetwork()).chainId;
+        const chainId = await web3.eth.getChainId();
         const nmxToken = new Token(chainId, nmx.address, nmxDecimals, await nmx.symbol(), await nmx.name());
         let nmxMultiplier = await toBN(10).pow(nmxDecimals);
 

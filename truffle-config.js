@@ -62,11 +62,11 @@ module.exports = {
         rinkeby: {
             network_id: "4",
             provider: () => {
-                const privateKey = process.env['ETH_DEPLOYER_PRIVATE_KEY']
+                const privateKey = process.env['ETH_DEPLOYER_PRIVATE_KEY'];
                 const wallet = new Wallet(new Buffer(privateKey, "hex"));
                 const engine = new ProviderEngine();
                 engine.addProvider(new WalletSubprovider(wallet, {}));
-                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("https://eth-ropsten.alchemyapi.io/v2/eCuq8woAYyIUVB5-CbjKxbRw8R16bp2O", {
+                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://127.0.0.1:8545", {
                     keepAlive: false,
                     timeout: 1000000
                 })));
