@@ -16,21 +16,21 @@ enum NominexPoolIds {
 }
 
 struct RewardScheduleItem {
-        uint16 repeatCount;
-        uint32 blockCount;
+        uint repeatCount;
+        uint duration;
         uint rewardRate;
         int128 repeatMultiplier;
         int128[5] poolRewardRates;
 }
 
 struct RewardSchedule {
-    uint64 distributionStartBlock;
+    uint64 distributionStart;
     RewardScheduleItem[] items;
 }
 
 library ScheduleLib {
     function copyFromMemoryToStorage(RewardSchedule memory mem, RewardSchedule storage stg) public {
-        stg.distributionStartBlock = mem.distributionStartBlock;
+        stg.distributionStart = mem.distributionStart;
         delete stg.items;
         for (uint i = 0; i < mem.items.length; ++i) {
             stg.items.push(mem.items[i]);

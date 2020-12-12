@@ -34,14 +34,14 @@ contract StakingPool is Ownable {
     RewardSchedule public rewardSchedule;
 
     uint public scheduleItemIndex = 0;
-    uint public scheduleItemStartBlockNumber = 0;
+    uint public scheduleItemStartTimestamp = 0;
     uint public scheduleItemRepeatCount = 0;
     uint public rewardRate;
 
     RewardPool[5] private nominexPools;
 
     uint public profitability = 0;
-    uint public lastUpdateBlock = 0;
+    uint public lastUpdateTimestamp = 0;
     uint public totalStaked = 0;
 
     uint public totalDistributed = 0;
@@ -49,6 +49,7 @@ contract StakingPool is Ownable {
     uint public totalClaimed = 0;
 
     uint private MULTIPLIER = 1e18;
+
     event Stake(address indexed owner, uint256 amount);
     event Reinvest(address indexed owner, uint256 amount);
     event ClaimedForReinvest(address indexed owner, uint256 amount);
@@ -57,10 +58,10 @@ contract StakingPool is Ownable {
     event Activate();
     event Deactivate();
 
-	constructor(address _rewardToken, address _stakingToken) public {
+    constructor(address _rewardToken, address _stakingToken) public {
         rewardToken = _rewardToken;
         stakingToken = _stakingToken;
-	}
+    }
 
     function setRewardSchedule(RewardSchedule memory _rewardSchedule) external onlyOwner {
         ScheduleLib.copyFromMemoryToStorage(_rewardSchedule, rewardSchedule);
@@ -88,7 +89,7 @@ contract StakingPool is Ownable {
         require(transferred, "NMXSTK: LP_FAILED_TRANSFER");
         updateState();
         totalStaked -= amount;
-        changeUserStakeAmount(stakingInfo, -amount);
+        changeUserStakeAmount(stakingInfo, - amount);
         emit Unstake(msg.sender, amount);
     }
 
@@ -178,68 +179,78 @@ contract StakingPool is Ownable {
 
     function updateState() private {
 
-        if (block.number <= rewardSchedule.distributionStartBlock ||
-            scheduleItemIndex >= rewardSchedule.items.length ||
-            block.number == lastUpdateBlock) {
+        if (block.timestamp <= rewardSchedule.distributionStart ||
+        scheduleItemIndex >= rewardSchedule.items.length ||
+            block.timestamp <= lastUpdateTimestamp) {
             return;
         }
 
-        uint processingPeriodStart = lastUpdateBlock;
-        if (scheduleItemStartBlockNumber == 0) {
-            scheduleItemStartBlockNumber = rewardSchedule.distributionStartBlock;
-            processingPeriodStart = scheduleItemStartBlockNumber;
+        uint processingPeriodStart = lastUpdateTimestamp;
+        if (scheduleItemStartTimestamp == 0) {
+            scheduleItemStartTimestamp = rewardSchedule.distributionStart;
+            processingPeriodStart = scheduleItemStartTimestamp;
             rewardRate = rewardSchedule.items[0].rewardRate;
         }
 
-        while (block.number > processingPeriodStart && scheduleItemIndex < rewardSchedule.items.length) {
-            RewardScheduleItem storage scheduleItem = rewardSchedule.items[scheduleItemIndex];
+        RewardScheduleItem storage scheduleItem = rewardSchedule.items[scheduleItemIndex];
+        do {
 
-            uint blocksAfterScheduleItemStart = block.number - scheduleItemStartBlockNumber;
-            bool processingPeriodFinished = blocksAfterScheduleItemStart >= scheduleItem.blockCount;
+            uint timePassedFromScheduleItemStart = block.timestamp - scheduleItemStartTimestamp;
+            bool schedulePeriodFinished = timePassedFromScheduleItemStart >= scheduleItem.duration;
 
-            uint processingPeriodEnd = (!processingPeriodFinished)
-                ? block.number
-                : scheduleItem.blockCount + scheduleItemStartBlockNumber;
-
-            uint blocksPassed = processingPeriodEnd - processingPeriodStart;
+            uint processingPeriodEnd = (
+                schedulePeriodFinished
+                    ? scheduleItemStartTimestamp + scheduleItem.duration
+                    : block.timestamp
+            );
 
             if (totalStaked > 0 && active) {
-                uint reward = blocksPassed * rewardRate;
-                uint personalReward = reward;
-
-                for (uint i = 0; i < scheduleItem.poolRewardRates.length; ++i) {
-                    uint poolReward = ABDKMath64x64.mulu(scheduleItem.poolRewardRates[i], reward);
-                    nominexPools[i].value += poolReward;
-                    personalReward -= poolReward;
-                }
-
-                uint delta = personalReward * MULTIPLIER / totalStaked;
-                profitability += delta;
-                totalReward += reward;
+                calculateReward(processingPeriodEnd - processingPeriodStart, scheduleItem);
             }
-            processingPeriodStart = processingPeriodEnd;
 
-            if (processingPeriodFinished) {
-                scheduleItemRepeatCount++;
-                scheduleItemStartBlockNumber = processingPeriodEnd;
-                if (scheduleItemRepeatCount >= scheduleItem.repeatCount) {
-                    scheduleItemRepeatCount = 0;
-                    scheduleItemIndex++;
-                    if (scheduleItemIndex >= rewardSchedule.items.length) {
-                        break;
-                    }
-                    RewardScheduleItem storage nextItem = rewardSchedule.items[scheduleItemIndex];
-                    if (nextItem.rewardRate != 0) {
-                        rewardRate = nextItem.rewardRate;
-                    } else {
-                        rewardRate = ABDKMath64x64.mulu(nextItem.repeatMultiplier, rewardRate);
-                    }
+
+            if (!schedulePeriodFinished) {
+                break;
+            }
+
+            processingPeriodStart = processingPeriodEnd;
+            scheduleItemStartTimestamp = processingPeriodEnd;
+            scheduleItemRepeatCount++;
+
+            if (scheduleItemRepeatCount < scheduleItem.repeatCount) {
+                rewardRate = ABDKMath64x64.mulu(scheduleItem.repeatMultiplier, rewardRate);
+                continue;
+            }
+
+            scheduleItemRepeatCount = 0;
+            scheduleItemIndex++;
+            if (scheduleItemIndex < rewardSchedule.items.length) {
+                scheduleItem = rewardSchedule.items[scheduleItemIndex];
+                if (scheduleItem.rewardRate != 0) {
+                    rewardRate = scheduleItem.rewardRate;
                 } else {
                     rewardRate = ABDKMath64x64.mulu(scheduleItem.repeatMultiplier, rewardRate);
                 }
+                continue;
             }
+            break;
+        } while (true);
+        lastUpdateTimestamp = block.timestamp;
+    }
+
+    function calculateReward(uint duration, RewardScheduleItem storage scheduleItem) private {
+        uint reward = duration * rewardRate;
+        uint personalReward = reward;
+
+        for (uint i = 0; i < scheduleItem.poolRewardRates.length; ++i) {
+            uint poolReward = ABDKMath64x64.mulu(scheduleItem.poolRewardRates[i], reward);
+            nominexPools[i].value += poolReward;
+            personalReward -= poolReward;
         }
-        lastUpdateBlock = block.number;
+
+        uint delta = personalReward * MULTIPLIER / totalStaked;
+        profitability += delta;
+        totalReward += reward;
     }
 
     function changeUserStakeAmount(StakingInfo storage stakingInfo, uint amount) private {
