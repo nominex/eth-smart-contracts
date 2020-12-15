@@ -12,7 +12,7 @@ module.exports = async function(deployer, network, accounts) {
   const schedule = {
     distributionStart: startBlockNumber,
     items: [
-      /*1-28*/
+      /*1-28 first 28 days*/
       scheduleItem({
         repeatCount: 4,
         duration: day * 7,
@@ -24,33 +24,9 @@ module.exports = async function(deployer, network, accounts) {
         operationalFundPoolRate: 0,
         reserveFundPoolRate: 0
       }),
-      /*29-30*/
+      /*29-56 second 28 days*/
       scheduleItem({
-        repeatCount: 1,
-        duration: day * 2,
-        dailyRewardRate: 0,
-        repeatMultiplier: 0.994,
-        bonusPoolRate: (1-0.2)*0.1,
-        affiliateTeamStakingPoolRate: 0.2,
-        fundingTeamPoolRate: 0,
-        operationalFundPoolRate: 0,
-        reserveFundPoolRate: 0
-      }),
-      /*31-35 end part of week 30-60*/
-      scheduleItem({
-        repeatCount: 1,
-        duration: day * 5,
-        dailyRewardRate: 0,
-        repeatMultiplier: 1,
-        bonusPoolRate: (1 - 0.15)*(1-0.25)*0.15,
-        affiliateTeamStakingPoolRate: (1 - 0.15)*0.25,
-        fundingTeamPoolRate: 0.05,
-        operationalFundPoolRate: 0.05,
-        reserveFundPoolRate: 0.05
-      }),
-      /*36-56 30-60*/
-      scheduleItem({
-        repeatCount: 3,
+        repeatCount: 4,
         duration: day * 7,
         dailyRewardRate: 0,
         repeatMultiplier: 0.994,
@@ -60,33 +36,9 @@ module.exports = async function(deployer, network, accounts) {
         operationalFundPoolRate: 0.05,
         reserveFundPoolRate: 0.05
       }),
-      /*57-60 start part of week 30-60*/
+      /*57-182 - 0.5 year*/
       scheduleItem({
-        repeatCount: 1,
-        duration: day * 4,
-        dailyRewardRate: 0,
-        repeatMultiplier: 0.994,
-        bonusPoolRate: (1 - 0.15)*(1-0.25)*0.15,
-        affiliateTeamStakingPoolRate: (1 - 0.15)*0.25,
-        fundingTeamPoolRate: 0.05,
-        operationalFundPoolRate: 0.05,
-        reserveFundPoolRate: 0.05
-      }),
-      /*61-63 end part of week*/
-      scheduleItem({
-        repeatCount: 1,
-        duration: day * 3,
-        dailyRewardRate: 0,
-        repeatMultiplier: 1,
-        bonusPoolRate: (1 - 0.3)*(1 - 0.3)*0.2,
-        affiliateTeamStakingPoolRate: (1 - 0.3)*0.3,
-        fundingTeamPoolRate: 0.1,
-        operationalFundPoolRate: 0.1,
-        reserveFundPoolRate: 0.1
-      }),
-      /*64-182 - 0.5 year*/
-      scheduleItem({
-        repeatCount: 17,
+        repeatCount: 18,
         duration: day * 7,
         dailyRewardRate: 0,
         repeatMultiplier: 0.994,
