@@ -12,7 +12,7 @@ contract StakingPool is Ownable {
 
     struct StakingInfo {
         uint amount;
-        uint initialProfitability;
+        uint rewardPaidPerUnitOfStakedCurrency;
         uint claimedReward;
         uint permanentReward;
     }
@@ -40,7 +40,7 @@ contract StakingPool is Ownable {
 
     RewardPool[5] private nominexPools;
 
-    uint public profitability = 0;
+    uint public rewardPerUnitOfStakedCurrency = 0;
     uint public lastUpdateTimestamp = 0;
     uint public totalStaked = 0;
 
@@ -249,18 +249,18 @@ contract StakingPool is Ownable {
         }
 
         uint delta = personalReward * MULTIPLIER / totalStaked;
-        profitability += delta;
+        rewardPerUnitOfStakedCurrency += delta;
         totalReward += reward;
     }
 
     function changeUserStakeAmount(StakingInfo storage stakingInfo, uint amount) private {
         stakingInfo.permanentReward = getTotalReward(stakingInfo);
         stakingInfo.amount += amount;
-        stakingInfo.initialProfitability = profitability;
+        stakingInfo.rewardPaidPerUnitOfStakedCurrency = rewardPerUnitOfStakedCurrency;
     }
 
     function getTotalReward(StakingInfo storage stakingInfo) private view returns (uint) {
-        return (profitability - stakingInfo.initialProfitability) * stakingInfo.amount / MULTIPLIER + stakingInfo.permanentReward;
+        return (rewardPerUnitOfStakedCurrency - stakingInfo.rewardPaidPerUnitOfStakedCurrency) * stakingInfo.amount / MULTIPLIER + stakingInfo.permanentReward;
     }
 
     function claimPoolReward(RewardPool storage pool) private {
