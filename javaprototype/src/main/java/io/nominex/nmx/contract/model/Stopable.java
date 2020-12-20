@@ -1,4 +1,4 @@
-package io.nominex.nmxcontract;
+package io.nominex.nmx.contract.model;
 
 public interface Stopable {
 
