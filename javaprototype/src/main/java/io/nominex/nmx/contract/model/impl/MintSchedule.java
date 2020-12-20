@@ -1,13 +1,13 @@
 package io.nominex.nmx.contract.model.impl;
 
-import io.nominex.nmx.contract.model.DistributionPool;
+import io.nominex.nmx.contract.model.MintPool;
 import static java.lang.Long.min;
 import java.util.Map;
 
 public class MintSchedule {
 
     private MintScheduleItem[] items;
-    private Map<DistributionPool, MintScheduleState> states;
+    private Map<MintPool, MintScheduleState> states;
 
     public MintSchedule() {
         MintShares shares_01_30 = new MintShares(0.8 * 0.9, 0.8 * 0.1, 0.2, 0);

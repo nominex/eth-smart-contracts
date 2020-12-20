@@ -1,6 +1,6 @@
 package io.nominex.nmx.contract.model;
 
-public enum DistributionPool {
+public enum MintPool {
 
     PRIMARY,
     BONUS,
