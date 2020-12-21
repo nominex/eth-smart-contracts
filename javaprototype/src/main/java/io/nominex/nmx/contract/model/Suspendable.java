@@ -2,9 +2,12 @@ package io.nominex.nmx.contract.model;
 
 public interface Suspendable {
 
-    boolean suspended();
+    default boolean suspended() {
+        return false;
+    }
 
     @OnlyOwner
-    void suspended(boolean suspended);
+    default void suspended(boolean suspended) {
+    }
 
 }

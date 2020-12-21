@@ -2,9 +2,9 @@ package io.nominex.nmx.contract.model;
 
 public class Staker {
 
-    double amount;
-    double initialRewardRate;
-    double claimed;
-    double rewarded;
-    
+    public double amount;
+    public double initialRewardRate;
+    public double claimed;
+    public double rewarded;
+
 }

@@ -1,5 +1,9 @@
 package io.nominex.nmx.contract.model;
 
-public class Address {
+public interface Address {
+
+    default boolean transferFrom(Address sender, Address recipient, double amount) {
+        return true;
+    }
 
 }

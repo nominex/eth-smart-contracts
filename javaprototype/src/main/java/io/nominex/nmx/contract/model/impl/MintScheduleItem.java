@@ -7,17 +7,17 @@ public class MintScheduleItem {
     final long cycleDuration;
     final int cyclesCount;
     final double cycleCompletenessMultiplier;
-    final MintShares shares;
+    final Double[] mintPoolShares;
 
     public MintScheduleItem(
             int cycleDurationDays,
             int cyclesCount,
             double cycleCompletenessMultiplier,
-            MintShares poolShares) {
+            Double[] mintPoolShares) {
         this.cycleDuration = cycleDurationDays * SECONDS_PER_DAY;
         this.cyclesCount = cyclesCount;
         this.cycleCompletenessMultiplier = cycleCompletenessMultiplier;
-        this.shares = poolShares;
+        this.mintPoolShares = mintPoolShares;
     }
 
 }

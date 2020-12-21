@@ -2,10 +2,14 @@ package io.nominex.nmx.contract.model;
 
 public interface Ownable {
 
-    Address owner();
+    default Address owner() {
+        return null;
+    }
 
-    void renounceOwnership();
+    default void renounceOwnership() {
+    }
 
-    void transferOwnership();
-    
+    default void transferOwnership() {
+    }
+
 }
