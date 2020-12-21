@@ -28,7 +28,7 @@ public class StakingRouter implements io.nominex.nmx.contract.model.StakingRoute
     }
 
     @Override
-    public double mint() {
+    public double supplyNmx() {
         double share = shares.get(InvocationContext.sender);
         if (share == 0) return 0;
         double nmxSupplied = nmx.supplyNmx();

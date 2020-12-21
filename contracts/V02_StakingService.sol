@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.12 <0.7.0;
+pragma solidity >=0.7.0 <0.8.0;
 
 import "./NmxSupplier.sol";
-import "./Suspendable.sol";
+import "./PausableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
-contract StakingService is Suspendable {
+contract StakingService is PausableByOwner {
+    using ABDKMath64x64 for int128;
     struct State {
         int128 historicalRewardRate;
-        uint256 totalStaked;
+        int128 totalStaked;
     }
 
     struct Staker {
-        uint256 amount;
+        int128 amount;
         int128 initialRewardRate;
     }
 
@@ -22,23 +24,22 @@ contract StakingService is Suspendable {
     State state;
     mapping(address => Staker) stakers;
 
-    event Stake(address indexed owner, uint256 amount);
-    event Unstake(address indexed owner, uint256 amount);
-    event Rewared(address indexed owner, uint256 amount);
+    event Staked(address indexed owner, uint256 amount);
+    event Unstaked(address indexed owner, uint256 amount);
+    event Rewarded(address indexed owner, uint256 amount);
 
     constructor(
         address _nmx,
         address _stakingToken,
         address _nmxSupplier
-    ) public {
-        rewardToken = _rewardToken;
+    ) {
+        nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
-        state.timestamp = block.timestamp;
         state.totalStaked = 1; // to avoid division by zero on the first stake
     }
 
-    function stake(uint256 amount) external notSuspended {
+    function stake(uint256 amount) external whenNotPaused {
         bool transferred =
             IERC20(stakingToken).transferFrom(
                 msg.sender,
@@ -48,23 +49,24 @@ contract StakingService is Suspendable {
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
         updateHistoricalRewardRate();
 
-        _reward(msg.sender, stakers[owner]);
+        Staker storage staker = stakers[msg.sender];
+        _reward(msg.sender, staker);
 
-        emit Stake(msg.sender, amount);
+        emit Staked(msg.sender, amount);
         state.totalStaked += amount;
         staker.amount += amount;
     }
 
-    function unstake(uint256 amount) external {
-        Staker staker = stakers[owner];
+    function unstaked(uint256 amount) external {
+        Staker storage staker = stakers[msg.sender];
         require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
         bool transferred = IERC20(stakingToken).transfer(msg.sender, amount);
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
         updateHistoricalRewardRate();
 
-        _reward(msg.sender);
+        _reward(msg.sender, staker);
 
-        emit Stake(msg.sender, amount);
+        emit Staked(msg.sender, amount);
         state.totalStaked += amount;
         staker.amount += amount;
     }
@@ -75,10 +77,8 @@ contract StakingService is Suspendable {
     }
 
     function _reward(address owner, Staker storage staker) private {
-        int128 unrewarded =
-            (state.historicalRewardRate - staker.initialRewardRate) *
-                staker.amount;
-        emit Rewarded(owner, rewarderFromLastStake);
+        int128 unrewarded = state.historicalRewardRate.sub(staker.initialRewardRate).staker.amount;
+        emit Rewarded(owner, unrewarded);
         bool transferred = IERC20(nmx).transfer(owner, unrewarded);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
         staker.initialRewardRate = state.historicalRewardRate;

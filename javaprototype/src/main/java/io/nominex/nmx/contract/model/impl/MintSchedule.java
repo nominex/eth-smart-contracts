@@ -34,8 +34,7 @@ public class MintSchedule implements Ownable {
             if (item != null) {
                 long boundary = min(time, scheduleState.cycleStartTime + item.cycleDuration);
                 long secondsFromLastUpdate = boundary - scheduleState.time;
-                double supplyFromLastUpdate = secondsFromLastUpdate * scheduleState.nextTickSupply * outputRate;
-                result += supplyFromLastUpdate;
+                result += secondsFromLastUpdate * scheduleState.nextTickSupply * outputRate * item.mintPoolShares[scheduleState.pool.ordinal()];
                 persistStateChange(scheduleState, item, boundary);
             }
         }

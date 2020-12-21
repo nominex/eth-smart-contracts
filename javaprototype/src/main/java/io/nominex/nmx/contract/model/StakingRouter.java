@@ -11,6 +11,6 @@ public interface StakingRouter extends Ownable, Suspendable, Address {
 
     double totalSupplied();
 
-    double mint(); // transfers reward and returns amount
+    double supplyNmx(); // transfers reward and returns amount
 
 }
