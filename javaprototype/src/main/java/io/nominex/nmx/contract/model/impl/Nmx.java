@@ -27,7 +27,7 @@ public class Nmx implements io.nominex.nmx.contract.model.Nmx, NmxSupplier {
         return supply;
     }
 
-    public void mint(Address address, double amount) {
+    private void mint(Address address, double amount) {
 
     }
 

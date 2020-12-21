@@ -2,18 +2,17 @@ package io.nominex.nmx.contract.model.impl;
 
 import io.nominex.nmx.contract.model.Address;
 import io.nominex.nmx.contract.model.InvocationContext;
+import io.nominex.nmx.contract.model.NmxSupplier;
 import io.nominex.nmx.contract.model.RequireNotSuspended;
 import io.nominex.nmx.contract.model.Staker;
-import io.nominex.nmx.contract.model.StakingRouter;
 import java.util.Map;
 
 public class StakingService implements io.nominex.nmx.contract.model.StakingService {
 
-    Address rewardToken;
-    StakingRouter rewardSupplier;
+    Address nmx;
+    NmxSupplier nmxSupplier;
     Address stakingToken;
     Map<Address, Staker> stakers;
-    private boolean suspended;
     private StakingServiceState state;
 
     @Override
@@ -21,11 +20,11 @@ public class StakingService implements io.nominex.nmx.contract.model.StakingServ
     public void stake(double amount) {
         boolean transferred = stakingToken.transferFrom(InvocationContext.sender, this, amount);
         if (!transferred) throw new RuntimeException();
-        checkSupply();
+        updateState();
         state.totalStaked += amount;
         Staker staker = stakers.get(InvocationContext.sender);
-        double rewardedFromLastStake = (state.historicalRewardRate - staker.initialRewardRate) * staker.amount;
-        staker.rewarded += rewardedFromLastStake;
+        double unrewarded = (state.historicalRewardRate - staker.initialRewardRate) * staker.amount;
+        nmx.transferFrom(this, InvocationContext.sender, unrewarded);
 
         staker.amount += amount;
         staker.initialRewardRate = state.historicalRewardRate;
@@ -41,11 +40,10 @@ public class StakingService implements io.nominex.nmx.contract.model.StakingServ
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    public void checkSupply() {
-        double currentSupply = rewardSupplier.mint();
+    public void updateState() {
+        double currentSupply = nmxSupplier.supplyNmx();
         if (currentSupply == 0) return;
-        state.totalSupply += currentSupply;
-        state.time = InvocationContext.timestamp;
+        state.timestamp = InvocationContext.timestamp;
         state.historicalRewardRate += currentSupply / state.totalStaked;
     }
 
