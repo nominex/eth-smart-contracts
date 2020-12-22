@@ -8,26 +8,22 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract StakingService is PausableByOwner {
     using ABDKMath64x64 for int128;
-
+    uint8 constant NMX_DECIMALS = 18; // todo paste the correct value
+    uint8 constant STAKING_TKN_DECIMALS = 18; // // todo paste the correct value
+    /**
+     * @param historicalRewardRate how many NMX rewards for one NMXLP
+     * @param totalStaked how many NMXLP are staked in total
+     */
     struct State {
-        /**
-         * @dev how many NMX rewards for one NMXLP
-         */
         int128 historicalRewardRate;
-        /**
-         * @dev how many NMXLP are staked in total
-         */
-        int128 totalStaked;
+        uint256 totalStaked;
     }
-
+    /**
+     * @param amount how much NMXLP staked
+     * @param initialRewardRate rice at which the reward was last paid
+     */
     struct Staker {
-        /**
-         * @dev how much NMXLP staked
-         */
-        int128 amount;
-        /**
-         * @dev rice at which the reward was last paid
-         */
+        uint256 amount;
         int128 initialRewardRate;
     }
 
@@ -135,7 +131,10 @@ contract StakingService is PausableByOwner {
      * @dev TODO
      */
     function _reward(address owner, Staker storage staker) private {
-        int128 unrewarded = state.historicalRewardRate.sub(staker.initialRewardRate).staker.amount;
+        int128 unrewarded =
+            state.historicalRewardRate.sub(staker.initialRewardRate).mul(
+                staker.amount
+            );
         emit Rewarded(owner, unrewarded);
         bool transferred = IERC20(nmx).transfer(owner, unrewarded);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
