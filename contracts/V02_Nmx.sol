@@ -115,4 +115,14 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         _mint(msg.sender, supply);
         return supply;
     }
+
+    function rewardRate() external view returns (uint256) {
+        (, MintScheduleState memory newState) =
+            schedule.makeProgress(
+                poolMintStates[uint256(MintPool.PRIMARY)],
+                block.timestamp,
+                MintPool.PRIMARY
+            );
+        return uint256(newState.nextTickSupply);
+    }
 }
