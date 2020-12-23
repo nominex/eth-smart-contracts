@@ -12,9 +12,9 @@ pragma solidity >=0.6.12 <0.9.0;
  */
 enum MintPool {DEFAULT_VALUE, PRIMARY, BONUS, TEAM, NOMINEX}
 struct MintScheduleState {
-    uint256 time;
+    uint40 time;
     uint8 itemIndex;
-    uint96 cycleIndex;
-    uint256 cycleStartTime;
+    uint16 cycleIndex;
+    uint40 cycleStartTime;
     int128 nextTickSupply;
 }

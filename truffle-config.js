@@ -108,7 +108,7 @@ module.exports = {
 
     compilers: {
         solc: {
-            version: "v0.6.12+commit.27d51765"
+            version: "v0.7.6+commit.7338295f"
         }
     },
     mocha: {

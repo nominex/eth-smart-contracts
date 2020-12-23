@@ -88,8 +88,8 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             "NMX: only owner can transfer pool ownership"
         );
         for (
-            uint8 existentPool = uint8(MintPool.PRIMARY);
-            existentPool <= uint8(MintPool.NOMINEX);
+            uint existentPool = uint(MintPool.PRIMARY);
+            existentPool <= uint(MintPool.NOMINEX);
             existentPool++
         ) {
             address existentOwner = poolOwners[uint256(existentPool)];
@@ -100,7 +100,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         }
 
         emit PoolOwnershipTransferred(currentOwner, newOwner, pool);
-        poolOwners[uint256(pool)] = newOwner;
+        poolOwners[uint(pool)] = newOwner;
         poolByOwner[currentOwner] = MintPool(0);
         poolByOwner[newOwner] = pool;
     }

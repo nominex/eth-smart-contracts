@@ -13,7 +13,7 @@ contract StakingService is PausableByOwner {
      */
     struct State {
         uint256 totalStaked;
-        int128 historicalRewardRate;
+        uint256 historicalRewardRate;
     }
     /**
      * @param amount how much NMXLP staked
@@ -21,7 +21,7 @@ contract StakingService is PausableByOwner {
      */
     struct Staker {
         uint256 amount;
-        int128 initialRewardRate;
+        uint256 initialRewardRate;
     }
 
     /**
@@ -98,7 +98,7 @@ contract StakingService is PausableByOwner {
      *
      * amount - new part of staked NMXLP
      */
-    function unstaked(uint256 amount) external {
+    function unstake(uint256 amount) external {
         Staker storage staker = stakers[msg.sender];
         require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
         bool transferred = IERC20(stakingToken).transfer(msg.sender, amount);
@@ -107,9 +107,9 @@ contract StakingService is PausableByOwner {
 
         _reward(msg.sender, staker);
 
-        emit Staked(msg.sender, amount);
-        state.totalStaked += amount;
-        staker.amount += amount;
+        emit Unstake(msg.sender, amount);
+        state.totalStaked -= amount;
+        staker.amount -= amount;
     }
 
     /**
@@ -127,9 +127,7 @@ contract StakingService is PausableByOwner {
      * @dev TODO
      */
     function _reward(address owner, Staker storage staker) private {
-        uint256 unrewarded =
-            (uint256(state.historicalRewardRate - staker.initialRewardRate) *
-                staker.amount) >> 64;
+        uint256 unrewarded = ((state.historicalRewardRate - staker.initialRewardRate) * staker.amount) >> 64;
         emit Rewarded(owner, unrewarded);
         bool transferred = IERC20(nmx).transfer(owner, unrewarded);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
@@ -141,11 +139,7 @@ contract StakingService is PausableByOwner {
      */
     function updateHistoricalRewardRate() public {
         uint256 currentNmxSupply = NmxSupplier(nmxSupplier).supplyNmx();
-        if (currentNmxSupply == 0) return;
-        if (state.totalStaked == 0) state.historicalRewardRate = 0;
-        else
-            state.historicalRewardRate += int128(
-                (currentNmxSupply << 64) / state.totalStaked
-            );
+        if (state.totalStaked != 0)
+            state.historicalRewardRate += (currentNmxSupply << 64) / state.totalStaked;
     }
 }

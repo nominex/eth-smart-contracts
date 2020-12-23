@@ -15,7 +15,7 @@ struct ScheduleItem {
 
 contract MintSchedule is Ownable {
     using ABDKMath64x64 for int128;
-    int128 private _outputRate = 1 << 64;
+    int128 private _outputRate = ABDKMath64x64.fromInt(1);
     ScheduleItem[] items;
 
     constructor() {
@@ -40,7 +40,7 @@ contract MintSchedule is Ownable {
         while (
             time > scheduleState.time && scheduleState.itemIndex < items.length
         ) {
-            if (scheduleState.itemIndex < items.length) {
+            if (scheduleState.itemIndex < items.length) { /* FIXME: или условие всегда выполняется или цикл может быть бесконечным */
                 ScheduleItem storage item = items[scheduleState.itemIndex];
                 uint256 boundary =
                     min(
@@ -57,6 +57,7 @@ contract MintSchedule is Ownable {
                     );
                 persistStateChange(scheduleState, item, boundary);
             }
+
         }
         return (nmxSupply >> 64, scheduleState);
     }

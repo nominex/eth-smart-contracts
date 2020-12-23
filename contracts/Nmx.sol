@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.4.25 <0.7.0;
+pragma solidity >=0.4.25 <0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -10,8 +10,6 @@ contract Nmx is ERC20 {
 	bytes32 public DOMAIN_SEPARATOR;
 	bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint) public nonces;
-
-	event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
 	constructor() public ERC20("Nominex", "NMX") {
 
