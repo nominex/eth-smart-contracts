@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.12 <0.9.0;
+pragma solidity >=0.7.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./V02_Lib.sol";
@@ -34,7 +34,11 @@ contract MintSchedule is Ownable {
         MintScheduleState memory scheduleState,
         uint256 time,
         MintPool pool
-    ) external view returns (uint256 result, MintScheduleState memory) {
+    )
+        external
+        view
+        returns (uint256 nmxSupply, MintScheduleState memory)
+    {
         if (time <= scheduleState.time) return (0, scheduleState);
         while (
             time > scheduleState.time && scheduleState.itemIndex < items.length
@@ -47,7 +51,7 @@ contract MintSchedule is Ownable {
                         scheduleState.cycleStartTime + item.cycleDuration
                     );
                 uint256 secondsFromLastUpdate = boundary - scheduleState.time;
-                result +=
+                nmxSupply +=
                     secondsFromLastUpdate *
                     uint256(
                         _outputRate.mul(item.poolShares[uint256(pool)]).mul(
@@ -57,7 +61,7 @@ contract MintSchedule is Ownable {
                 persistStateChange(scheduleState, item, boundary);
             }
         }
-        return (result >> 64, scheduleState);
+        return (nmxSupply >> 64, scheduleState);
     }
 
     function persistStateChange(

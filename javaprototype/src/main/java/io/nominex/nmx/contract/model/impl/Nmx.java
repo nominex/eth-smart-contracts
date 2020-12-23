@@ -10,7 +10,7 @@ public class Nmx implements io.nominex.nmx.contract.model.Nmx, NmxSupplier {
 
     private MintSchedule schedule;
     private Map<Address, MintPool> poolOwners;
-    private Map<MintPool, MintScheduleState> mintStates;
+    private Map<MintPool, MintScheduleState> poolMintStates;
 
     @Override
     public void transferPoolOwnership(MintPool pool, Address newOwner) {
@@ -22,7 +22,7 @@ public class Nmx implements io.nominex.nmx.contract.model.Nmx, NmxSupplier {
     public double supplyNmx() {
         MintPool pool = poolOwners.get(InvocationContext.sender);
         if (pool == MintPool.DEFAULT_VALUE) return 0;
-        double supply = schedule.makeProgress(mintStates.get(pool), InvocationContext.timestamp, pool);
+        double supply = schedule.makeProgress(poolMintStates.get(pool), InvocationContext.timestamp, pool);
         mint(InvocationContext.sender, supply);
         return supply;
     }
