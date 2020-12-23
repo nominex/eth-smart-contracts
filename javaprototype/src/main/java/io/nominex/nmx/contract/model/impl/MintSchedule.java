@@ -1,5 +1,6 @@
 package io.nominex.nmx.contract.model.impl;
 
+import io.nominex.nmx.contract.model.MintPool;
 import io.nominex.nmx.contract.model.OnlyOwner;
 import io.nominex.nmx.contract.model.Ownable;
 import static java.lang.Long.min;
@@ -24,18 +25,18 @@ public class MintSchedule implements Ownable {
         this.outputRate = outputRate;
     }
 
-    public double makeProgress(MintScheduleState scheduleState, long time) {
-        if (time <= scheduleState.time) return 0;
+    public double makeProgress(MintScheduleState state, long time, MintPool pool) {
+        if (time <= state.time) return 0;
         double result = 0;
-        while (time > scheduleState.time && scheduleState.itemIndex < items.length) {
+        while (time > state.time && state.itemIndex < items.length) {
             // todo handle last item in a special maner (set nextTickSupply accordingly to the rest of tokens) ?
             MintScheduleItem item = null;
-            if (scheduleState.itemIndex < items.length) item = items[scheduleState.itemIndex];
+            if (state.itemIndex < items.length) item = items[state.itemIndex];
             if (item != null) {
-                long boundary = min(time, scheduleState.cycleStartTime + item.cycleDuration);
-                long secondsFromLastUpdate = boundary - scheduleState.time;
-                result += secondsFromLastUpdate * scheduleState.nextTickSupply * outputRate * item.mintPoolShares[scheduleState.pool.ordinal()];
-                persistStateChange(scheduleState, item, boundary);
+                long boundary = min(time, state.cycleStartTime + item.cycleDuration);
+                long secondsFromLastUpdate = boundary - state.time;
+                result += secondsFromLastUpdate * state.nextTickSupply * outputRate * item.poolShares[pool.ordinal()];
+                persistStateChange(state, item, boundary);
             }
         }
         return result;

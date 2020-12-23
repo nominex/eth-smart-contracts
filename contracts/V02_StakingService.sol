@@ -7,16 +7,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract StakingService is PausableByOwner {
-    using ABDKMath64x64 for int128;
-    uint8 constant NMX_DECIMALS = 18; // todo paste the correct value
-    uint8 constant STAKING_TKN_DECIMALS = 18; // // todo paste the correct value
     /**
      * @param historicalRewardRate how many NMX rewards for one NMXLP
      * @param totalStaked how many NMXLP are staked in total
      */
     struct State {
-        int128 historicalRewardRate;
         uint256 totalStaked;
+        int128 historicalRewardRate;
     }
     /**
      * @param amount how much NMXLP staked
@@ -69,7 +66,6 @@ contract StakingService is PausableByOwner {
         nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
-        state.totalStaked = 1; // to avoid division by zero on the first stake
     }
 
     /**
@@ -131,10 +127,9 @@ contract StakingService is PausableByOwner {
      * @dev TODO
      */
     function _reward(address owner, Staker storage staker) private {
-        int128 unrewarded =
-            state.historicalRewardRate.sub(staker.initialRewardRate).mul(
-                staker.amount
-            );
+        uint256 unrewarded =
+            (uint256(state.historicalRewardRate - staker.initialRewardRate) *
+                staker.amount) >> 64;
         emit Rewarded(owner, unrewarded);
         bool transferred = IERC20(nmx).transfer(owner, unrewarded);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
@@ -147,6 +142,10 @@ contract StakingService is PausableByOwner {
     function updateHistoricalRewardRate() public {
         uint256 currentNmxSupply = NmxSupplier(nmxSupplier).supplyNmx();
         if (currentNmxSupply == 0) return;
-        state.historicalRewardRate += currentNmxSupply / state.totalStaked;
+        if (state.totalStaked == 0) state.historicalRewardRate = 0;
+        else
+            state.historicalRewardRate += int128(
+                (currentNmxSupply << 64) / state.totalStaked
+            );
     }
 }

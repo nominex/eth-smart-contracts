@@ -11,3 +11,10 @@ pragma solidity >=0.6.12 <0.9.0;
  * NOMINEX - tokens for Nominex company
  */
 enum MintPool {DEFAULT_VALUE, PRIMARY, BONUS, TEAM, NOMINEX}
+struct MintScheduleState {
+    uint256 time;
+    uint8 itemIndex;
+    uint96 cycleIndex;
+    uint256 cycleStartTime;
+    int128 nextTickSupply;
+}

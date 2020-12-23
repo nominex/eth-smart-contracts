@@ -7,7 +7,7 @@ public class MintScheduleItem {
     final long cycleDuration;
     final int cyclesCount;
     final double cycleCompletenessMultiplier;
-    final Double[] mintPoolShares;
+    final Double[] poolShares;
 
     public MintScheduleItem(
             int cycleDurationDays,
@@ -17,7 +17,7 @@ public class MintScheduleItem {
         this.cycleDuration = cycleDurationDays * SECONDS_PER_DAY;
         this.cyclesCount = cyclesCount;
         this.cycleCompletenessMultiplier = cycleCompletenessMultiplier;
-        this.mintPoolShares = mintPoolShares;
+        this.poolShares = mintPoolShares;
     }
 
 }

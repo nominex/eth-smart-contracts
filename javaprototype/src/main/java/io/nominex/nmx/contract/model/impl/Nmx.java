@@ -22,7 +22,7 @@ public class Nmx implements io.nominex.nmx.contract.model.Nmx, NmxSupplier {
     public double supplyNmx() {
         MintPool pool = poolOwners.get(InvocationContext.sender);
         if (pool == MintPool.DEFAULT_VALUE) return 0;
-        double supply = schedule.makeProgress(mintStates.get(pool), InvocationContext.timestamp);
+        double supply = schedule.makeProgress(mintStates.get(pool), InvocationContext.timestamp, pool);
         mint(InvocationContext.sender, supply);
         return supply;
     }

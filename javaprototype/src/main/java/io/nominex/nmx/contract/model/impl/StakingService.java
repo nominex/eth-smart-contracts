@@ -43,7 +43,6 @@ public class StakingService implements io.nominex.nmx.contract.model.StakingServ
     public void updateState() {
         double currentSupply = nmxSupplier.supplyNmx();
         if (currentSupply == 0) return;
-        state.timestamp = InvocationContext.timestamp;
         state.historicalRewardRate += currentSupply / state.totalStaked;
     }
 
