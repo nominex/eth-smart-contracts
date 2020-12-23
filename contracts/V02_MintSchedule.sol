@@ -27,6 +27,7 @@ contract MintSchedule is Ownable {
             outputRate <= 1 << 64,
             "NMXMINTSCH: outputRate must be le 1<<64"
         );
+        require(outputRate >= 0, "NMXMINTSCH: outputRate must be ge 0");
         _outputRate = outputRate;
     }
 
@@ -34,11 +35,7 @@ contract MintSchedule is Ownable {
         MintScheduleState memory scheduleState,
         uint256 time,
         MintPool pool
-    )
-        external
-        view
-        returns (uint256 nmxSupply, MintScheduleState memory)
-    {
+    ) external view returns (uint256 nmxSupply, MintScheduleState memory) {
         if (time <= scheduleState.time) return (0, scheduleState);
         while (
             time > scheduleState.time && scheduleState.itemIndex < items.length

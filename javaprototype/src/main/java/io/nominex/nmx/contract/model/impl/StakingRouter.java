@@ -23,11 +23,6 @@ public class StakingRouter implements io.nominex.nmx.contract.model.StakingRoute
     }
 
     @Override
-    public double totalSupplied() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     public double supplyNmx() {
         double share = shares.get(InvocationContext.sender);
         if (share == 0) return 0;
