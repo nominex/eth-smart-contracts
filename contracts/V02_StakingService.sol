@@ -5,6 +5,7 @@ import "./NmxSupplier.sol";
 import "./PausableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 
 contract StakingService is PausableByOwner {
     /**
@@ -18,10 +19,12 @@ contract StakingService is PausableByOwner {
     /**
      * @param amount how much NMXLP staked
      * @param initialRewardRate rice at which the reward was last paid
+     * @param reward total nmx amount user got as a reward
      */
     struct Staker {
         uint256 amount;
         uint256 initialRewardRate;
+        uint256 reward;
     }
 
     /**
@@ -43,7 +46,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev mapping a staker's address to his state
      */
-    mapping(address => Staker) stakers;
+    mapping(address => Staker) public stakers;
 
     /**
      * @dev event when someone is staked NMXLP
@@ -74,7 +77,7 @@ contract StakingService is PausableByOwner {
      *
      * amount - new part of staked NMXLP
      */
-    function stake(uint256 amount) external whenNotPaused {
+    function stake(uint256 amount) public whenNotPaused {
         bool transferred =
             IERC20(stakingToken).transferFrom(
                 msg.sender,
@@ -90,6 +93,25 @@ contract StakingService is PausableByOwner {
         emit Staked(msg.sender, amount);
         state.totalStaked += amount;
         staker.amount += amount;
+    }
+
+    function stakeWithPermit(
+        uint256 amount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external whenNotPaused {
+        IUniswapV2ERC20(stakingToken).permit(
+            msg.sender,
+            address(this),
+            amount,
+            deadline,
+            v,
+            r,
+            s
+        );
+        stake(amount);
     }
 
     /**
@@ -124,14 +146,28 @@ contract StakingService is PausableByOwner {
     }
 
     /**
+     * @dev make a reward and returns rewarded amount. Is supposed to be called without transaction.
+     */
+    function reward() external returns (uint256 rewarded) {
+        address owner = msg.sender;
+        Staker storage staker = stakers[owner];
+        uint256 previousReward = staker.reward;
+        _reward(owner, staker);
+        return staker.reward - previousReward;
+    }
+
+    /**
      * @dev TODO
      */
     function _reward(address owner, Staker storage staker) private {
-        uint256 unrewarded = ((state.historicalRewardRate - staker.initialRewardRate) * staker.amount) >> 64;
+        uint256 unrewarded =
+            ((state.historicalRewardRate - staker.initialRewardRate) *
+                staker.amount) >> 64;
         emit Rewarded(owner, unrewarded);
         bool transferred = IERC20(nmx).transfer(owner, unrewarded);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
         staker.initialRewardRate = state.historicalRewardRate;
+        staker.reward += unrewarded;
     }
 
     /**
@@ -140,6 +176,12 @@ contract StakingService is PausableByOwner {
     function updateHistoricalRewardRate() public {
         uint256 currentNmxSupply = NmxSupplier(nmxSupplier).supplyNmx();
         if (state.totalStaked != 0)
-            state.historicalRewardRate += (currentNmxSupply << 64) / state.totalStaked;
+            state.historicalRewardRate +=
+                (currentNmxSupply << 64) /
+                state.totalStaked;
+    }
+
+    function totalStaked() external view returns (uint256) {
+        return state.totalStaked;
     }
 }
