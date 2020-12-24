@@ -27,6 +27,7 @@ dist/
 
 # JetBrains IDE
 .idea/
+*.iml
 
 # Vusial Studio Code
 .vscode/
