@@ -12,10 +12,10 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     bytes32 public constant PERMIT_TYPEHASH =
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public nonces;
-    MintSchedule schedule;
+    address public mintSchedule;
     mapping(address => MintPool) poolByOwner;
-    address[] poolOwners;
-    MintScheduleState[] poolMintStates;
+    address[5] poolOwners; // 5 - number of MintPool values
+    MintScheduleState[5] poolMintStates; // 5 - number of MintPool values
 
     event PoolOwnershipTransferred(
         address indexed previousOwner,
@@ -23,7 +23,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         MintPool indexed pool
     );
 
-    constructor() ERC20("Nominex", "NMX") {
+    constructor(address _mintSchedule) ERC20("Nominex", "NMX") {
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -39,7 +39,17 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
                 address(this)
             )
         );
-        // todo fill the field with MintScheduleStates
+        mintSchedule = _mintSchedule;
+        for (
+            uint256 i = uint256(MintPool.PRIMARY);
+            i <= uint256(MintPool.NOMINEX);
+            i++
+        ) {
+            MintScheduleState storage poolMintState = poolMintStates[i];
+            poolMintState.nextTickSupply = 10000 * 10**18;
+            poolMintState.time = uint40(block.timestamp);
+            poolMintState.cycleStartTime = uint40(block.timestamp);
+        }
     }
 
     function permit(
@@ -88,8 +98,8 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             "NMX: only owner can transfer pool ownership"
         );
         for (
-            uint existentPool = uint(MintPool.PRIMARY);
-            existentPool <= uint(MintPool.NOMINEX);
+            uint256 existentPool = uint256(MintPool.PRIMARY);
+            existentPool <= uint256(MintPool.NOMINEX);
             existentPool++
         ) {
             address existentOwner = poolOwners[uint256(existentPool)];
@@ -100,7 +110,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         }
 
         emit PoolOwnershipTransferred(currentOwner, newOwner, pool);
-        poolOwners[uint(pool)] = newOwner;
+        poolOwners[uint256(pool)] = newOwner;
         poolByOwner[currentOwner] = MintPool.DEFAULT_VALUE;
         poolByOwner[newOwner] = pool;
     }
@@ -110,7 +120,11 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         if (pool == MintPool.DEFAULT_VALUE) return 0;
         MintScheduleState storage state = poolMintStates[uint256(pool)];
         (uint256 supply, MintScheduleState memory newState) =
-            schedule.makeProgress(state, uint40(block.timestamp), pool);
+            MintSchedule(mintSchedule).makeProgress(
+                state,
+                uint40(block.timestamp),
+                pool
+            );
         poolMintStates[uint256(pool)] = newState;
         _mint(msg.sender, supply);
         return supply;
@@ -118,7 +132,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
 
     function rewardRate() external view returns (uint256) {
         (, MintScheduleState memory newState) =
-            schedule.makeProgress(
+            MintSchedule(mintSchedule).makeProgress(
                 poolMintStates[uint256(MintPool.PRIMARY)],
                 uint40(block.timestamp),
                 MintPool.PRIMARY

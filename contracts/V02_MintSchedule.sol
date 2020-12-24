@@ -15,8 +15,8 @@ struct ScheduleItem {
 
 contract MintSchedule is Ownable {
     using ABDKMath64x64 for int128;
-    int128 private _outputRate = ABDKMath64x64.fromInt(1);
-    ScheduleItem[] items;
+    int128 public _outputRate = ABDKMath64x64.fromInt(1);
+    ScheduleItem[] public items;
 
     constructor() {
         // todo fill the items with actual values

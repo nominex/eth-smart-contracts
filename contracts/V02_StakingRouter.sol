@@ -7,11 +7,14 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract StakingRouter is Ownable, NmxSupplier {
-    Nmx private nmx;
-    mapping(address => int128) serviceShares;
-    address[] activeServices;
-    mapping(address => uint256) pendingSupplies;
-    mapping(address => uint256) untransferredSupplys;
+    address public nmx;
+    mapping(address => int128) public serviceShares;
+    address[] public activeServices;
+    mapping(address => uint256) public pendingSupplies;
+
+    constructor(address _nmx) {
+        nmx = _nmx;
+    }
 
     function changeStakingServiceShares(
         address[] calldata addresses,
@@ -51,7 +54,7 @@ contract StakingRouter is Ownable, NmxSupplier {
     }
 
     function updatePendingSupplies() private {
-        uint256 supply = nmx.supplyNmx();
+        uint256 supply = NmxSupplier(nmx).supplyNmx();
         for (
             uint256 activeServiceIndex = 0;
             activeServiceIndex < activeServices.length;
