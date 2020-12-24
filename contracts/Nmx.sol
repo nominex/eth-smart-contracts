@@ -3,7 +3,7 @@ pragma solidity >=0.4.25 <0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract Nmx is ERC20 {
+contract Nmx01 is ERC20 {
 
 	uint private constant TOTAL_SUPPLY = 200000000 * (10**18);
 	
@@ -11,7 +11,7 @@ contract Nmx is ERC20 {
 	bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint) public nonces;
 
-	constructor() public ERC20("Nominex", "NMX") {
+	constructor() ERC20("Nominex01", "NMX01") {
 
         uint chainId;
         assembly {

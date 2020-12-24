@@ -7,7 +7,7 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 struct ScheduleItem {
-    uint256 cycleDuration;
+    uint40 cycleDuration;
     uint96 cyclesCount;
     int128 cycleCompletenessMultiplier;
     int128[] poolShares;
@@ -33,7 +33,7 @@ contract MintSchedule is Ownable {
 
     function makeProgress(
         MintScheduleState memory scheduleState,
-        uint256 time,
+        uint40 time,
         MintPool pool
     ) external view returns (uint256 nmxSupply, MintScheduleState memory) {
         if (time <= scheduleState.time) return (0, scheduleState);
@@ -41,7 +41,7 @@ contract MintSchedule is Ownable {
             time > scheduleState.time && scheduleState.itemIndex < items.length
         ) {
             ScheduleItem storage item = items[scheduleState.itemIndex];
-            uint256 boundary =
+            uint40 boundary =
                 min(time, scheduleState.cycleStartTime + item.cycleDuration);
             uint256 secondsFromLastUpdate = boundary - scheduleState.time;
             nmxSupply +=
@@ -59,7 +59,7 @@ contract MintSchedule is Ownable {
     function persistStateChange(
         MintScheduleState memory state,
         ScheduleItem memory item,
-        uint256 time
+        uint40 time
     ) private pure {
         state.time = time;
         if (time == state.cycleStartTime + item.cycleDuration) {
@@ -76,7 +76,7 @@ contract MintSchedule is Ownable {
         }
     }
 
-    function min(uint256 a, uint256 b) private pure returns (uint256) {
+    function min(uint40 a, uint40 b) private pure returns (uint40) {
         if (a < b) return a;
         return b;
     }

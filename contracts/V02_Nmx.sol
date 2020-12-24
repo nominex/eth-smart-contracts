@@ -110,7 +110,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         if (pool == MintPool.DEFAULT_VALUE) return 0;
         MintScheduleState storage state = poolMintStates[uint256(pool)];
         (uint256 supply, MintScheduleState memory newState) =
-            schedule.makeProgress(state, block.timestamp, pool);
+            schedule.makeProgress(state, uint40(block.timestamp), pool);
         poolMintStates[uint256(pool)] = newState;
         _mint(msg.sender, supply);
         return supply;
@@ -120,7 +120,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         (, MintScheduleState memory newState) =
             schedule.makeProgress(
                 poolMintStates[uint256(MintPool.PRIMARY)],
-                block.timestamp,
+                uint40(block.timestamp),
                 MintPool.PRIMARY
             );
         return uint256(newState.nextTickSupply);
