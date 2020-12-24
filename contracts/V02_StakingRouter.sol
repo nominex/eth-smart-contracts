@@ -27,7 +27,7 @@ contract StakingRouter is Ownable, NmxSupplier {
             cumulativeShare += shares[i];
         }
         require(
-            cumulativeShare < 1 << 64,
+            cumulativeShare <= 1 << 64,
             "NMXSTKROU: shares must be le 1<<64 in total"
         );
 
