@@ -50,6 +50,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             poolMintState.time = uint40(block.timestamp);
             poolMintState.cycleStartTime = uint40(block.timestamp);
         }
+        _mint(address(this), 117000 * 10**18);
     }
 
     function permit(

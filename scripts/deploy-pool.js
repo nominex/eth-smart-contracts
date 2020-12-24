@@ -4,7 +4,8 @@
 * */
 
 const Erc20 = artifacts.require("ERC20");
-const StakingPoolManager = artifacts.require("StakingPoolManager");
+const StakingRouter = artifacts.require("StakingRouter");
+const StakingService = artifacts.require("StakingService");
 const Nmx = artifacts.require("Nmx");
 const {ChainId, Token, TokenAmount, Pair, FACTORY_ADDRESS} = require("@uniswap/sdk");
 
@@ -30,7 +31,7 @@ module.exports = async (callback) => {
             callback("No adress given for lp token");
             return;
         }
-        const poolManager = await StakingPoolManager.deployed();
+        const stakingRouter = await StakingRouter.deployed();
         const uniswapFactory = await IUniswapV2Factory.at(FACTORY_ADDRESS);
         const nmx = await Nmx.deployed();
         const pairedTkn = await Erc20.at(program.tokenAddress);
@@ -98,12 +99,12 @@ module.exports = async (callback) => {
 
         }
 
-        let stakingPoolInfo = await poolManager.stakingPools(pairAddress);
         if (toBN(stakingPoolInfo.poolAddress).isZero()) {
-            config.logger.info(`Creating staking pool for pair ${pairAddress}`);
-            await poolManager.addPool(pairAddress);
+            config.logger.info(`Creating staking service for pair ${pairAddress}`);
+            const stakingService = new StakingService(nmx, pairAddress, stakingRouter);
+            stakingRouter.changeStakingServiceShares([stakingService.address], [1 << 64]);
         }
-        stakingPoolInfo = await poolManager.stakingPools(pairAddress);
+        stakingPoolInfo = await stakingRouter.stakingPools(pairAddress);
         config.logger.info(`Staking pool for pair ${pairAddress} has address ${stakingPoolInfo.poolAddress}`);
         callback();
     } catch (e) {
