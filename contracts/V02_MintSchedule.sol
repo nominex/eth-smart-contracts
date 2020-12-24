@@ -40,24 +40,18 @@ contract MintSchedule is Ownable {
         while (
             time > scheduleState.time && scheduleState.itemIndex < items.length
         ) {
-            if (scheduleState.itemIndex < items.length) { /* FIXME: или условие всегда выполняется или цикл может быть бесконечным */
-                ScheduleItem storage item = items[scheduleState.itemIndex];
-                uint256 boundary =
-                    min(
-                        time,
-                        scheduleState.cycleStartTime + item.cycleDuration
-                    );
-                uint256 secondsFromLastUpdate = boundary - scheduleState.time;
-                nmxSupply +=
-                    secondsFromLastUpdate *
-                    uint256(
-                        _outputRate.mul(item.poolShares[uint256(pool)]).mul(
-                            scheduleState.nextTickSupply
-                        )
-                    );
-                persistStateChange(scheduleState, item, boundary);
-            }
-
+            ScheduleItem storage item = items[scheduleState.itemIndex];
+            uint256 boundary =
+                min(time, scheduleState.cycleStartTime + item.cycleDuration);
+            uint256 secondsFromLastUpdate = boundary - scheduleState.time;
+            nmxSupply +=
+                secondsFromLastUpdate *
+                uint256(
+                    _outputRate.mul(item.poolShares[uint256(pool)]).mul(
+                        scheduleState.nextTickSupply
+                    )
+                );
+            persistStateChange(scheduleState, item, boundary);
         }
         return (nmxSupply >> 64, scheduleState);
     }

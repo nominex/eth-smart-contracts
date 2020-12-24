@@ -107,7 +107,7 @@ contract StakingService is PausableByOwner {
 
         _reward(msg.sender, staker);
 
-        emit Unstake(msg.sender, amount);
+        emit Unstaked(msg.sender, amount);
         state.totalStaked -= amount;
         staker.amount -= amount;
     }
