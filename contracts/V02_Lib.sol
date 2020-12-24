@@ -16,5 +16,5 @@ struct MintScheduleState {
     uint8 itemIndex;
     uint16 cycleIndex;
     uint40 cycleStartTime;
-    int128 nextTickSupply;
+    uint256 nextTickSupply;
 }

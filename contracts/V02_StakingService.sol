@@ -162,7 +162,7 @@ contract StakingService is PausableByOwner {
     function _reward(address owner, Staker storage staker) private {
         uint256 unrewarded =
             ((state.historicalRewardRate - staker.initialRewardRate) *
-                staker.amount) >> 64;
+                staker.amount) / 10**18;
         emit Rewarded(owner, unrewarded);
         bool transferred = IERC20(nmx).transfer(owner, unrewarded);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
@@ -175,9 +175,9 @@ contract StakingService is PausableByOwner {
      */
     function updateHistoricalRewardRate() public {
         uint256 currentNmxSupply = NmxSupplier(nmxSupplier).supplyNmx();
-        if (state.totalStaked != 0)
+        if (state.totalStaked != 0 && currentNmxSupply != 0)
             state.historicalRewardRate +=
-                (currentNmxSupply << 64) /
+                (currentNmxSupply * 10**18) /
                 state.totalStaked;
     }
 

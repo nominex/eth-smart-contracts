@@ -197,14 +197,11 @@ contract MintSchedule is Ownable {
             uint256 secondsFromLastUpdate = boundary - scheduleState.time;
             nmxSupply +=
                 secondsFromLastUpdate *
-                uint256(
-                    _outputRate.mul(item.poolShares[uint256(pool)]).mul(
-                        scheduleState.nextTickSupply
-                    )
-                );
+                    _outputRate.mul(item.poolShares[uint256(pool)])
+                    .mulu(scheduleState.nextTickSupply);
             persistStateChange(scheduleState, item, boundary);
         }
-        return (nmxSupply >> 64, scheduleState);
+        return (nmxSupply, scheduleState);
     }
 
     function persistStateChange(
@@ -214,10 +211,7 @@ contract MintSchedule is Ownable {
     ) private pure {
         state.time = time;
         if (time == state.cycleStartTime + item.cycleDuration) {
-            state.nextTickSupply = ABDKMath64x64.mul(
-                state.nextTickSupply,
-                item.cycleCompletenessMultiplier
-            );
+            state.nextTickSupply = item.cycleCompletenessMultiplier.mulu(state.nextTickSupply);
             state.cycleIndex++;
             state.cycleStartTime = time;
             if (state.cycleIndex == item.cyclesCount) {

@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract StakingRouter is Ownable, NmxSupplier {
+    using ABDKMath64x64 for int128;
     address public nmx;
     mapping(address => int128) public serviceShares;
     address[] public activeServices;
@@ -30,7 +31,7 @@ contract StakingRouter is Ownable, NmxSupplier {
             cumulativeShare += shares[i];
         }
         require(
-            cumulativeShare <= 1 << 64,
+            cumulativeShare <= ABDKMath64x64.fromInt(1),
             "NMXSTKROU: shares must be le 1<<64 in total"
         );
 
@@ -62,9 +63,7 @@ contract StakingRouter is Ownable, NmxSupplier {
         ) {
             address activeService = activeServices[activeServiceIndex];
             int128 activeServiceShare = serviceShares[activeService];
-            pendingSupplies[activeService] =
-                pendingSupplies[activeService] +
-                ABDKMath64x64.mulu(activeServiceShare, supply);
+            pendingSupplies[activeService] += ABDKMath64x64.mulu(activeServiceShare, supply);
         }
     }
 }
