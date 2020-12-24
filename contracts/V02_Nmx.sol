@@ -101,7 +101,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
 
         emit PoolOwnershipTransferred(currentOwner, newOwner, pool);
         poolOwners[uint(pool)] = newOwner;
-        poolByOwner[currentOwner] = MintPool(0);
+        poolByOwner[currentOwner] = MintPool.DEFAULT_VALUE;
         poolByOwner[newOwner] = pool;
     }
 
