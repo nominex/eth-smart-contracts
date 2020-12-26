@@ -25,6 +25,7 @@ contract StakingService is PausableByOwner {
         uint256 amount;
         uint256 initialRewardRate;
         uint256 reward;
+        uint256 unclaimedReward;
     }
 
     /**
@@ -88,7 +89,7 @@ contract StakingService is PausableByOwner {
         updateHistoricalRewardRate();
 
         Staker storage staker = stakers[msg.sender];
-        _reward(msg.sender, staker);
+        _updateReward(msg.sender, staker);
 
         emit Staked(msg.sender, amount);
         state.totalStaked += amount;
@@ -127,7 +128,7 @@ contract StakingService is PausableByOwner {
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
         updateHistoricalRewardRate();
 
-        _reward(msg.sender, staker);
+        _updateReward(msg.sender, staker);
 
         emit Unstaked(msg.sender, amount);
         state.totalStaked -= amount;
@@ -135,45 +136,51 @@ contract StakingService is PausableByOwner {
     }
 
     /**
-     * @dev rewards for the previously staked amount at the current rate
+     * @dev reward transfe
      * emit Rewarded event
      *
      * amount - new part of staked NMXLP
      */
-    function reward(address owner) external {
+    function claimReward() external {
         updateHistoricalRewardRate();
-        _reward(owner, stakers[owner]);
+        address owner = msg.sender;
+        Staker storage staker = stakers[owner];
+        _updateReward(owner, staker);
+        emit Rewarded(owner, staker.unclaimedReward);
+        bool transferred = IERC20(nmx).transfer(staker, staker.unclaimedReward);
+        require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
+        staker.unclaimedReward = 0;
     }
 
     /**
-     * @dev make a reward and returns rewarded amount. Is supposed to be called without transaction.
+     * @dev updates state and returns unclaimed reward amount.
      */
-    function reward() external returns (uint256 rewarded) {
+    function getReward() external returns (uint256) {
         address owner = msg.sender;
         Staker storage staker = stakers[owner];
-        uint256 previousReward = staker.reward;
-        _reward(owner, staker);
-        return staker.reward - previousReward;
+        _updateReward(owner, staker);
+        return staker.unclaimedReward;
     }
 
     /**
      * @dev TODO
      */
-    function _reward(address owner, Staker storage staker) private {
+    function _updateReward(address owner, Staker storage staker) private {
         uint256 unrewarded =
             ((state.historicalRewardRate - staker.initialRewardRate) *
                 staker.amount) / 10**18;
-        emit Rewarded(owner, unrewarded);
-        bool transferred = IERC20(nmx).transfer(owner, unrewarded);
-        require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
         staker.initialRewardRate = state.historicalRewardRate;
         staker.reward += unrewarded;
+        staker.unclaimedReward += unrewarded;
     }
 
     /**
      * @dev update how many NMX rewards for one NMXLP are currently
      */
     function updateHistoricalRewardRate() public {
+        if (paused()) {
+            return;
+        }
         uint256 currentNmxSupply = NmxSupplier(nmxSupplier).supplyNmx();
         if (state.totalStaked != 0 && currentNmxSupply != 0)
             state.historicalRewardRate +=
@@ -184,4 +191,5 @@ contract StakingService is PausableByOwner {
     function totalStaked() external view returns (uint256) {
         return state.totalStaked;
     }
+
 }
