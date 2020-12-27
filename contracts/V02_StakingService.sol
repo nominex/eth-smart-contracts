@@ -44,6 +44,11 @@ contract StakingService is PausableByOwner {
      * @dev internal service state
      */
     State state;
+
+    /**
+     * @dev trusted contract for nmx reinvesting
+     */
+    address public reinvestContract;
     /**
      * @dev mapping a staker's address to his state
      */
@@ -62,6 +67,11 @@ contract StakingService is PausableByOwner {
      */
     event Rewarded(address indexed owner, uint256 amount);
 
+    /**
+     * @dev event when someone is awarded NMX
+     */
+    event ClaimedForReinvest(address indexed owner, uint256 amount);
+
     constructor(
         address _nmx,
         address _stakingToken,
@@ -70,6 +80,10 @@ contract StakingService is PausableByOwner {
         nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
+    }
+
+    function setReinvestContract(address _reinvestContract) external onlyOwner {
+        reinvestContract = _reinvestContract;
     }
 
     /**
@@ -147,9 +161,33 @@ contract StakingService is PausableByOwner {
         Staker storage staker = stakers[owner];
         _updateReward(owner, staker);
         emit Rewarded(owner, staker.unclaimedReward);
-        bool transferred = IERC20(nmx).transfer(staker, staker.unclaimedReward);
+        bool transferred = IERC20(nmx).transfer(owner, staker.unclaimedReward);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
         staker.unclaimedReward = 0;
+    }
+
+    function claimForReinvest(address owner, address to, uint amount) external {
+        require(msg.sender == reinvestContract);
+        updateHistoricalRewardRate();
+        Staker storage staker = stakers[owner];
+        _updateReward(msg.sender, staker);
+        require(amount >= staker.unclaimedReward, "NMXSTKSRV: NOT_ENOUGH_BALANCE");
+        bool transferred = IERC20(nmx).transfer(to, amount);
+        require(transferred, "NMXSTKSRV: NMX_TRANSFER_FAIlED");
+        staker.unclaimedReward -= amount;
+        emit ClaimedForReinvest(owner, amount);
+    }
+
+    function reinvest(address owner, uint amount, uint correctedNmx) external {
+        Staker storage staker = stakers[owner];
+        _updateReward(owner, staker);
+
+        emit Staked(owner, amount);
+        state.totalStaked += amount;
+        staker.amount += amount;
+        staker.unclaimedReward += correctedNmx;
+        emit ClaimedForReinvest(owner, -correctedNmx);
+        emit Reinvest(owner, correctedNmx);
     }
 
     /**
