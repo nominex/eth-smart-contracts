@@ -41,7 +41,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev ERC20 TODO
      */
-    address stakingToken;
+    address public stakingToken;
     /**
      * @dev to got minted NMX
      */
@@ -203,7 +203,6 @@ contract StakingService is PausableByOwner {
 
     function claimForReinvest(
         address owner,
-        address to,
         uint256 nmxAmount,
         uint256 signedAmount,
         uint256 deadline,
@@ -221,7 +220,7 @@ contract StakingService is PausableByOwner {
         Staker storage staker = stakers[owner];
         _updateReward(staker);
         require(nmxAmount >= staker.unclaimedReward, "NMXSTKSRV: NOT_ENOUGH_BALANCE");
-        bool transferred = IERC20(nmx).transfer(to, nmxAmount);
+        bool transferred = IERC20(nmx).transfer(msg.sender, nmxAmount);
         require(transferred, "NMXSTKSRV: NMX_TRANSFER_FAIlED");
         staker.unclaimedReward -= nmxAmount;
         emit Rewarded(owner, nmxAmount);

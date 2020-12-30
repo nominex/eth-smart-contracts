@@ -99,13 +99,27 @@ module.exports = async (callback) => {
 
         }
 
-        if (toBN(stakingPoolInfo.poolAddress).isZero()) {
+
+        let stakingService = undefined;
+
+        for (let i = 0; true; ++i) {
+            let activeService;
+            try {
+                activeService = await stakingRouter.activeServices(i);
+            } catch (e) {
+                break;
+            }
+            stakingService = await stakingService.at(activeService);
+            if (await service.stakingToken() === pairAddress) {
+                break;
+            }
+        }
+        if (!stakingService) {
             config.logger.info(`Creating staking service for pair ${pairAddress}`);
-            const stakingService = new StakingService(nmx, pairAddress, stakingRouter);
+            stakingService = await StakingService.new(nmx.address, pairAddress, stakingRouter.address);
             stakingRouter.changeStakingServiceShares([stakingService.address], [1 << 64]);
         }
-        stakingPoolInfo = await stakingRouter.stakingPools(pairAddress);
-        config.logger.info(`Staking pool for pair ${pairAddress} has address ${stakingPoolInfo.poolAddress}`);
+        config.logger.info(`Staking service for pair ${pairAddress} has address ${stakingService.address}`);
         callback();
     } catch (e) {
         callback(e);

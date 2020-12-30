@@ -54,7 +54,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
          * FIXME: если я правильно понял, то это то, что было куплено пользователями,
          * но вроде как нет возможности это вывести, возможно _mint(msg.sender)?
          */
-        _mint(address(this), 117000 * 10**18);
+        _mint(msg.sender, 117000 * 10**18);
     }
 
     function permit(

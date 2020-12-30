@@ -4,9 +4,10 @@ const ProviderEngine = require("@trufflesuite/web3-provider-engine");
 const WalletSubprovider = require('@trufflesuite/web3-provider-engine/subproviders/wallet.js');
 const Web3Subprovider = require("@trufflesuite/web3-provider-engine/subproviders/provider.js");
 const web3 = require("web3");
+const nconf = require("nconf");
 
-// const privateKey = "6ce2fe8a96e142f6268a0040c21a2ff750f908ab1d05119a352c4c1ca452d641";
-// const privateKey = "84a2ce9cfc53fca0f39ed7f168294583a350a80ba5c9959f5193d45daa2daad8";
+nconf.argv().env().file({ file: './.config.json' });
+
 
 
 const uniswapSdk = require('@uniswap/sdk');
@@ -24,7 +25,8 @@ module.exports = {
             //  port: 7545,
             network_id: "1",
             provider: () => {
-                const privateKey = process.env['ETH_DEPLOYER_PRIVATE_KEY']
+                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
+                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
                 const wallet = new Wallet(new Buffer(privateKey, "hex"));
                 const engine = new ProviderEngine();
                 engine.addProvider(new WalletSubprovider(wallet, {}));
@@ -43,7 +45,8 @@ module.exports = {
         ropsten: {
             network_id: "3",
             provider: () => {
-                const privateKey = process.env['ETH_DEPLOYER_PRIVATE_KEY']
+                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
+                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
                 const wallet = new Wallet(new Buffer(privateKey, "hex"));
                 const engine = new ProviderEngine();
                 engine.addProvider(new WalletSubprovider(wallet, {}));
@@ -62,7 +65,8 @@ module.exports = {
         rinkeby: {
             network_id: "4",
             provider: () => {
-                const privateKey = process.env['ETH_DEPLOYER_PRIVATE_KEY'];
+                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
+                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
                 const wallet = new Wallet(new Buffer(privateKey, "hex"));
                 const engine = new ProviderEngine();
                 engine.addProvider(new WalletSubprovider(wallet, {}));
