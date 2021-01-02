@@ -14,7 +14,6 @@ enum MintPool {DEFAULT_VALUE, PRIMARY, BONUS, TEAM, NOMINEX}
 
 /**
  * @dev current state of the schedule for each MintPool
- * @dev current state of the schedule for each MintPool
  *
  * @param time last invocation time
  * @param itemIndex current index in the calendar
