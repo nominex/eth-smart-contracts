@@ -15,7 +15,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     address public mintSchedule;
     mapping(address => MintPool) poolByOwner;
     address[5] poolOwners; // 5 - number of MintPool values
-    MintScheduleState[5] poolMintStates; // 5 - number of MintPool values
+    MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
 
     event PoolOwnershipTransferred(
         address indexed previousOwner,
@@ -50,10 +50,6 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             poolMintState.time = uint40(block.timestamp);
             poolMintState.cycleStartTime = uint40(block.timestamp);
         }
-        /*
-         * FIXME: если я правильно понял, то это то, что было куплено пользователями,
-         * но вроде как нет возможности это вывести, возможно _mint(msg.sender)?
-         */
         _mint(msg.sender, 117000 * 10**18);
     }
 
@@ -66,7 +62,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         bytes32 r,
         bytes32 s
     ) external {
-        require(deadline >= block.timestamp, "NMX: EXPIRED");
+        require(deadline >= block.timestamp, "NMX: deadline expired");
         bytes32 digest =
             keccak256(
                 abi.encodePacked(
@@ -87,7 +83,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
             recoveredAddress != address(0) && recoveredAddress == owner,
-            "NMX: INVALID_SIGNATURE"
+            "NMX: invalid signature"
         );
         _approve(owner, spender, value);
     }
