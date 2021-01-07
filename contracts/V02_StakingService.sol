@@ -52,10 +52,6 @@ contract StakingService is PausableByOwner {
     State state;
 
     /**
-     * @dev trusted contract for nmx reinvesting
-     */
-    address public reinvestContract;
-    /**
      * @dev mapping a staker's address to his state
      */
     mapping(address => Staker) public stakers;

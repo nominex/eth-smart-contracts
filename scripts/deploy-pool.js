@@ -109,15 +109,16 @@ module.exports = async (callback) => {
             } catch (e) {
                 break;
             }
-            stakingService = await stakingService.at(activeService);
-            if (await service.stakingToken() === pairAddress) {
+            stakingService = await StakingService.at(activeService);
+            if (await stakingService.stakingToken() === pairAddress) {
                 break;
             }
         }
         if (!stakingService) {
             config.logger.info(`Creating staking service for pair ${pairAddress}`);
             stakingService = await StakingService.new(nmx.address, pairAddress, stakingRouter.address);
-            stakingRouter.changeStakingServiceShares([stakingService.address], [1 << 64]);
+            /*FIXME: add services that were created before*/
+            await stakingRouter.changeStakingServiceShares([stakingService.address], [1 << 64]);
         }
         config.logger.info(`Staking service for pair ${pairAddress} has address ${stakingService.address}`);
         callback();
