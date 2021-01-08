@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
+import "./UniswapV2Library.sol";
 import "./Math.sol";
 import "./V02_StakingService.sol";
 
@@ -39,7 +39,7 @@ contract Reinvestor {
             s
         );
 
-        IERC20(nmx).safeTransfer(this, reinvestNmxAmount);
+        IERC20(nmx).safeTransfer(address(this), reinvestNmxAmount);
         IERC20(pairedToken).safeTransferFrom(msg.sender, uniswapPair, pairedTokenAmount);
 
         uint liquidityMinted = IUniswapV2Pair(uniswapPair).mint(address(this));
@@ -50,7 +50,7 @@ contract Reinvestor {
 
     function getNmxAmount(uint nmxAmount, uint pairedTokenAmount) private view
     returns (uint requiredNmxAmount, uint requiredTokenAmount) {
-        uint (nmxReserve, pairedTokenReserve) = UniswapV2Library.getReserves(factory, nmx, pairedToken);
+        (uint nmxReserve, uint pairedTokenReserve) = UniswapV2Library.getReserves(factory, nmx, pairedToken);
         uint quotedNmxAmount = UniswapV2Library.quote(pairedTokenAmount, pairedTokenReserve, nmxReserve);
         if (quotedNmxAmount <= nmxAmount) {
             return (quotedNmxAmount, pairedTokenAmount);

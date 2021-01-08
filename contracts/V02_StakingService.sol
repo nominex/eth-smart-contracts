@@ -102,10 +102,6 @@ contract StakingService is PausableByOwner {
 
     }
 
-    function setReinvestContract(address _reinvestContract) external onlyOwner {
-        reinvestContract = _reinvestContract;
-    }
-
     /**
      * @dev accepts NMXLP staked by the user, also rewards for the previously staked amount at the current rate
      * emit Staked and Rewarded events
