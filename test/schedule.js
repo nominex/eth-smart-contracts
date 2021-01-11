@@ -11,7 +11,7 @@ const MINT_POOL_BONUS = 2;
 const MINT_POOL_TEAM = 3;
 const MINT_POOL_NOMINEX = 4;
 
-contract('MintSchedule', () => {
+contract('MintSchedule', (accounts) => {
 
     let mintSchedule;
     let now = Math.floor((new Date()).getTime() / 1000);
@@ -259,11 +259,11 @@ contract('MintSchedule', () => {
         let oneSecExpectedNmxSupply0 = oneSecExpectedNmxSupply * 0;
         let oneSecExpectedNmxSupply1 = Math.floor(oneSecExpectedNmxSupply * 1 + ROUNDING_CORRECTION_VALUE);
 
-        await mintSchedule.setOutputRate((5n << 64n) / 10n);
+        await mintSchedule.setOutputRate((5n << 64n) / 10n); // 0.5
         await test(state, state.time + 1, MINT_POOL_BONUS, oneSecExpectedNmxSupply05 * 1, {time: state.time + 1});
         await test(state, state.time + 2, MINT_POOL_BONUS, oneSecExpectedNmxSupply05 * 2, {time: state.time + 2});
 
-        await mintSchedule.setOutputRate((1n << 64n) / 10n);
+        await mintSchedule.setOutputRate((1n << 64n) / 10n); // 0.1
         await test(state, state.time + 1, MINT_POOL_BONUS, oneSecExpectedNmxSupply01 * 1, {time: state.time + 1});
         await test(state, state.time + 3, MINT_POOL_BONUS, oneSecExpectedNmxSupply01 * 3, {time: state.time + 3});
 
@@ -274,6 +274,44 @@ contract('MintSchedule', () => {
         await mintSchedule.setOutputRate(1n << 64n);
         await test(state, state.time + 1, MINT_POOL_BONUS, oneSecExpectedNmxSupply1 * 1, {time: state.time + 1});
         await test(state, state.time + 5, MINT_POOL_BONUS, oneSecExpectedNmxSupply1 * 5, {time: state.time + 5});
+    });
+
+    it('outputRate must be ge 0', async () => {
+        let errorMsg = '';
+        try {
+            await mintSchedule.setOutputRate((-5n << 64n) / 10n); // -0.5
+        } catch (e) {
+            errorMsg = e.message;
+        }
+        assert(errorMsg.includes('NMXMINTSCH: outputRate must be ge 0'), `Unexpected errorMsg message: ${errorMsg}`);
+    });
+
+    it('outputRate must be le 1<<64', async () => {
+        let errorMsg = '';
+        try {
+            await mintSchedule.setOutputRate((1n << 64n) + ((5n << 64n) / 10n));  // 1.5
+        } catch (e) {
+            errorMsg = e.message;
+        }
+        assert(errorMsg.includes('outputRate must be le 1<<64'), `Unexpected errorMsg message: ${errorMsg}`);
+    });
+
+    it('outputRate can only be called by owner', async () => {
+        let errorMsg = '';
+        try {
+            await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[1]}); // 0.5
+        } catch (e) {
+            errorMsg = e.message;
+        }
+        assert(errorMsg.includes('Ownable: caller is not the owner'), `Unexpected errorMsg message: ${errorMsg}`);
+
+        errorMsg = '';
+        try {
+            await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[0]}); // 0.5
+        } catch (e) {
+            errorMsg = e.message;
+        }
+        assert(errorMsg === '', `Unexpected errorMsg message: ${errorMsg}`);
     });
 
     async function test(state, timestamp, mintPool, expectedNmxSupply, expectedState) {
