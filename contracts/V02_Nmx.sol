@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Nmx is ERC20, NmxSupplier, Ownable {
     bytes32 public DOMAIN_SEPARATOR;
+    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public nonces;
@@ -23,7 +24,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         MintPool indexed pool
     );
 
-    constructor(address _mintSchedule) ERC20("Nominex", "NMX") {
+    constructor(address _mintSchedule) ERC20("Nominex utility token", "NMX") {
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -46,7 +47,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             i++
         ) {
             MintScheduleState storage poolMintState = poolMintStates[i];
-            poolMintState.nextTickSupply = 10000 * 10**18 / uint40(1 days);
+            poolMintState.nextTickSupply = (10000 * 10**18) / uint40(1 days);
             poolMintState.time = uint40(block.timestamp);
             poolMintState.cycleStartTime = uint40(block.timestamp);
         }
