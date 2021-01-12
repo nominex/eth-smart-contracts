@@ -209,11 +209,11 @@ contract MintSchedule is Ownable {
         ScheduleItem memory item,
         uint40 time
     ) private pure {
-        state.time = time;
+        state.time = uint40(time);
         if (time == state.cycleStartTime + item.cycleDuration) {
             state.nextTickSupply = item.cycleCompletenessMultiplier.mulu(state.nextTickSupply);
             state.cycleIndex++;
-            state.cycleStartTime = time;
+            state.cycleStartTime = uint40(time);
             if (state.cycleIndex == item.cyclesCount) {
                 state.cycleIndex = 0;
                 state.itemIndex++;

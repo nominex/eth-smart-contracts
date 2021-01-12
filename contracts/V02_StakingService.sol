@@ -49,7 +49,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev internal service state
      */
-    State state;
+    State public state;
 
     /**
      * @dev mapping a staker's address to his state
@@ -141,7 +141,7 @@ contract StakingService is PausableByOwner {
     function _stakeFrom(address owner, uint256 amount) private {
         bool transferred =
         IERC20(stakingToken).transferFrom(
-            msg.sender,
+            owner,
             address(this),
             amount
         );
