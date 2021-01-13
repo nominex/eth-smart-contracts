@@ -1,6 +1,6 @@
 const Nmx = artifacts.require("Nmx");
 const StakingPool = artifacts.require("StakingPool");
-const {scheduleItem, rpcCommand} = require("../lib/utils.js");
+const {scheduleItem, rpcCommand} = require("../../lib/utils.js");
 
 let toBN = web3.utils.toBN;
 let toWei = web3.utils.toWei;
