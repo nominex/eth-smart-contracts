@@ -2,12 +2,12 @@ const Nmx = artifacts.require("Nmx");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const StakingRouter = artifacts.require("StakingRouter");
 const StakingService = artifacts.require("StakingService");
-const {scheduleItem, rpcCommand} = require("../../lib/utils.js");
+const { rpcCommand } = require("../../lib/utils.js");
 const truffleAssert = require('truffle-assertions');
 
-let toBN = web3.utils.toBN;
-let toWei = web3.utils.toWei;
-let fromWei = web3.utils.fromWei;
+const toBN = web3.utils.toBN;
+const toWei = web3.utils.toWei;
+const fromWei = web3.utils.fromWei;
 
 contract('StakingService', (accounts) => {
 
@@ -31,26 +31,31 @@ contract('StakingService', (accounts) => {
         stakingRouter.changeStakingServiceShares(new Array(stakingService.address), new Array(1).fill(1));
 
         await stakingToken.transfer(accounts[1], toWei(toBN(initialBalance)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(initialBalance)), {from: accounts[1]});
+        await stakingToken.approve(stakingService.address, toWei(toBN(initialBalance)), { from: accounts[1] });
         await stakingToken.transfer(accounts[3], toWei(toBN(100)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(50)), {from: accounts[3]});
+        await stakingToken.approve(stakingService.address, toWei(toBN(50)), { from: accounts[3] });
         await stakingToken.transfer(accounts[4], toWei(toBN(50)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(100)), {from: accounts[4]});
+        await stakingToken.approve(stakingService.address, toWei(toBN(100)), { from: accounts[4] });
+        snapshotId = await rpcCommand("evm_snapshot");
     });
 
     beforeEach(async () => {
         await verifyStakedAmount(0);
-        snapshotId = await rpcCommand("evm_snapshot");
     });
 
     afterEach(async () => {
         await rpcCommand("evm_revert", [snapshotId]);
     });
 
-    it('smoke', async () => {
+    it('stake', async () => {
+        await stakeAndVerify(10, 10);
+    });
+
+    it('unstake', async () => {
         await stakeAndVerify(10, 10);
         await unstakeAndVerify(10, 0);
     });
+
 
     it('unstake more than staked', async () => {
         try {
@@ -135,13 +140,13 @@ contract('StakingService', (accounts) => {
     });
 
     it('stake not allowed amount', async () => {
-        await stakingService.stakeFrom(accounts[3], toWei(toBN(49)), {from: accounts[2]});
+        await stakingService.stakeFrom(accounts[3], toWei(toBN(49)), { from: accounts[2] });
         assert.equal(49, fromWei((await stakingService.stakers(accounts[3])).amount), "staked amount");
         assert.equal(49, fromWei(await stakingToken.balanceOf(stakingService.address)), "stakingService balance");
         assert.equal(51, fromWei(await stakingToken.balanceOf(accounts[3])), "account3 balance");
 
         try {
-            await stakingService.stakeFrom(accounts[3], toWei(toBN(2)), {from: accounts[2]});
+            await stakingService.stakeFrom(accounts[3], toWei(toBN(2)), { from: accounts[2] });
             throw new Error("Error not occurred");
         } catch (error) {
             assert(error.message.includes("transfer amount exceeds allowance"), error.message);
@@ -149,13 +154,13 @@ contract('StakingService', (accounts) => {
     });
 
     it('stake when not enough balance', async () => {
-        await stakingService.stakeFrom(accounts[4], toWei(toBN(49)), {from: accounts[2]});
+        await stakingService.stakeFrom(accounts[4], toWei(toBN(49)), { from: accounts[2] });
         assert.equal(49, fromWei((await stakingService.stakers(accounts[4])).amount), "staked amount");
         assert.equal(49, fromWei(await stakingToken.balanceOf(stakingService.address)), "stakingService balance");
         assert.equal(1, fromWei(await stakingToken.balanceOf(accounts[4])), "account4 balance");
 
         try {
-            await stakingService.stakeFrom(accounts[4], toWei(toBN(2)), {from: accounts[2]});
+            await stakingService.stakeFrom(accounts[4], toWei(toBN(2)), { from: accounts[2] });
             throw new Error("Error not occurred");
         } catch (error) {
             assert(error.message.includes("transfer amount exceeds balance"), error.message);
@@ -163,17 +168,17 @@ contract('StakingService', (accounts) => {
     });
 
     it('total staked', async () => {
-        await stakingService.stakeFrom(accounts[1], toWei(toBN(40)), {from: accounts[2]});
+        await stakingService.stakeFrom(accounts[1], toWei(toBN(40)), { from: accounts[2] });
         assert.equal(40, fromWei((await stakingService.state()).totalStaked), "totalStaked");
         assert.equal(0, fromWei((await stakingService.state()).historicalRewardRate), "totalStaked");
 
-        await stakingService.stakeFrom(accounts[3], toWei(toBN(20)), {from: accounts[2]});
-        await stakingService.unstake(toWei(toBN(5)), {from: accounts[1]});
+        await stakingService.stakeFrom(accounts[3], toWei(toBN(20)), { from: accounts[2] });
+        await stakingService.unstake(toWei(toBN(5)), { from: accounts[1] });
         assert.equal(55, fromWei((await stakingService.state()).totalStaked), "totalStaked");
         assert.equal(0, fromWei((await stakingService.state()).historicalRewardRate), "totalStaked");
 
-        await stakingService.stakeFrom(accounts[4], toWei(toBN(30)), {from: accounts[2]});
-        await stakingService.unstake(toWei(toBN(5)), {from: accounts[3]});
+        await stakingService.stakeFrom(accounts[4], toWei(toBN(30)), { from: accounts[2] });
+        await stakingService.unstake(toWei(toBN(5)), { from: accounts[3] });
         assert.equal(80, fromWei((await stakingService.state()).totalStaked), "totalStaked");
         assert.equal(0, fromWei((await stakingService.state()).historicalRewardRate), "totalStaked");
     });
@@ -189,11 +194,11 @@ contract('StakingService', (accounts) => {
     }
 
     async function stake(amountToStake) {
-        return await stakingService.stakeFrom(accounts[1], toWei(toBN(amountToStake)), {from: accounts[2]});
+        return await stakingService.stakeFrom(accounts[1], toWei(toBN(amountToStake)), { from: accounts[2] });
     }
 
     async function unstake(amountToUnstake) {
-        return await stakingService.unstake(toWei(toBN(amountToUnstake)), {from: accounts[1]});
+        return await stakingService.unstake(toWei(toBN(amountToUnstake)), { from: accounts[1] });
     }
 
     async function stakeAndVerify(amountToStake, expectedBalance) {
