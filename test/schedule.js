@@ -296,7 +296,7 @@ contract('MintSchedule', (accounts) => {
         assert(errorMsg.includes('outputRate must be le 1<<64'), `Unexpected errorMsg message: ${errorMsg}`);
     });
 
-    it('outputRate can only be called by owner', async () => {
+    it('outputRate can not be called by not the owner', async () => {
         let errorMsg = '';
         try {
             await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[1]}); // 0.5
@@ -304,15 +304,19 @@ contract('MintSchedule', (accounts) => {
             errorMsg = e.message;
         }
         assert(errorMsg.includes('Ownable: caller is not the owner'), `Unexpected errorMsg message: ${errorMsg}`);
+    });
 
-        errorMsg = '';
+    it('outputRate can be called by the owner', async () => {
+        await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[1]}); // 0.5
+    });
+
+    errorMsg = '';
         try {
             await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[0]}); // 0.5
         } catch (e) {
             errorMsg = e.message;
         }
         assert(errorMsg === '', `Unexpected errorMsg message: ${errorMsg}`);
-    });
 
     async function test(state, timestamp, mintPool, expectedNmxSupply, expectedState) {
         let result = await mintSchedule.makeProgress(state, timestamp, mintPool);
