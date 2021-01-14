@@ -29,7 +29,7 @@ contract StakingService is PausableByOwner {
     }
 
     bytes32 public DOMAIN_SEPARATOR;
-    string private constant CLAIM_TYPE = "Claim(adress owner,adress spender,uint amount,address wallet,uint nonce,uint deadline)";
+    string private constant CLAIM_TYPE = "Claim(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
     bytes32 public CLAIM_TYPEHASH = keccak256(abi.encodePacked(CLAIM_TYPE));
 
     mapping(address => uint256) public nonces;
@@ -67,7 +67,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev event when someone is awarded NMX
      */
-    event Rewarded(address indexed owner, uint256 amount);
+    event Rewarded(address indexed from, address indexed to, uint256 amount);
 
     constructor(
         address _nmx,
@@ -141,10 +141,8 @@ contract StakingService is PausableByOwner {
             amount
         );
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
-        updateHistoricalRewardRate();
 
-        Staker storage staker = stakers[owner];
-        _updateReward(staker);
+        Staker storage staker = updateStateAndStaker(owner);
 
         emit Staked(owner, amount);
         state.totalStaked += amount;
@@ -158,15 +156,16 @@ contract StakingService is PausableByOwner {
      * amount - new part of staked NMXLP
      */
     function unstake(uint256 amount) external {
-        Staker storage staker = stakers[msg.sender];
+        unstakeTo(msg.sender, amount);
+    }
+
+    function unstakeTo(address to, uint256 amount) public {
+        Staker storage staker = updateStateAndStaker(to);
         require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
-        bool transferred = IERC20(stakingToken).transfer(msg.sender, amount);
+        bool transferred = IERC20(stakingToken).transfer(to, amount);
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
-        updateHistoricalRewardRate();
 
-        _updateReward(staker);
-
-        emit Unstaked(msg.sender, amount);
+        emit Unstaked(to, amount);
         state.totalStaked -= amount;
         staker.amount -= amount;
     }
@@ -178,16 +177,9 @@ contract StakingService is PausableByOwner {
      * amount - new part of staked NMXLP
      */
     function claimReward() external returns (uint256) {
-        updateHistoricalRewardRate();
-        address owner = msg.sender;
-        Staker storage staker = stakers[owner];
-        _updateReward(staker);
-        uint reward = staker.unclaimedReward;
-        emit Rewarded(owner, reward);
-        bool transferred = IERC20(nmx).transfer(owner, reward);
-        require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
-        staker.unclaimedReward = 0;
-        return reward;
+        Staker storage staker = updateStateAndStaker(msg.sender);
+        _claimReward(staker, msg.sender, msg.sender, staker.unclaimedReward);
+        return staker.unclaimedReward;
     }
 
     function claimWithAuthorization(
@@ -201,18 +193,28 @@ contract StakingService is PausableByOwner {
         require(nmxAmount <= signedAmount);
         verifySignature(owner, msg.sender, signedAmount, deadline, v, r, s);
 
-        if (nmxAmount == 0) {
-            return;
-        }
+        Staker storage staker = updateStateAndStaker(msg.sender);
+        _claimReward(staker, msg.sender, msg.sender, nmxAmount);
+    }
 
+    function updateStateAndStaker(address stakerAddress) private returns (Staker storage staker) {
         updateHistoricalRewardRate();
-        Staker storage staker = stakers[owner];
-        _updateReward(staker);
-        require(nmxAmount >= staker.unclaimedReward, "NMXSTKSRV: NOT_ENOUGH_BALANCE");
-        bool transferred = IERC20(nmx).transfer(msg.sender, nmxAmount);
-        require(transferred, "NMXSTKSRV: NMX_TRANSFER_FAIlED");
-        staker.unclaimedReward -= nmxAmount;
-        emit Rewarded(owner, nmxAmount);
+        staker = stakers[stakerAddress];
+
+        uint256 unrewarded =
+        ((state.historicalRewardRate - staker.initialRewardRate) *
+        staker.amount) / 10**18;
+        staker.initialRewardRate = state.historicalRewardRate;
+        staker.reward += unrewarded;
+        staker.unclaimedReward += unrewarded;
+    }
+
+    function _claimReward(Staker storage staker, address from, address to, uint256 amount) private {
+        require(amount <= staker.unclaimedReward, "NMXSTKSRV: NOT_ENOUGH_BALANCE");
+        emit Rewarded(from, to, amount);
+        bool transferred = IERC20(nmx).transfer(to, amount);
+        require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
+        staker.unclaimedReward -= amount;
     }
 
     function verifySignature(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) private {
@@ -244,11 +246,8 @@ contract StakingService is PausableByOwner {
     /**
      * @dev updates state and returns unclaimed reward amount.
      */
-    function getReward() external returns (uint256) {
-        address owner = msg.sender;
-        Staker storage staker = stakers[owner];
-        _updateReward(staker);
-        return staker.unclaimedReward;
+    function getReward() external returns (uint256 unclaimedReward) {
+        unclaimedReward = updateStateAndStaker(msg.sender).unclaimedReward;
     }
 
     /**
