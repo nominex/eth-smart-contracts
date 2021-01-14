@@ -29,7 +29,7 @@ contract Reinvestor {
     function reinvest(uint256 nmxAmount, uint256 deadline, uint8 v, bytes32 r, bytes32 s, uint pairedTokenAmount) external {
         uint256 reinvestNmxAmount;
         (reinvestNmxAmount, pairedTokenAmount) = getNmxAmount(nmxAmount, pairedTokenAmount);
-        StakingService(stakingService).claimForReinvest(
+        StakingService(stakingService).claimWithAuthorization(
             msg.sender,
             reinvestNmxAmount,
             nmxAmount,

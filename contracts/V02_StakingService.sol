@@ -190,7 +190,7 @@ contract StakingService is PausableByOwner {
         return reward;
     }
 
-    function claimForReinvest(
+    function claimWithAuthorization(
         address owner,
         uint256 nmxAmount,
         uint256 signedAmount,
