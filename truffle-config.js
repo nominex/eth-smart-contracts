@@ -10,7 +10,6 @@ nconf.argv().env().file({ file: './.config.json' });
 
 
 
-const uniswapSdk = require('@uniswap/sdk');
 let testrpcProvider = null;
 module.exports = {
     // Uncommenting the defaults below
@@ -39,8 +38,6 @@ module.exports = {
                 return engine;
             },
             networkCheckTimeout: 1000000,
-            unswapRouterV2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-            usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
         },
         ropsten: {
             network_id: "3",
@@ -59,8 +56,6 @@ module.exports = {
                 return engine;
             },
             networkCheckTimeout: 1000000,
-            unswapRouterV2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-            usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
         },
         rinkeby: {
             network_id: "4",
@@ -79,17 +74,12 @@ module.exports = {
                 return engine;
             },
             networkCheckTimeout: 1000000,
-            unswapRouterV2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-            usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
         },
         development: {
             host: "127.0.0.1",
             port: 7545,
             network_id: "5777",
             networkCheckTimeout: 100000,
-            uniswapRouter02: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-            uniswapFactory: "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
-            usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
         },
         testrpc: {
             network_id: "*",
@@ -100,8 +90,6 @@ module.exports = {
                 return testrpcProvider;
             },
             networkCheckTimeout: 1000000,
-            unswapRouterV2: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-            usdt: "0xdAC17F958D2ee523a2206206994597C13D831ec7"
         },
         test: {
             host: "127.0.0.1",
@@ -121,5 +109,3 @@ module.exports = {
     },
 
 };
-
-
