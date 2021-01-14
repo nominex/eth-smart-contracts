@@ -69,11 +69,6 @@ contract StakingService is PausableByOwner {
      */
     event Rewarded(address indexed owner, uint256 amount);
 
-    /**
-     * @dev event when someone is awarded NMX
-     */
-    event ClaimedForReinvest(address indexed owner, uint256 amount);
-
     constructor(
         address _nmx,
         address _stakingToken,
