@@ -307,16 +307,10 @@ contract('MintSchedule', (accounts) => {
     });
 
     it('outputRate can be called by the owner', async () => {
-        await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[1]}); // 0.5
+        await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[0]}); // 0.5
     });
 
-    errorMsg = '';
-        try {
-            await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[0]}); // 0.5
-        } catch (e) {
-            errorMsg = e.message;
-        }
-        assert(errorMsg === '', `Unexpected errorMsg message: ${errorMsg}`);
+    
 
     async function test(state, timestamp, mintPool, expectedNmxSupply, expectedState) {
         let result = await mintSchedule.makeProgress(state, timestamp, mintPool);

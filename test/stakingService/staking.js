@@ -44,6 +44,7 @@ contract('StakingService', (accounts) => {
     });
 
     afterEach(async () => {
+        console.log('after each DFASDF')
         await rpcCommand("evm_revert", [snapshotId]);
     });
 
@@ -58,6 +59,7 @@ contract('StakingService', (accounts) => {
 
 
     it('unstake more than staked', async () => {
+        console.log('unstake more than staked')
         try {
             await stakeAndVerify(10, 10);
             await unstake(11);
@@ -69,6 +71,7 @@ contract('StakingService', (accounts) => {
     });
 
     it('stake in 2 stages', async () => {
+        console.log('stake in 2 stages')
         await stakeAndVerify(10, 10);
         await stakeAndVerify(6, 16);
         await unstakeAndVerify(16, 0);
