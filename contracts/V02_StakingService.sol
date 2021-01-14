@@ -251,18 +251,6 @@ contract StakingService is PausableByOwner {
     }
 
     /**
-     * @dev TODO
-     */
-    function _updateReward(Staker storage staker) private {
-        uint256 unrewarded =
-            ((state.historicalRewardRate - staker.initialRewardRate) *
-                staker.amount) / 10**18;
-        staker.initialRewardRate = state.historicalRewardRate;
-        staker.reward += unrewarded;
-        staker.unclaimedReward += unrewarded;
-    }
-
-    /**
      * @dev update how many NMX rewards for one NMXLP are currently
      */
     function updateHistoricalRewardRate() public {
