@@ -9,7 +9,7 @@ const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
-contract('StakingService', (accounts) => {
+contract('StakingService#staking', (accounts) => {
 
     const initialBalance = 1000;
 

@@ -190,7 +190,7 @@ contract StakingService is PausableByOwner {
         uint8 v,
         bytes32 r,
         bytes32 s) external {
-        require(nmxAmount <= signedAmount);
+        require(nmxAmount <= signedAmount, "NMXSTKSRV: INVALID_NMX_AMOUNT");
         verifySignature(owner, msg.sender, signedAmount, deadline, v, r, s);
 
         Staker storage staker = updateStateAndStaker(msg.sender);

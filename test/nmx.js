@@ -1,6 +1,6 @@
 const Nmx = artifacts.require('Nmx');
 const MintScheduleStub = artifacts.require('MintScheduleStub');
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const {signData} = require("../../lib/utils.js");
 const ZERO = web3.utils.toBN(0);
 
 contract('Nmx - initializing', accounts => {
@@ -231,21 +231,6 @@ contract('Nmx - permit', async accounts => {
             message: message
         };
         return typedData;
-    };
-
-    const signData = async function (owner, typeData) {
-        const promise = new Promise((resolve, reject) => {
-            const request = { id: 1, method: "eth_signTypedData", params: [owner, typeData], from: owner };
-            web3.currentProvider.send(request, (errorMsg, response) => {
-                if (errorMsg) reject(errorMsg);
-                const r = response.result.slice(0, 66);
-                const s = "0x" + response.result.slice(66, 130);
-                const v = Number("0x" + response.result.slice(130, 132));
-                resolve({ v, r, s });
-            });
-        });
-
-        return promise;
     };
 
     it('permit success with correct amount', async () => {
