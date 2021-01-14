@@ -2,7 +2,7 @@
 pragma solidity >=0.7.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "../contracts/V02_Lib.sol";
+import "../contracts/Lib.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract MintScheduleStub {

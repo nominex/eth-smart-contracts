@@ -3,7 +3,7 @@ pragma solidity >=0.7.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./NmxSupplier.sol";
-import "./V02_MintSchedule.sol";
+import "./MintSchedule.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
