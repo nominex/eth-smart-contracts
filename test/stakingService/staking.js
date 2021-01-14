@@ -36,10 +36,13 @@ contract('StakingService', (accounts) => {
         await stakingToken.approve(stakingService.address, toWei(toBN(50)), { from: accounts[3] });
         await stakingToken.transfer(accounts[4], toWei(toBN(50)));
         await stakingToken.approve(stakingService.address, toWei(toBN(100)), { from: accounts[4] });
-        snapshotId = await rpcCommand("evm_snapshot");
     });
-
+    
     beforeEach(async () => {
+        // snaphot must be taken before each test because of the issue in ganache
+        // evm_revert also deletes the saved snapshot
+        // https://github.com/trufflesuite/ganache-cli/issues/138
+        snapshotId = await rpcCommand("evm_snapshot");
         await verifyStakedAmount(0);
     });
 
