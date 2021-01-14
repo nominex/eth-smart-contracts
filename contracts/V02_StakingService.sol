@@ -177,15 +177,17 @@ contract StakingService is PausableByOwner {
      *
      * amount - new part of staked NMXLP
      */
-    function claimReward() external {
+    function claimReward() external returns (uint256) {
         updateHistoricalRewardRate();
         address owner = msg.sender;
         Staker storage staker = stakers[owner];
         _updateReward(staker);
-        emit Rewarded(owner, staker.unclaimedReward);
-        bool transferred = IERC20(nmx).transfer(owner, staker.unclaimedReward);
+        uint reward = staker.unclaimedReward;
+        emit Rewarded(owner, reward);
+        bool transferred = IERC20(nmx).transfer(owner, reward);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
         staker.unclaimedReward = 0;
+        return reward;
     }
 
     function claimForReinvest(
