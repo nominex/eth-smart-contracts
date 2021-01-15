@@ -160,12 +160,12 @@ contract StakingService is PausableByOwner {
     }
 
     function unstakeTo(address to, uint256 amount) public {
-        Staker storage staker = updateStateAndStaker(to);
+        Staker storage staker = updateStateAndStaker(msg.sender);
         require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
         bool transferred = IERC20(stakingToken).transfer(to, amount);
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
 
-        emit Unstaked(to, amount);
+        emit Unstaked(msg.sender, amount);
         state.totalStaked -= amount;
         staker.amount -= amount;
     }

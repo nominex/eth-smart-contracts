@@ -4,20 +4,22 @@ const StakingRouter = artifacts.require("StakingRouter");
 const StakingService = artifacts.require("StakingService");
 const { rpcCommand } = require("../../lib/utils.js");
 const truffleAssert = require('truffle-assertions');
+const { step } = require("mocha-steps");
 
 const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
-contract('StakingService#staking', (accounts) => {
-
-    const initialBalance = 1000;
+contract('StakingService; Group: Staking', (accounts) => {
 
     let nmx;
     let stakingToken;
     let stakingService;
     let snapshotId;
     let stakingRouter;
+
+    let errorMessage = "";
+    let tx = null;
 
     before(async () => {
         nmx = await Nmx.deployed();
@@ -30,196 +32,466 @@ contract('StakingService#staking', (accounts) => {
         stakingService = await StakingService.new(nmx.address, stakingToken.address, stakingRouter.address);
         stakingRouter.changeStakingServiceShares(new Array(stakingService.address), new Array(1).fill(1));
 
-        await stakingToken.transfer(accounts[1], toWei(toBN(initialBalance)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(initialBalance)), { from: accounts[1] });
+        await stakingToken.transfer(accounts[1], toWei(toBN(1000)));
+        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: accounts[1]});
         await stakingToken.transfer(accounts[3], toWei(toBN(100)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(50)), { from: accounts[3] });
+        await stakingToken.approve(stakingService.address, toWei(toBN(50)), {from: accounts[3]});
         await stakingToken.transfer(accounts[4], toWei(toBN(50)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(100)), { from: accounts[4] });
-    });
-    
-    beforeEach(async () => {
-        // snaphot must be taken before each test because of the issue in ganache
-        // evm_revert also deletes the saved snapshot
-        // https://github.com/trufflesuite/ganache-cli/issues/138
-        snapshotId = await rpcCommand("evm_snapshot");
-        await verifyStakedAmount(0);
+        await stakingToken.approve(stakingService.address, toWei(toBN(100)), {from: accounts[4]});
     });
 
-    afterEach(async () => {
-        console.log('after each DFASDF')
-        await rpcCommand("evm_revert", [snapshotId]);
-    });
-
-    it('stake', async () => {
-        await stakeAndVerify(10, 10);
-    });
-
-    it('unstake', async () => {
-        await stakeAndVerify(10, 10);
-        await unstakeAndVerify(10, 0);
-    });
-
-
-    it('unstake more than staked', async () => {
-        console.log('unstake more than staked')
-        try {
-            await stakeAndVerify(10, 10);
-            await unstake(11);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("NOT_ENOUGH_STAKED"), error.message);
-            await verifyStakedAmount(10);
-        }
-    });
-
-    it('stake in 2 stages', async () => {
-        console.log('stake in 2 stages')
-        await stakeAndVerify(10, 10);
-        await stakeAndVerify(6, 16);
-        await unstakeAndVerify(16, 0);
-    });
-
-    it('unstake in 2 stages', async () => {
-        await stakeAndVerify(10, 10);
-        await unstakeAndVerify(6, 4);
-        await unstakeAndVerify(4, 0);
-    });
-
-    it('stake/unstake with 0 amount', async () => {
-        await stakeAndVerify(0, 0);
-        await unstakeAndVerify(0, 0);
-
-        await stakeAndVerify(5, 5);
-
-        await unstakeAndVerify(0, 5);
-        await unstakeAndVerify(0, 5);
-    });
-
-    it('unstake with 0 balance', async () => {
-        try {
-            await unstake(1);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("NOT_ENOUGH_STAKED"), error.message);
-        }
-    });
-
-    it('stake negative amount', async () => {
-        try {
-            await stake(-1);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("INVALID_ARGUMENT"), error.message);
-        }
-    });
-
-    it('unstake negative amount', async () => {
-        try {
-            await unstake(-1);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("INVALID_ARGUMENT"), error.message);
-        }
-    });
-
-    it('stake when paused', async () => {
-        try {
-            await stakingService.pause();
-            await stakeAndVerify(10, 10);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("Pausable: paused"), error.message);
-        }
-    });
-
-    it('unstake when paused and stake after unpause', async () => {
-        await stakeAndVerify(10, 10);
-        await stakingService.pause();
-        await unstakeAndVerify(4, 6);
-
-        await stakingService.unpause();
-        await stakeAndVerify(14, 20);
-        await unstakeAndVerify(5, 15);
-        await stakingService.pause();
-        await unstakeAndVerify(15, 0);
-    });
-
-    it('stake not allowed amount', async () => {
-        await stakingService.stakeFrom(accounts[3], toWei(toBN(49)), { from: accounts[2] });
-        assert.equal(49, fromWei((await stakingService.stakers(accounts[3])).amount), "staked amount");
-        assert.equal(49, fromWei(await stakingToken.balanceOf(stakingService.address)), "stakingService balance");
-        assert.equal(51, fromWei(await stakingToken.balanceOf(accounts[3])), "account3 balance");
-
-        try {
-            await stakingService.stakeFrom(accounts[3], toWei(toBN(2)), { from: accounts[2] });
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("transfer amount exceeds allowance"), error.message);
-        }
-    });
-
-    it('stake when not enough balance', async () => {
-        await stakingService.stakeFrom(accounts[4], toWei(toBN(49)), { from: accounts[2] });
-        assert.equal(49, fromWei((await stakingService.stakers(accounts[4])).amount), "staked amount");
-        assert.equal(49, fromWei(await stakingToken.balanceOf(stakingService.address)), "stakingService balance");
-        assert.equal(1, fromWei(await stakingToken.balanceOf(accounts[4])), "account4 balance");
-
-        try {
-            await stakingService.stakeFrom(accounts[4], toWei(toBN(2)), { from: accounts[2] });
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("transfer amount exceeds balance"), error.message);
-        }
-    });
-
-    it('total staked', async () => {
-        await stakingService.stakeFrom(accounts[1], toWei(toBN(40)), { from: accounts[2] });
-        assert.equal(40, fromWei((await stakingService.state()).totalStaked), "totalStaked");
-        assert.equal(0, fromWei((await stakingService.state()).historicalRewardRate), "totalStaked");
-
-        await stakingService.stakeFrom(accounts[3], toWei(toBN(20)), { from: accounts[2] });
-        await stakingService.unstake(toWei(toBN(5)), { from: accounts[1] });
-        assert.equal(55, fromWei((await stakingService.state()).totalStaked), "totalStaked");
-        assert.equal(0, fromWei((await stakingService.state()).historicalRewardRate), "totalStaked");
-
-        await stakingService.stakeFrom(accounts[4], toWei(toBN(30)), { from: accounts[2] });
-        await stakingService.unstake(toWei(toBN(5)), { from: accounts[3] });
-        assert.equal(80, fromWei((await stakingService.state()).totalStaked), "totalStaked");
-        assert.equal(0, fromWei((await stakingService.state()).historicalRewardRate), "totalStaked");
-    });
-
-    async function getStakedBalance() {
-        return (await stakingService.stakers(accounts[1])).amount;
-    }
-
-    async function verifyStakedAmount(expectedBalance) {
-        assert.equal(expectedBalance, fromWei(await getStakedBalance()), "staked amount");
-        assert.equal(expectedBalance, fromWei(await stakingToken.balanceOf(stakingService.address)), "stakingService balance");
-        assert.equal(initialBalance - expectedBalance, fromWei(await stakingToken.balanceOf(accounts[1])), "account1 balance");
-    }
-
-    async function stake(amountToStake) {
-        return await stakingService.stakeFrom(accounts[1], toWei(toBN(amountToStake)), { from: accounts[2] });
-    }
-
-    async function unstake(amountToUnstake) {
-        return await stakingService.unstake(toWei(toBN(amountToUnstake)), { from: accounts[1] });
-    }
-
-    async function stakeAndVerify(amountToStake, expectedBalance) {
-        let tx = await stake(amountToStake);
-        await verifyStakedAmount(expectedBalance);
-        truffleAssert.eventEmitted(tx, 'Staked', (ev) => {
-            return ev.owner === accounts[1] && fromWei(ev.amount) === amountToStake.toString();
+    function makeSuite(name, tests) {
+        describe(`Test: ${name}`, function () {
+            before(async () => {
+                // snaphot must be taken before each test because of the issue in ganache
+                // evm_revert also deletes the saved snapshot
+                // https://github.com/trufflesuite/ganache-cli/issues/138
+                snapshotId = await rpcCommand("evm_snapshot");
+                //await verifyStakedAmount(0); TODO
+            });
+            tests();
+            after(async () => {
+                await rpcCommand("evm_revert", [snapshotId]);
+                errorMessage = "";
+                tx = null;
+            });
         });
     }
 
-    async function unstakeAndVerify(amountToUnstake, expectedBalance) {
-        let tx = await unstake(amountToUnstake);
-        await verifyStakedAmount(expectedBalance);
-        truffleAssert.eventEmitted(tx, 'Unstaked', (ev) => {
-            return ev.owner === accounts[1] && fromWei(ev.amount) === amountToUnstake.toString();
+    makeSuite('Successful stake for user', () => {
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+        stake(10, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 10);
+        verifyUserBalanceAndStakedAmount(accounts[1], 990, 10);
+        verifyStakingServiceBalanceAndTotalStaked(10);
+    });
+
+    makeSuite('User can stake multiple times', () => {
+        stake(30, accounts[1]);
+        stake(20, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 20);
+        verifyUserBalanceAndStakedAmount(accounts[1], 950, 50);
+        verifyStakingServiceBalanceAndTotalStaked(50);
+    });
+
+    makeSuite('Staking is not available when StakingService paused', () => {
+        pauseStakingService();
+        stake(15, accounts[1]);
+        checkErrorOccurred("Pausable: paused");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Staking is available when StakingService unpaused after pause', () => {
+        pauseStakingService();
+        unpauseStakingService();
+        stake(3, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 3);
+        verifyUserBalanceAndStakedAmount(accounts[1], 997, 3);
+        verifyStakingServiceBalanceAndTotalStaked(3);
+    });
+
+    makeSuite('Error occurred when user stake more than approved', () => {
+        stake(501, accounts[1]);
+        checkErrorOccurred("ERC20: transfer amount exceeds allowance");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Error occurred when user stake more than balance', () => {
+        verifyUserBalanceAndStakedAmount(accounts[4], 50, 0);
+        stake(51, accounts[4]);
+        checkErrorOccurred("ERC20: transfer amount exceeds balance");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[4], 50, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('User can stake 0 amount', () => {
+        stake(0, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 0);
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Error occurred when user stake negative amount', () => {
+        stake(-1, accounts[1]);
+        checkErrorOccurred("INVALID_ARGUMENT");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('TotalStaked accumulate all users staked amount', () => {
+        stake(4, accounts[1]);
+        stake(5, accounts[3]);
+        stake(1, accounts[4]);
+        verifyStakingServiceBalanceAndTotalStaked(10);
+    });
+
+    makeSuite('User can stake after unstaking', () => {
+        stake(30, accounts[1]);
+        unstake(10, accounts[1]);
+        stake(5, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 5);
+        verifyUserBalanceAndStakedAmount(accounts[1], 975, 25);
+        verifyStakingServiceBalanceAndTotalStaked(25);
+    });
+
+    makeSuite('Successful unstake for user', () => {
+        stake(20, accounts[1]);
+        unstake(20, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 20);
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('User can unstake in multiple steps', () => {
+        stake(20, accounts[1]);
+        unstake(7, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 7);
+        verifyUserBalanceAndStakedAmount(accounts[1], 987, 13);
+        verifyStakingServiceBalanceAndTotalStaked(13);
+        unstake(13, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 13);
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Unstaking is available when StakingService paused', () => {
+        stake(20, accounts[1]);
+        pauseStakingService();
+        unstake(15, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 15);
+        verifyUserBalanceAndStakedAmount(accounts[1], 995, 5);
+        verifyStakingServiceBalanceAndTotalStaked(5);
+    });
+
+    makeSuite('Error occurred when user unstake without staking', () => {
+        unstake(15, accounts[1]);
+        checkErrorOccurred("NMXSTKSRV: NOT_ENOUGH_STAKED");
+        checkStakingEventNotEmitted('Unstaked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Error occurred when user unstake more than staked', () => {
+        stake(20, accounts[1]);
+        unstake(21, accounts[1]);
+        checkErrorOccurred("NMXSTKSRV: NOT_ENOUGH_STAKED");
+        checkStakingEventNotEmitted('Unstaked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 980, 20);
+        verifyStakingServiceBalanceAndTotalStaked(20);
+    });
+
+    makeSuite('User can unstake 0 amount', () => {
+        stake(20, accounts[1]);
+        unstake(0, accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 0);
+        verifyUserBalanceAndStakedAmount(accounts[1], 980, 20);
+        verifyStakingServiceBalanceAndTotalStaked(20);
+    });
+
+    makeSuite('Error occurred when user unstake negative amount', () => {
+        stake(5, accounts[1]);
+        unstake(-1, accounts[1]);
+        checkErrorOccurred("INVALID_ARGUMENT");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 995, 5);
+        verifyStakingServiceBalanceAndTotalStaked(5);
+    });
+
+    makeSuite('TotalStaked accumulate users unstaked amount', () => {
+        stake(14, accounts[1]);
+        stake(15, accounts[3]);
+        stake(11, accounts[4]);
+        unstake(4, accounts[1]);
+        unstake(5, accounts[3]);
+        unstake(1, accounts[4]);
+        verifyStakingServiceBalanceAndTotalStaked(30);
+    });
+
+    makeSuite('User can stake for yourself with using stakeFrom', () => {
+        stakeFrom(5, accounts[1], accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 5);
+        verifyUserBalanceAndStakedAmount(accounts[1], 995, 5);
+        verifyStakingServiceBalanceAndTotalStaked(5);
+    });
+
+    makeSuite('Other user can stake if approved balance is enough', () => {
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        stakeFrom(5, accounts[1], accounts[3]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 5);
+        verifyUserBalanceAndStakedAmount(accounts[1], 995, 5);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(5);
+    });
+
+    makeSuite('Other user can stake multiple times if approved balance is enough', () => {
+        stakeFrom(5, accounts[1], accounts[3]);
+        stakeFrom(10, accounts[1], accounts[3]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 10);
+        verifyUserBalanceAndStakedAmount(accounts[1], 985, 15);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(15);
+    });
+
+    makeSuite('StakeFrom is not available when StakingService paused', () => {
+        pauseStakingService();
+        stakeFrom(5, accounts[1], accounts[3]);
+        checkErrorOccurred("Pausable: paused");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Error occurred when other user stakeFrom more than approved', () => {
+        stakeFrom(501, accounts[1], accounts[3]);
+        checkErrorOccurred("ERC20: transfer amount exceeds allowance");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Error occurred when other user stakeFrom more than balance', () => {
+        verifyUserBalanceAndStakedAmount(accounts[4], 50, 0);
+        stakeFrom(51, accounts[4], accounts[3]);
+        checkErrorOccurred("ERC20: transfer amount exceeds balance");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[4], 50, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Other user can stakeFrom 0 amount', () => {
+        stakeFrom(0, accounts[1], accounts[3]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Staked', accounts[1], 0);
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('Error occurred when other user stakeFrom negative amount', () => {
+        stakeFrom(-1, accounts[1], accounts[3]);
+        checkErrorOccurred("INVALID_ARGUMENT");
+        checkStakingEventNotEmitted('Staked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('User can unstake to yourself with using unstakeTo', () => {
+        stake(20, accounts[1]);
+        unstakeTo(20, accounts[1], accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 20);
+        verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('User can unstake to other address with using unstakeTo', () => {
+        stake(20, accounts[1]);
+        unstakeTo(20, accounts[3], accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 20);
+        verifyUserBalanceAndStakedAmount(accounts[1], 980, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 120, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('User can unstake to other address with using unstakeTo in 2 steps', () => {
+        stake(20, accounts[1]);
+        unstakeTo(12, accounts[3], accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 12);
+        verifyUserBalanceAndStakedAmount(accounts[1], 980, 8);
+        verifyUserBalanceAndStakedAmount(accounts[3], 112, 0);
+        verifyStakingServiceBalanceAndTotalStaked(8);
+        unstakeTo(8, accounts[3], accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 8);
+        verifyUserBalanceAndStakedAmount(accounts[1], 980, 0);
+        verifyUserBalanceAndStakedAmount(accounts[3], 120, 0);
+        verifyStakingServiceBalanceAndTotalStaked(0);
+    });
+
+    makeSuite('User can unstake to other address with using unstakeTo when service paused', () => {
+        stake(30, accounts[1]);
+        pauseStakingService();
+        unstakeTo(15, accounts[3], accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 15);
+        verifyUserBalanceAndStakedAmount(accounts[1], 970, 15);
+        verifyUserBalanceAndStakedAmount(accounts[3], 115, 0);
+        verifyStakingServiceBalanceAndTotalStaked(15);
+    });
+
+    makeSuite('Error occurred when user unstakeTo more than staked', () => {
+        stake(10, accounts[1]);
+        unstakeTo(11, accounts[3], accounts[1]);
+        checkErrorOccurred("NMXSTKSRV: NOT_ENOUGH_STAKED");
+        checkStakingEventNotEmitted('Unstaked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 990, 10);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(10);
+    });
+
+    makeSuite('User can unstakeTo 0 amount', () => {
+        stake(10, accounts[1]);
+        unstakeTo(0, accounts[3], accounts[1]);
+        errorNotOccurred();
+        checkStakingEventEmitted('Unstaked', accounts[1], 0);
+        verifyUserBalanceAndStakedAmount(accounts[1], 990, 10);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(10);
+    });
+
+    makeSuite('Error occurred whe user unstakeTo negative amount', () => {
+        stake(10, accounts[1]);
+        unstakeTo(-1, accounts[3], accounts[1]);
+        checkErrorOccurred("INVALID_ARGUMENT");
+        checkStakingEventNotEmitted('Unstaked');
+        verifyUserBalanceAndStakedAmount(accounts[1], 990, 10);
+        verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
+        verifyStakingServiceBalanceAndTotalStaked(10);
+    });
+
+    function stake(amountToStake, fromAddress) {
+        step(`Stake ${amountToStake} from ${fromAddress}`, async () => {
+            try {
+                tx = await stakingService.stake(toWei(toBN(amountToStake)), {from: fromAddress});
+            } catch (error) {
+                tx = null;
+                errorMessage = error.message;
+            }
+        });
+    }
+
+    function stakeFrom(amountToStake, ownerAddress, fromAddress) {
+        step(`StakeFrom ${amountToStake} for ${ownerAddress} from ${fromAddress}`, async () => {
+            try {
+                tx = await stakingService.stakeFrom(ownerAddress, toWei(toBN(amountToStake)), {from: fromAddress});
+            } catch (error) {
+                tx = null;
+                errorMessage = error.message;
+            }
+        });
+    }
+
+    function unstake(amountToUnstake, fromAddress) {
+        step(`Unstake ${amountToUnstake} from ${fromAddress}`, async () => {
+            try {
+                tx = await stakingService.unstake(toWei(toBN(amountToUnstake)),  {from: fromAddress});
+            } catch (error) {
+                tx = null;
+                errorMessage = error.message;
+            }
+        });
+    }
+
+    function unstakeTo(amountToUnstake, toAddress, fromAddress) {
+        step(`UnstakeTo ${amountToUnstake} to ${toAddress} from ${fromAddress}`, async () => {
+            try {
+                tx = await stakingService.unstakeTo(toAddress, toWei(toBN(amountToUnstake)),  {from: fromAddress});
+            } catch (error) {
+                tx = null;
+                errorMessage = error.message;
+            }
+        });
+    }
+
+    function checkErrorOccurred(expectedMessage) {
+        step(`Check that error occurred with message "${expectedMessage}"`, async () => {
+            await assert(errorMessage.includes(expectedMessage), errorMessage);
+        });
+    }
+
+    function errorNotOccurred() {
+        step(`Check that error not occurred`, async () => {
+            await assert.equal('', errorMessage);
+        });
+    }
+
+    function checkStakingEventEmitted(eventName, owner, amount) {
+        step(`Check "${eventName}" event emitted with params: owner=${owner}, amount=${amount}`, async () => {
+            truffleAssert.eventEmitted(tx, eventName, (ev) => {
+                return ev.owner === owner && fromWei(ev.amount) === amount.toString();
+            });
+        });
+    }
+
+    function checkStakingEventNotEmitted(eventName) {
+        step(`Check "${eventName}" event not emitted`, async () => {
+            if (tx === null) {
+                return;
+            }
+            truffleAssert.eventNotEmitted(tx, eventName);
+        });
+    }
+
+    function verifyUserBalanceAndStakedAmount(address, balance, stakedAmount) {
+        verifyUserBalance(address, balance);
+        verifyUserStakedAmount(address, stakedAmount);
+    }
+
+    function verifyUserBalance(address, balance) {
+        step(`User "${address}" balance is "${balance}"`, async () => {
+           await assert.equal(balance, fromWei(await stakingToken.balanceOf(address)), "user balance");
+        });
+    }
+
+    function verifyUserStakedAmount(address, stakedAmount) {
+        step(`User "${address}" staked amount is "${stakedAmount}"`, async () => {
+            await assert.equal(stakedAmount, fromWei((await stakingService.stakers(address)).amount), "stakedAmount");
+        });
+    }
+
+    function verifyStakingServiceBalanceAndTotalStaked(totalStaked) {
+        verifyStakingServiceBalance(totalStaked);
+        verifyTotalStaked(totalStaked);
+    }
+
+    function verifyStakingServiceBalance(balance) {
+        step(`StakingService balance is "${balance}"`, async () => {
+            await assert.equal(balance, fromWei(await stakingToken.balanceOf(stakingService.address)), "stakingService balance");
+        });
+    }
+
+    function verifyTotalStaked(totalStaked) {
+        step(`StakingService totalStaked is "${totalStaked}"`, async () => {
+            await assert.equal(totalStaked, fromWei((await stakingService.state()).totalStaked), "totalStaked");
+        });
+    }
+
+    function pauseStakingService() {
+        step(`Pause StakingService"`, async () => {
+            await stakingService.pause();
+        });
+    }
+
+    function unpauseStakingService() {
+        step(`Unpause StakingService"`, async () => {
+            await stakingService.unpause();
         });
     }
 
