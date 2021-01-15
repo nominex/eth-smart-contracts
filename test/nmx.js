@@ -1,7 +1,6 @@
 const Nmx = artifacts.require('Nmx');
 const MintScheduleStub = artifacts.require('MintScheduleStub');
-const {signData} = require("../../lib/utils.js");
-const ZERO = web3.utils.toBN(0);
+const { signData, ZERO } = require("../../lib/utils.js");
 
 contract('Nmx - initializing', accounts => {
     let nmx;
@@ -19,7 +18,7 @@ contract('Nmx - initializing', accounts => {
     it('default state initialized with 0 nextTickSupply', async () => {
         await nmx.transferPoolOwnership(0, accounts[0]);
         const rewardRate = await nmx.supplyNmx.call();
-        assert(rewardRate.eq(ZERO), `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`);
+        assert(rewardRate.isZero(), `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`);
     });
 
     it('primary state initialized with non 0 nextTickSupply', async () => {
@@ -101,7 +100,7 @@ contract('Nmx - transfer pool ownership', accounts => {
         await nmx.transferPoolOwnership(1, accounts[0]);
         await nmx.transferPoolOwnership(1, accounts[1]);
         const rewardRate = await nmx.supplyNmx.call();
-        assert(rewardRate.eq(ZERO), `Unexpected rewardRate after pool ownership loosing ${rewardRate}`);
+        assert(rewardRate.isZero(), `Unexpected rewardRate after pool ownership loosing ${rewardRate}`);
     });
 });
 
@@ -118,7 +117,7 @@ contract('Nmx - supplyNmx', accounts => {
 
     it('arbitrary caller got 0', async () => {
         const rewardRate = await nmx.supplyNmx.call({ from: accounts[6] });
-        assert(rewardRate.eq(ZERO), `Unexpected rewardRate for arbitrary caller ${rewardRate}`);
+        assert(rewardRate.isZero(), `Unexpected rewardRate for arbitrary caller ${rewardRate}`);
     });
 
     it('pool owner got gt 0', async () => {
@@ -239,7 +238,7 @@ contract('Nmx - permit', async accounts => {
         const sign = await signData(accounts[0], typedData);
         assert(ZERO.eq(await nmx.allowance(accounts[0], accounts[1])));
         await nmx.permit(permitInfo.owner, permitInfo.spender, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s);
-        assert(!web3.utils.toBN(permitInfo.value).eq(ZERO));
+        assert(!web3.utils.toBN(permitInfo.value).isZero());
         assert(web3.utils.toBN(permitInfo.value).eq(await nmx.allowance(accounts[0], accounts[1])));
     });
 

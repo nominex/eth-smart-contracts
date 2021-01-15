@@ -1,12 +1,12 @@
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const StakingService = artifacts.require("StakingService");
-const {rpcCommand, signData} = require("../../lib/utils.js");
+const {rpcCommand, signData, ZERO} = require("../../lib/utils.js");
 const truffleAssert = require('truffle-assertions');
 
-let toBN = web3.utils.toBN;
-let toWei = web3.utils.toWei;
-let fromWei = web3.utils.fromWei;
+const toBN = web3.utils.toBN;
+const toWei = web3.utils.toWei;
+const fromWei = web3.utils.fromWei;
 
 contract('StakingService#claimReward', (accounts) => {
 
@@ -30,6 +30,9 @@ contract('StakingService#claimReward', (accounts) => {
     });
 
     beforeEach(async () => {
+        // snaphot must be taken before each test because of the issue in ganache
+        // evm_revert also deletes the saved snapshot
+        // https://github.com/trufflesuite/ganache-cli/issues/138
         snapshotId = await rpcCommand("evm_snapshot");
     });
 
@@ -37,64 +40,67 @@ contract('StakingService#claimReward', (accounts) => {
         await rpcCommand("evm_revert", [snapshotId]);
     });
 
-    it('try to claim reward without staking', async () => {
+    it('reward without staking gives no changes', async () => {
         await claimRewardAndVerify(user, 0, 0);
     });
 
-    it('claim first reward', async () => {
+    it('reward after one stake is correct', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(6)));
-        await claimRewardAndVerify(user, 0.0625 * 6, 0.0625 * 6);
+        await claimRewardAndVerify(user, (1 / (10 + 6)) * 6, (1 / (10 + 6)) * 6);
     });
 
-    it('claim reward after partial unstake', async () => {
+    it('reward after partial unstake is correct ', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await stakingService.unstake(toWei(toBN(4)), {from: user});
-        await claimRewardAndVerify(user, 0.05 * 10 + 0.0625 * 6, 0.05 * 10 + 0.0625 * 6);
+        await claimRewardAndVerify(user, (1 / (10 + 10)) * 10 + (1 / (10 + 6)) * 6, (1 / (10 + 10)) * 10 + (1 / (10 + 6)) * 6);
     });
 
-    it('can claim prize after exiting staking program', async () => {
+    it('reward after full unstake is correct', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await stakingService.unstake(toWei(toBN(10)), {from: user});
-        await claimRewardAndVerify(user, 0.05 * 10, 0.05 * 10);
+        await claimRewardAndVerify(user, (1 / (10 + 10)) * 10, (1 / (10 + 10)) * 10);
     });
 
-    it('rewards are not credited after exiting staking program', async () => {
+    it('no reward credited after exiting staking program', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await stakingService.unstake(toWei(toBN(10)), {from: user});
         await stakingService.claimReward({from: user});
-        await claimRewardAndVerify(user, 0.05 * 10, 0);
+        await claimRewardAndVerify(user, (1 / (10 + 10)) * 10, 0);
     });
 
-    it('claim reward twice in a row at different times', async () => {
+    it('total amount of few rewards is correct', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await stakingService.claimReward({from: user});
-        await claimRewardAndVerify(user, 0.05 * 10 * 2, 0.05 * 10);
+        await claimRewardAndVerify(user, (1 / (10 + 10)) * 10 * 2, (1 / (10 + 10)) * 10);
     });
 
-    it('claim reward twice in a row at the same times', async () => {
+    it('total amount of few rewards is correct when Nmx mint schedule is over', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await stakingService.claimReward({from: user});
         await nmx.setSupply(0);
-        await claimRewardAndVerify(user, 0.05 * 10, 0);
+        await claimRewardAndVerify(user, (1 / (10 + 10)) * 10, 0);
     });
 
-    it('claim reward with first stake at the same times', async () => {
+    it('no reward if no nmx supplied to the service', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await nmx.setSupply(0);
         await stakingService.claimReward({from: user});
         await claimRewardAndVerify(user, 0, 0);
     });
 
-    it('claim reward while paused', async () => {
+    it('reward can be claimed if the service is on a pause', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await stakingService.updateHistoricalRewardRate();
         await stakingService.pause({from: accounts[0]});
-        await claimRewardAndVerify(user, 0.05 * 10, 0.05 * 10);
+        await claimRewardAndVerify(user, (1 / (10 + 10)) * 10, (1 / (10 + 10)) * 10);
     });
 
     async function claimRewardAndVerify(user, nmxBalance, rewardAmount) {
+        const initialBalance = await nmx.balanceOf(user);
         let tx = await stakingService.claimReward({from: user});
-        assert.equal(nmxBalance, fromWei(await nmx.balanceOf(user)), "nmx balance");
+        const finalBalance = await nmx.balanceOf(user);
+        assert.equal(nmxBalance, fromWei(finalBalance), "nmx balance");
+        assert.equal(rewardAmount, fromWei(finalBalance.sub(initialBalance)), `reward amount`)
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
             return ev.from === user && ev.to === user && fromWei(ev.amount) === rewardAmount.toString();
         });
@@ -107,34 +113,38 @@ contract('StakingService#claimWithAuthorization', async accounts => {
     let nmx;
     let stakingService;
     let snapshotId;
-    let user;
+    const rewardOwner = accounts[3];
+    const rewardSpender = accounts[0];
 
     before(async () => {
         nmx = await MockedNmxToken.new();
         let stakingToken = await MockedStakingToken.new();
         stakingService = await StakingService.new(nmx.address, stakingToken.address, nmx.address);
 
-        user = accounts[1];
-        await stakingToken.transfer(user, toWei(toBN(500)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: user});
-
-        await stakingToken.transfer(accounts[3], toWei(toBN(500)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: accounts[3]});
-        await stakingService.stakeFrom(accounts[3], toWei(toBN(10)));
+        await stakingToken.transfer(rewardOwner, toWei(toBN(500)));
+        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: rewardOwner});
+        await stakingService.stakeFrom(rewardOwner, toWei(toBN(10)));
+        assert.notEqual(rewardOwner, rewardSpender, 'owner should be different to spender')
     });
 
     beforeEach(async () => {
+        // snaphot must be taken before each test because of the issue in ganache
+        // evm_revert also deletes the saved snapshot
+        // https://github.com/trufflesuite/ganache-cli/issues/138
         snapshotId = await rpcCommand("evm_snapshot");
+        assert.deepEqual(await nmx.balanceOf(rewardSpender), ZERO, 'initial rewardSpender Nmx balance');
+        assert.deepEqual(await nmx.balanceOf(rewardOwner), ZERO, 'initial rewardOwner Nmx balance');
     });
 
     afterEach(async () => {
+        assert.deepEqual(await nmx.balanceOf(rewardOwner), ZERO, 'final rewardOwner Nmx balance');
         await rpcCommand("evm_revert", [snapshotId]);
     });
 
     async function defaultPermitInfo(value) {
         return {
-            owner: accounts[0],
-            spender: user,
+            owner: rewardOwner,
+            spender: rewardSpender,
             value: value.toString(),
             deadline: Math.floor(Date.now() / 1000) + 120,
             nonce: 0,
@@ -187,160 +197,155 @@ contract('StakingService#claimWithAuthorization', async accounts => {
     };
 
     it('signAmount can be equal to nmxAmount', async () => {
-        let nmxAmount = toWei(toBN(0.05 * 8 * 1000), "milli");
+        let nmxAmount = toWei(toBN(0.8 * 1000), "milli");
         let signAmount = nmxAmount;
-        await stakingService.stakeFrom(user, toWei(toBN(10)));
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-        assert(nmxAmount.eq(await nmx.balanceOf(user)), "nmx balance");
+        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
-            return ev.from === user && ev.to === user && ev.amount.eq(nmxAmount);
+            return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
         });
     });
 
-    it('signAmount cannot be less than nmxAmount', async () => {
-        let nmxAmount = toWei(toBN(0.05 * 8 * 1000), "milli");
+    it('signAmount can not be less than nmxAmount', async () => {
+        let nmxAmount = toWei(toBN(0.8 * 1000), "milli");
         let signAmount = nmxAmount.subn(1);
-        await stakingService.stakeFrom(user, toWei(toBN(10)));
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
-            assert(error.message.includes('NMXSTKSRV: INVALID_NMX_AMOUNT'), error.message);
+            assert(error.message.includes('NMXSTKSRV: INVALID_NMX_AMOUNT'), `Unexpected error message ${error.message}`);
         }
     });
 
     it('cannot claim greater than the unclaimed reward', async () => {
-        let nmxAmount = toWei(toBN(0.05 * 10 * 1000), "milli").addn(1);
-        let signAmount = nmxAmount.addn(10);
-        await stakingService.stakeFrom(user, toWei(toBN(10)));
+        let nmxAmount = toWei(toBN(1 * 1000), "milli").addn(1);
+        let signAmount = nmxAmount;
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
             assert(error.message.includes('NMXSTKSRV: NOT_ENOUGH_BALANCE'), error.message);
         }
     });
 
-    it('reward is paid by nmxAmount (not by signedAmount)', async () => {
-        let nmxAmount = toWei(toBN(0.05 * 8 * 1000), "milli");
+    it('rewarded amount is nmxAmount (not signedAmount)', async () => {
+        let nmxAmount = toWei(toBN(0.8 * 1000), "milli");
         let signAmount = nmxAmount.addn(1);
-        await stakingService.stakeFrom(user, toWei(toBN(10)));
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-        assert(nmxAmount.eq(await nmx.balanceOf(user)), "nmx balance");
+        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
-            return ev.from === user && ev.to === user && ev.amount.eq(nmxAmount);
+            return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
         });
     });
 
     it('can claim whole reward', async () => {
-        let nmxAmount = toWei(toBN(0.05 * 10 * 1000), "milli");
+        let nmxAmount = toWei(toBN(1 * 1000), "milli");
         let signAmount = nmxAmount;
-        await stakingService.stakeFrom(user, toWei(toBN(10)));
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-        assert(nmxAmount.eq(await nmx.balanceOf(user)), "nmx balance");
+        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
-            return ev.from === user && ev.to === user && ev.amount.eq(nmxAmount);
+            return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
         });
     });
 
-    it('expired deadline', async () => {
+    it('error on expired deadline', async () => {
         const permitInfo = await defaultPermitInfo(1);
         permitInfo.deadline = 1;
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
             assert(error.message.includes('NMXSTKSRV: EXPIRED'), error.message);
         }
     });
 
-    it('incorrect nonce', async () => {
+    it('error on incorrect nonce', async () => {
         const permitInfo = await defaultPermitInfo(1);
         permitInfo.nonce++;
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
             assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
         }
     });
 
-    it('incorrect chainId', async () => {
+    it('error on incorrect chainId', async () => {
         const permitInfo = await defaultPermitInfo(1);
         permitInfo.chainId++;
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
             assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
         }
     });
 
-    it('incorrect verifyingContract address', async () => {
+    it('error on incorrect verifyingContract address', async () => {
         const permitInfo = await defaultPermitInfo(1);
         permitInfo.verifyingContract = accounts[0];
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
             assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
         }
     });
 
-    it('wrong signature', async () => {
+    it('error on wrong signature', async () => {
         const permitInfo = await defaultPermitInfo(1);
         const typedData = createPermitMessageData(permitInfo);
-        const sign = await signData(accounts[0], typedData);
+        const sign = await signData(permitInfo.owner, typedData);
         sign.v = sign.v >= 99 ? sign.v - 1 : sign.v + 1;
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
             assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
         }
     });
 
-    it('wrong signer', async () => {
+    it('error on wrong signer', async () => {
         const permitInfo = await defaultPermitInfo(1);
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(accounts[1], typedData);
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert(false, "Error not occurred")
+            assert.fail("Error not occurred")
         } catch (error) {
             assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
         }

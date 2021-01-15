@@ -193,8 +193,8 @@ contract StakingService is PausableByOwner {
         require(nmxAmount <= signedAmount, "NMXSTKSRV: INVALID_NMX_AMOUNT");
         verifySignature(owner, msg.sender, signedAmount, deadline, v, r, s);
 
-        Staker storage staker = updateStateAndStaker(msg.sender);
-        _claimReward(staker, msg.sender, msg.sender, nmxAmount);
+        Staker storage staker = updateStateAndStaker(owner);
+        _claimReward(staker, owner, msg.sender, nmxAmount);
     }
 
     function updateStateAndStaker(address stakerAddress) private returns (Staker storage staker) {

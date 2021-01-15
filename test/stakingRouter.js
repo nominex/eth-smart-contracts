@@ -1,6 +1,6 @@
 const StakingRouter = artifacts.require("StakingRouter");
 const NmxStub = artifacts.require("NmxStub");
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const { ZERO_ADDRESS } = require('../../lib/utils.js');
 
 contract('StakingRouter - changeStakingServiceShares - validation', (accounts) => {
     let router;
@@ -135,7 +135,7 @@ contract('StakingRouter - supplyNmx', (accounts) => {
     it('service actually got supply', async () => {
         await router.changeStakingServiceShares([accounts[0]], [1n << 64n]);
         const initialSupply = (await nmxStub.balanceOf(accounts[0]));
-        
+
         await router.supplyNmx();
         const finalSupply = (await nmxStub.balanceOf(accounts[0]));
         assert(initialSupply.lt(finalSupply), `Supply was not transferred to service account ${initialSupply} ${finalSupply}`);
@@ -144,7 +144,7 @@ contract('StakingRouter - supplyNmx', (accounts) => {
     it('transferred amount eq function result', async () => {
         await router.changeStakingServiceShares([accounts[0]], [1n << 64n]);
         const initialSupply = (await nmxStub.balanceOf(accounts[0]));
-        
+
         const supply = await router.supplyNmx.call(); // call to estimate supply
         await router.supplyNmx(); // actual transaction to transfer supply
         const finalSupply = (await nmxStub.balanceOf(accounts[0]));

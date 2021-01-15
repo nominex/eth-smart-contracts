@@ -8,7 +8,7 @@ contract MockedStakingToken is ERC20 {
 
     uint private constant TOTAL_SUPPLY = 10000 * (10**18);
 
-    constructor() public ERC20("Nominex LP", "NMXLP") {
+    constructor() ERC20("Nominex LP", "NMXLP") {
         _mint(msg.sender, TOTAL_SUPPLY);
     }
 
