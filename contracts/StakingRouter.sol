@@ -10,7 +10,7 @@ contract StakingRouter is Ownable, NmxSupplier {
     using ABDKMath64x64 for int128;
     address public nmx;
     mapping(address => int128) public serviceShares;
-    address[] public activeServices;
+    address[] activeServices;
     mapping(address => uint256) public pendingSupplies;
 
     constructor(address _nmx) {
@@ -52,6 +52,10 @@ contract StakingRouter is Ownable, NmxSupplier {
         bool transferred = IERC20(nmx).transfer(msg.sender, supply);
         require(transferred, "NMXSTKROU: NMX_FAILED_TRANSFER");
         return supply;
+    }
+
+    function activeServices() external returns (address[]) {
+        return activeServices;
     }
 
     function updatePendingSupplies() private {
