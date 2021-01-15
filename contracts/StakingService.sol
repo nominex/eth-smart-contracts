@@ -45,7 +45,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev to got minted NMX
      */
-    address nmxSupplier;
+    address public nmxSupplier;
     /**
      * @dev internal service state
      */
@@ -262,6 +262,10 @@ contract StakingService is PausableByOwner {
             state.historicalRewardRate +=
                 (currentNmxSupply * 10**18) /
                 state.totalStaked;
+    }
+
+    function changeNmxSupplier(address newNmxSupplier) external onlyOwner {
+        nmxSupplier = newNmxSupplier;
     }
 
     function totalStaked() external view returns (uint256) {
