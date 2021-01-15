@@ -265,10 +265,6 @@ contract StakingService is PausableByOwner {
     }
 
     function changeNmxSupplier(address newNmxSupplier) external onlyOwner {
-        require(
-            newNmxSupplier != nmxSupplier,
-            "NMXSTKSRV: new nmx supplier must differs from the old one"
-        );
         nmxSupplier = newNmxSupplier;
     }
 
