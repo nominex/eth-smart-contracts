@@ -9,12 +9,21 @@ const StakingService = artifacts.require("StakingService");
 const Nmx = artifacts.require("Nmx");
 const {ChainId, Token, TokenAmount, Pair, FACTORY_ADDRESS} = require("@uniswap/sdk");
 
+const contract = require("@truffle/contract");
+const provision = require("@truffle/provisioner");
 const {Command} = require('commander');
 
 const program = new Command();
 
 program.option('--tokenAddress <address>', 'token used with nmx to create liquidity pool');
 program.parse(process.argv);
+
+function requireContract(path, externalCfg) {
+    const contractData = require(path);
+    const contractInstance = contract(contractData);
+    provision(contractInstance, externalCfg || config);
+    return contractInstance;
+}
 
 module.exports = async (callback) => {
 
@@ -24,8 +33,8 @@ module.exports = async (callback) => {
     try {
         console.log("Creating new staking pool for token " + program.tokenAddress);
         const utils = require("../lib/utils");
-        const IUniswapV2Factory = utils.requireContract("@uniswap/v2-core/build/IUniswapV2Factory.json", config);
-        const IUniswapV2Router02 = utils.requireContract("@uniswap/v2-periphery/build/IUniswapV2Router02.json", config);
+        const IUniswapV2Factory = requireContract("@uniswap/v2-core/build/IUniswapV2Factory.json", config);
+        const IUniswapV2Router02 = requireContract("@uniswap/v2-periphery/build/IUniswapV2Router02.json", config);
 
         if (!program.tokenAddress) {
             callback("No adress given for lp token");
