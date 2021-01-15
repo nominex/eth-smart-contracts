@@ -1,4 +1,9 @@
 const MintSchedule = artifacts.require("MintSchedule");
+const Nmx = artifacts.require('Nmx');
+
+const toBN = web3.utils.toBN;
+const toWei = web3.utils.toWei;
+const fromWei = web3.utils.fromWei;
 
 const DAY = 24 * 60 * 60;
 
@@ -310,8 +315,6 @@ contract('MintSchedule', (accounts) => {
         await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[0]}); // 0.5
     });
 
-    
-
     async function test(state, timestamp, mintPool, expectedNmxSupply, expectedState) {
         let result = await mintSchedule.makeProgress(state, timestamp, mintPool);
 
@@ -326,5 +329,55 @@ contract('MintSchedule', (accounts) => {
 
         return result;
     }
+});
+
+contract('MintSchedule#totalSupply', (accounts) => {
+
+    let nmx;
+    let mintSchedule;
+
+    before(async () => {
+        nmx = await Nmx.deployed();
+        mintSchedule = await MintSchedule.deployed();
+    });
+
+    it('total supplied NMX less than 200kk', async () => {
+        let now = Math.floor((new Date()).getTime() / 1000);
+        let state = {
+            time: now,
+            itemIndex: 0,
+            cycleIndex: 0,
+            cycleStartTime: now,
+            nextTickSupply: (10000 * 10 ** 18) / DAY + ''
+        };
+
+        let totalSupply = toBN(0);
+
+        for (let i = 0; i < 102; i++) {
+            let newTime = state.time + DAY * 365;
+            let result0 = await mintSchedule.makeProgress(state, newTime, MINT_POOL_DEFAULT_VALUE);
+            let result1 = await mintSchedule.makeProgress(state, newTime, MINT_POOL_PRIMARY);
+            let result2 = await mintSchedule.makeProgress(state, newTime, MINT_POOL_BONUS);
+            let result3 = await mintSchedule.makeProgress(state, newTime, MINT_POOL_TEAM);
+            let result4 = await mintSchedule.makeProgress(state, newTime, MINT_POOL_NOMINEX);
+
+            let oneYearSupply = result0[0].add(result1[0]).add(result2[0]).add(result3[0]).add(result4[0]);
+            totalSupply = totalSupply.add(oneYearSupply);
+
+            state.time = parseInt(result0[1].time);
+            state.itemIndex = result0[1].itemIndex;
+            state.cycleIndex = result0[1].cycleIndex;
+            state.cycleStartTime = result0[1].cycleStartTime;
+            state.nextTickSupply = result0[1].nextTickSupply;
+
+            if (i === 101) {
+                assert(oneYearSupply.isZero(), "supply for 102 year = " + oneYearSupply)
+            }
+        }
+
+        let alreadyMintedNmx = await nmx.balanceOf(accounts[0]);
+        let totalSupplyWithMinted = totalSupply.add(alreadyMintedNmx);
+        assert(totalSupplyWithMinted.lte(toWei(toBN(200000000))), "total NMX supply = " + totalSupplyWithMinted);
+    });
 
 });
