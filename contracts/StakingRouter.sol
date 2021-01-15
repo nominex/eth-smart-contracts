@@ -54,7 +54,7 @@ contract StakingRouter is Ownable, NmxSupplier {
         return supply;
     }
 
-    function activeServices() external returns (address[]) {
+    function getActiveServices() external returns (address[] memory) {
         return activeServices;
     }
 
