@@ -377,7 +377,8 @@ contract('MintSchedule#totalSupply', (accounts) => {
 
         let alreadyMintedNmx = await nmx.balanceOf(accounts[0]);
         let totalSupplyWithMinted = totalSupply.add(alreadyMintedNmx);
-        assert(totalSupplyWithMinted.lte(toWei(toBN(200000000))), "total NMX supply = " + totalSupplyWithMinted);
+        console.log(`Total Nmx supply: ${totalSupplyWithMinted}`)
+        assert(totalSupplyWithMinted.lte(toWei(toBN(200000000))), `total NMX supply = ${totalSupplyWithMinted}`);
     });
 
 });
