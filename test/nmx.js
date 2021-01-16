@@ -56,19 +56,21 @@ contract('Nmx - transfer pool ownership', accounts => {
 
     it('transfer to current same pool owner fails', async () => {
         await nmx.transferPoolOwnership(1, accounts[0]);
-        let errorMsg = '';
-        try { await nmx.transferPoolOwnership(1, accounts[0]); } catch (e) {
-            errorMsg = e.message;
+        try {
+            await nmx.transferPoolOwnership(1, accounts[0]);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: new owner must differs from the old one"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes('NMX: new owner must differs from the old one'), `Unexpected errorMsg message: ${errorMsg}`);
     });
 
     it('arbitrary sender can not transfer ownership', async () => {
-        let errorMsg = '';
-        try { await nmx.transferPoolOwnership(1, accounts[1], { from: accounts[1] }); } catch (e) {
-            errorMsg = e.message;
+        try {
+            await nmx.transferPoolOwnership(1, accounts[1], { from: accounts[1] });
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: only owner can transfer pool ownership"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes('NMX: only owner can transfer pool ownership'), `Unexpected errorMsg message: ${errorMsg}`);
     });
 
     it('current pool owner can transfer ownership', async () => {
@@ -83,11 +85,13 @@ contract('Nmx - transfer pool ownership', accounts => {
 
     it('can not transfer ownership to owner of another pool', async () => {
         await nmx.transferPoolOwnership(1, accounts[1]);
-        let errorMsg = '';
-        try { await nmx.transferPoolOwnership(2, accounts[1]); } catch (e) {
-            errorMsg = e.message;
+        try {
+            await nmx.transferPoolOwnership(2, accounts[1]);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: every pool must have dedicated owner"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes('NMX: every pool must have dedicated owner'), `Unexpected errorMsg message: ${errorMsg}`);
+
     });
 
     it('address can receive ownership after transfering its own', async () => {
@@ -247,13 +251,13 @@ contract('Nmx - permit', async accounts => {
         permitInfo.deadline = 1;
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(accounts[0], typedData);
-        let errorMsg = '';
+
         try {
             await nmx.permit(permitInfo.owner, permitInfo.spender, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s);
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("NMX: deadline expired"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes("NMX: deadline expired"), `Unexpected error message ${errorMsg}`);
     });
 
     it('incorrect nonce', async () => {
@@ -261,13 +265,13 @@ contract('Nmx - permit', async accounts => {
         permitInfo.nonce++;
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(accounts[0], typedData);
-        let errorMsg = '';
+
         try {
             await nmx.permit(permitInfo.owner, permitInfo.spender, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s);
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("NMX: invalid signature"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes("NMX: invalid signature"), `Unexpected error message ${errorMsg}`);
     });
 
     it('incorrect chainId', async () => {
@@ -275,13 +279,13 @@ contract('Nmx - permit', async accounts => {
         permitInfo.chainId++;
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(accounts[0], typedData);
-        let errorMsg = '';
+
         try {
             await nmx.permit(permitInfo.owner, permitInfo.spender, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s);
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("NMX: invalid signature"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes("NMX: invalid signature"), `Unexpected error message ${errorMsg}`);
     });
 
     it('incorrect verifyingContract address', async () => {
@@ -289,13 +293,13 @@ contract('Nmx - permit', async accounts => {
         permitInfo.verifyingContract = accounts[0];
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(accounts[0], typedData);
-        let errorMsg = '';
+
         try {
             await nmx.permit(permitInfo.owner, permitInfo.spender, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s);
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("NMX: invalid signature"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes("NMX: invalid signature"), `Unexpected error message ${errorMsg}`);
     });
 
     it('wrong signature', async () => {
@@ -303,25 +307,26 @@ contract('Nmx - permit', async accounts => {
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(accounts[0], typedData);
         sign.v = sign.v >= 99 ? sign.v - 1 : sign.v + 1;
-        let errorMsg = '';
+
         try {
             await nmx.permit(permitInfo.owner, permitInfo.spender, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s);
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("NMX: invalid signature"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes("NMX: invalid signature"), `Unexpected error message ${errorMsg}`);
     });
 
     it('wrong signer', async () => {
         const permitInfo = await defaultPermitInfo();
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(accounts[1], typedData);
-        let errorMsg = '';
+
         try {
             await nmx.permit(permitInfo.owner, permitInfo.spender, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s);
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("NMX: invalid signature"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes("NMX: invalid signature"), `Unexpected error message ${errorMsg}`);
     });
+
 });

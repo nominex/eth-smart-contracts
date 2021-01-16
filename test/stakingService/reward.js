@@ -219,9 +219,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMXSTKSRV: INVALID_NMX_AMOUNT'), `Unexpected error message ${error.message}`);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMXSTKSRV: INVALID_NMX_AMOUNT"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -234,9 +234,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMXSTKSRV: NOT_ENOUGH_BALANCE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMXSTKSRV: NOT_ENOUGH_BALANCE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -276,9 +276,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMXSTKSRV: EXPIRED'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMXSTKSRV: EXPIRED"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -290,9 +290,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -304,9 +304,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -318,9 +318,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -332,9 +332,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -345,9 +345,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 

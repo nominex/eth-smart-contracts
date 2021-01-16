@@ -47,7 +47,6 @@ contract('StakingService#staking', (accounts) => {
     });
 
     afterEach(async () => {
-        console.log('after each DFASDF')
         await rpcCommand("evm_revert", [snapshotId]);
     });
 
@@ -60,21 +59,18 @@ contract('StakingService#staking', (accounts) => {
         await unstakeAndVerify(10, 0);
     });
 
-
     it('unstake more than staked', async () => {
-        console.log('unstake more than staked')
         try {
             await stakeAndVerify(10, 10);
             await unstake(11);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("NOT_ENOUGH_STAKED"), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NOT_ENOUGH_STAKED"), `Unexpected error message: ${e.message}`);
             await verifyStakedAmount(10);
         }
     });
 
     it('stake in 2 stages', async () => {
-        console.log('stake in 2 stages')
         await stakeAndVerify(10, 10);
         await stakeAndVerify(6, 16);
         await unstakeAndVerify(16, 0);
@@ -99,27 +95,27 @@ contract('StakingService#staking', (accounts) => {
     it('unstake with 0 balance', async () => {
         try {
             await unstake(1);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("NOT_ENOUGH_STAKED"), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NOT_ENOUGH_STAKED"), `Unexpected error message: ${e.message}`);
         }
     });
 
     it('stake negative amount', async () => {
         try {
             await stake(-1);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("INVALID_ARGUMENT"), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("INVALID_ARGUMENT"), `Unexpected error message: ${e.message}`);
         }
     });
 
     it('unstake negative amount', async () => {
         try {
             await unstake(-1);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("INVALID_ARGUMENT"), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("INVALID_ARGUMENT"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -127,9 +123,9 @@ contract('StakingService#staking', (accounts) => {
         try {
             await stakingService.pause();
             await stakeAndVerify(10, 10);
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("Pausable: paused"), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("Pausable: paused"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -153,9 +149,9 @@ contract('StakingService#staking', (accounts) => {
 
         try {
             await stakingService.stakeFrom(accounts[3], toWei(toBN(2)), { from: accounts[2] });
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("transfer amount exceeds allowance"), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("transfer amount exceeds allowance"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -167,9 +163,9 @@ contract('StakingService#staking', (accounts) => {
 
         try {
             await stakingService.stakeFrom(accounts[4], toWei(toBN(2)), { from: accounts[2] });
-            throw new Error("Error not occurred");
-        } catch (error) {
-            assert(error.message.includes("transfer amount exceeds balance"), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("transfer amount exceeds balance"), `Unexpected error message: ${e.message}`);
         }
     });
 

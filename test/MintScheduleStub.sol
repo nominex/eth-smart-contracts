@@ -6,12 +6,13 @@ import "../contracts/Lib.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract MintScheduleStub {
+
     function makeProgress(
         MintScheduleState memory scheduleState,
         uint40 time,
         MintPool pool
     ) external view returns (uint256 nmxSupply, MintScheduleState memory) {
-        nmxSupply = scheduleState.nextTickSupply;        
+        nmxSupply = scheduleState.nextTickSupply;
 
         scheduleState.time = uint40(block.timestamp);
         scheduleState.itemIndex += 1;
@@ -24,4 +25,5 @@ contract MintScheduleStub {
 
         return (nmxSupply, scheduleState);
     }
+
 }

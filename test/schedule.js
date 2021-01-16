@@ -282,33 +282,30 @@ contract('MintSchedule', (accounts) => {
     });
 
     it('outputRate must be ge 0', async () => {
-        let errorMsg = '';
         try {
             await mintSchedule.setOutputRate((-5n << 64n) / 10n); // -0.5
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("NMXMINTSCH: outputRate must be ge 0"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes('NMXMINTSCH: outputRate must be ge 0'), `Unexpected errorMsg message: ${errorMsg}`);
     });
 
     it('outputRate must be le 1<<64', async () => {
-        let errorMsg = '';
         try {
             await mintSchedule.setOutputRate((1n << 64n) + ((5n << 64n) / 10n));  // 1.5
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("outputRate must be le 1<<64"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes('outputRate must be le 1<<64'), `Unexpected errorMsg message: ${errorMsg}`);
     });
 
     it('outputRate can not be called by not the owner', async () => {
-        let errorMsg = '';
         try {
             await mintSchedule.setOutputRate(((5n << 64n) / 10n), {from: accounts[1]}); // 0.5
+            assert.fail("Error not occurred");
         } catch (e) {
-            errorMsg = e.message;
+            assert(e.message.includes("Ownable: caller is not the owner"), `Unexpected error message: ${e.message}`);
         }
-        assert(errorMsg.includes('Ownable: caller is not the owner'), `Unexpected errorMsg message: ${errorMsg}`);
     });
 
     it('outputRate can be called by the owner', async () => {
