@@ -126,7 +126,7 @@ module.exports = async (callback) => {
             config.logger.info(`Creating staking service for pair ${pairAddress}`);
             stakingService = await StakingService.new(nmx.address, pairAddress, stakingRouter.address);
             /*FIXME: add services that were created before*/
-            await stakingRouter.changeStakingServiceShares([stakingService.address], [1 << 64]);
+            await stakingRouter.changeStakingServiceShares([stakingService.address], [toBN(1).shln(64)]);
         }
         config.logger.info(`Staking service for pair ${pairAddress} has address ${stakingService.address}`);
         callback();
