@@ -29,8 +29,12 @@ contract StakingService is PausableByOwner {
     }
 
     bytes32 public DOMAIN_SEPARATOR;
+
     string private constant CLAIM_TYPE = "Claim(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
     bytes32 public CLAIM_TYPEHASH = keccak256(abi.encodePacked(CLAIM_TYPE));
+
+    string private constant UNSTAKE_TYPE = "Unstake(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
+    bytes32 public UNSTAKE_TYPEHASH = keccak256(abi.encodePacked(UNSTAKE_TYPE));
 
     mapping(address => uint256) public nonces;
 
@@ -63,7 +67,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev event when someone unstaked NMXLP
      */
-    event Unstaked(address indexed owner, uint256 amount);
+    event Unstaked(address indexed from, address indexed to, uint256 amount);
     /**
      * @dev event when someone is awarded NMX
      */
@@ -156,16 +160,33 @@ contract StakingService is PausableByOwner {
      * amount - new part of staked NMXLP
      */
     function unstake(uint256 amount) external {
-        unstakeTo(msg.sender, amount);
+        _unstake(msg.sender, msg.sender, amount);
     }
 
     function unstakeTo(address to, uint256 amount) public {
-        Staker storage staker = updateStateAndStaker(to);
+        _unstake(msg.sender, to, amount);
+    }
+
+    function unstakeWithAuthorization(
+        address owner,
+        uint256 amount,
+        uint256 signedAmount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s) external {
+        require(amount <= signedAmount, "NMXSTKSRV: INVALID_AMOUNT");
+        verifySignature(UNSTAKE_TYPEHASH, owner, msg.sender, signedAmount, deadline, v, r, s);
+        _unstake(owner, msg.sender, amount);
+    }
+
+    function _unstake(address from, address to, uint256 amount) private {
+        Staker storage staker = updateStateAndStaker(from);
         require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
         bool transferred = IERC20(stakingToken).transfer(to, amount);
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
 
-        emit Unstaked(to, amount);
+        emit Unstaked(from, to, amount);
         state.totalStaked -= amount;
         staker.amount -= amount;
     }
@@ -199,7 +220,7 @@ contract StakingService is PausableByOwner {
         bytes32 r,
         bytes32 s) external {
         require(nmxAmount <= signedAmount, "NMXSTKSRV: INVALID_NMX_AMOUNT");
-        verifySignature(owner, msg.sender, signedAmount, deadline, v, r, s);
+        verifySignature(CLAIM_TYPEHASH, owner, msg.sender, signedAmount, deadline, v, r, s);
 
         Staker storage staker = updateStateAndStaker(owner);
         _claimReward(staker, owner, msg.sender, nmxAmount);
@@ -225,7 +246,7 @@ contract StakingService is PausableByOwner {
         staker.unclaimedReward -= amount;
     }
 
-    function verifySignature(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) private {
+    function verifySignature(bytes32 typehash, address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) private {
         require(deadline >= block.timestamp, "NMXSTKSRV: EXPIRED");
         bytes32 digest =
         keccak256(
@@ -234,7 +255,7 @@ contract StakingService is PausableByOwner {
                 DOMAIN_SEPARATOR,
                 keccak256(
                     abi.encode(
-                        CLAIM_TYPEHASH,
+                        typehash,
                         owner,
                         spender,
                         value,

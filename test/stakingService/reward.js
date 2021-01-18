@@ -91,7 +91,7 @@ contract('StakingService#claimReward', (accounts) => {
     it('reward can be claimed if the service is on a pause', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
         await stakingService.updateHistoricalRewardRate();
-        await stakingService.pause({from: accounts[0]});
+        await stakingService.pause();
         await claimRewardAndVerify(user, (1 / (10 + 10)) * 10, (1 / (10 + 10)) * 10);
     });
 
@@ -172,7 +172,7 @@ contract('StakingService#claimRewardTo', (accounts) => {
     it('reward can be claimed if the service is on a pause', async () => {
         await stakingService.stakeFrom(user1, toWei(toBN(10)));
         await stakingService.updateHistoricalRewardRate();
-        await stakingService.pause({from: accounts[0]});
+        await stakingService.pause();
         await claimRewardToAndVerify(user1, user2, (1 / (10 + 10)) * 10, (1 / (10 + 10)) * 10);
     });
 
@@ -347,6 +347,22 @@ contract('StakingService#claimWithAuthorization', async accounts => {
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(permitInfo.owner, typedData);
 
+        let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
+        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
+        truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
+            return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
+        });
+    });
+
+    it('reward can be claimed if the service is on a pause', async () => {
+        let nmxAmount = toWei(toBN(1 * 1000), "milli");
+        let signAmount = nmxAmount;
+        const permitInfo = await defaultPermitInfo(signAmount);
+        const typedData = createPermitMessageData(permitInfo);
+        const sign = await signData(permitInfo.owner, typedData);
+
+        await stakingService.updateHistoricalRewardRate();
+        await stakingService.pause();
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
         assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
