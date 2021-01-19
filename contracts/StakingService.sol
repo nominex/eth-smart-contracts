@@ -171,14 +171,22 @@ contract StakingService is PausableByOwner {
     }
 
     /**
-     * @dev reward transfe
-     * emit Rewarded event
-     *
-     * amount - new part of staked NMXLP
+     * @dev get the whole reward for yourself
      */
     function claimReward() external returns (uint256) {
         Staker storage staker = updateStateAndStaker(msg.sender);
         _claimReward(staker, msg.sender, msg.sender, staker.unclaimedReward);
+        return staker.unclaimedReward;
+    }
+
+    /**
+     * @dev receive the entire reward to a different address
+     *
+     * @param to address to receive the award
+     */
+    function claimRewardTo(address to) external returns (uint256) {
+        Staker storage staker = updateStateAndStaker(msg.sender);
+        _claimReward(staker, msg.sender, to, staker.unclaimedReward);
         return staker.unclaimedReward;
     }
 

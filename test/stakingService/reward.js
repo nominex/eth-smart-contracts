@@ -13,14 +13,14 @@ contract('StakingService#claimReward', (accounts) => {
     let nmx;
     let stakingService;
     let snapshotId;
-    let user;
+
+    const user = accounts[1];
 
     before(async () => {
         nmx = await MockedNmxToken.new();
         let stakingToken = await MockedStakingToken.new();
         stakingService = await StakingService.new(nmx.address, stakingToken.address, nmx.address);
 
-        user = accounts[1];
         await stakingToken.transfer(user, toWei(toBN(500)));
         await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: user});
 
@@ -100,9 +100,94 @@ contract('StakingService#claimReward', (accounts) => {
         let tx = await stakingService.claimReward({from: user});
         const finalBalance = await nmx.balanceOf(user);
         assert.equal(nmxBalance, fromWei(finalBalance), "nmx balance");
-        assert.equal(rewardAmount, fromWei(finalBalance.sub(initialBalance)), `reward amount`)
+        assert.equal(rewardAmount, fromWei(finalBalance.sub(initialBalance)), `reward amount`);
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
             return ev.from === user && ev.to === user && fromWei(ev.amount) === rewardAmount.toString();
+        });
+    }
+
+});
+
+contract('StakingService#claimRewardTo', (accounts) => {
+
+    let nmx;
+    let stakingService;
+    let snapshotId;
+
+    const user1 = accounts[1];
+    const user2 = accounts[2];
+
+    before(async () => {
+        nmx = await MockedNmxToken.new();
+        let stakingToken = await MockedStakingToken.new();
+        stakingService = await StakingService.new(nmx.address, stakingToken.address, nmx.address);
+
+        await stakingToken.transfer(user1, toWei(toBN(500)));
+        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: user1});
+
+        await stakingToken.transfer(user2, toWei(toBN(500)));
+        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: user2});
+
+        await stakingToken.transfer(accounts[3], toWei(toBN(500)));
+        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: accounts[3]});
+        await stakingService.stakeFrom(accounts[3], toWei(toBN(10)));
+    });
+
+    beforeEach(async () => {
+        // snaphot must be taken before each test because of the issue in ganache
+        // evm_revert also deletes the saved snapshot
+        // https://github.com/trufflesuite/ganache-cli/issues/138
+        snapshotId = await rpcCommand("evm_snapshot");
+    });
+
+    afterEach(async () => {
+        await rpcCommand("evm_revert", [snapshotId]);
+    });
+
+    it('reward without staking gives no changes', async () => {
+        await claimRewardToAndVerify(user1, user2, 0, 0);
+    });
+
+    it('reward to yourself address', async () => {
+        await stakingService.stakeFrom(user1, toWei(toBN(6)));
+        await claimRewardToAndVerify(user1, user1, (1 / (10 + 6)) * 6, (1 / (10 + 6)) * 6);
+    });
+
+    it('reward to another address', async () => {
+        await stakingService.stakeFrom(user1, toWei(toBN(6)));
+        await claimRewardToAndVerify(user1, user2, (1 / (10 + 6)) * 6, (1 / (10 + 6)) * 6);
+    });
+
+    it('reward to another address with a non-zero balance', async () => {
+        await stakingService.stakeFrom(user1, toWei(toBN(6)));
+        await stakingService.stakeFrom(user2, toWei(toBN(4)));
+        await stakingService.claimRewardTo(user2, {from: user2});
+        await nmx.setSupply(0);
+
+        let firstReward = (1 / (10 + 6 + 4)) * 4;
+        let secondReward = (1 / (10 + 6)) * 6 + ((1 / (10 + 6 + 4)) * 6);
+        await claimRewardToAndVerify(user1, user2, firstReward + secondReward, secondReward);
+    });
+
+    it('reward can be claimed if the service is on a pause', async () => {
+        await stakingService.stakeFrom(user1, toWei(toBN(10)));
+        await stakingService.updateHistoricalRewardRate();
+        await stakingService.pause({from: accounts[0]});
+        await claimRewardToAndVerify(user1, user2, (1 / (10 + 10)) * 10, (1 / (10 + 10)) * 10);
+    });
+
+    async function claimRewardToAndVerify(from, to, nmxBalance, rewardAmount) {
+        const initialBalanceFrom = await nmx.balanceOf(from);
+        const initialBalanceTo = await nmx.balanceOf(to);
+        let tx = await stakingService.claimRewardTo(to, {from: from});
+        const finalBalanceFrom = await nmx.balanceOf(from);
+        const finalBalanceTo = await nmx.balanceOf(to);
+
+        assert.equal(nmxBalance, fromWei(finalBalanceTo), "nmx balance of 'to'");
+        assert.equal(rewardAmount, fromWei(finalBalanceTo.sub(initialBalanceTo)), `reward amount`);
+        if (from !== to) assert.deepEqual(initialBalanceFrom, finalBalanceFrom, "nmx balance of 'from'");
+        truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
+            return ev.from === from && ev.to === to && fromWei(ev.amount) === rewardAmount.toString();
         });
     }
 
@@ -113,6 +198,7 @@ contract('StakingService#claimWithAuthorization', async accounts => {
     let nmx;
     let stakingService;
     let snapshotId;
+
     const rewardOwner = accounts[3];
     const rewardSpender = accounts[0];
 
@@ -219,9 +305,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMXSTKSRV: INVALID_NMX_AMOUNT'), `Unexpected error message ${error.message}`);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMXSTKSRV: INVALID_NMX_AMOUNT"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -234,9 +320,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMXSTKSRV: NOT_ENOUGH_BALANCE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMXSTKSRV: NOT_ENOUGH_BALANCE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -276,9 +362,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMXSTKSRV: EXPIRED'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMXSTKSRV: EXPIRED"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -290,9 +376,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -304,9 +390,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -318,9 +404,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -332,9 +418,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 
@@ -345,9 +431,9 @@ contract('StakingService#claimWithAuthorization', async accounts => {
 
         try {
             await stakingService.claimWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-            assert.fail("Error not occurred")
-        } catch (error) {
-            assert(error.message.includes('NMX: INVALID_SIGNATURE'), error.message);
+            assert.fail("Error not occurred");
+        } catch (e) {
+            assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
         }
     });
 

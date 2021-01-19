@@ -51,8 +51,8 @@ contract('StakingService; Group: NmxSupplier', (accounts) => {
         step(`Change nmxSupplier by ${fromAddress} to ${newSupplier}`, async () => {
             try {
                 await stakingService.changeNmxSupplier(newSupplier, {from: fromAddress});
-            } catch (error) {
-                errorMessage = error.message;
+            } catch (e) {
+                errorMessage = e.message;
             }
         });
     }
