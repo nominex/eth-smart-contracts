@@ -100,7 +100,13 @@ module.exports = {
 
     compilers: {
         solc: {
-            version: "v0.7.6+commit.7338295f"
+            version: "v0.7.6+commit.7338295f",
+            settings: {
+                optimizer: {
+                    enabled: true,
+                    runs: 10000
+                }
+            }
         }
     },
     mocha: {
