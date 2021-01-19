@@ -107,7 +107,7 @@ contract StakingService is PausableByOwner {
      *
      * amount - new part of staked NMXLP
      */
-    function stake(uint256 amount) public whenNotPaused {
+    function stake(uint256 amount) external whenNotPaused {
         _stakeFrom(msg.sender, amount);
     }
 
@@ -127,7 +127,7 @@ contract StakingService is PausableByOwner {
             r,
             s
         );
-        stake(amount);
+        _stakeFrom(msg.sender, amount);
     }
 
     function stakeFrom(
