@@ -1,6 +1,6 @@
 const Nmx = artifacts.require('Nmx');
 const MintScheduleStub = artifacts.require('MintScheduleStub');
-const { signData, ZERO } = require("../../lib/utils.js");
+const { signData, ZERO } = require("../lib/utils.js");
 
 contract('Nmx - initializing', accounts => {
     let nmx;

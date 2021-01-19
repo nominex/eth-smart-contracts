@@ -1,6 +1,6 @@
 const StakingRouter = artifacts.require("StakingRouter");
 const NmxStub = artifacts.require("NmxStub");
-const { ZERO_ADDRESS } = require('../../lib/utils.js');
+const { ZERO_ADDRESS } = require('../lib/utils.js');
 
 contract('StakingRouter - changeStakingServiceShares - validation', (accounts) => {
 

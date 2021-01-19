@@ -338,7 +338,7 @@ contract('MintSchedule#totalSupply', (accounts) => {
         mintSchedule = await MintSchedule.deployed();
     });
 
-    it('total supplied NMX less than 200kk', async () => {
+    xit('total supplied NMX less than 200kk', async () => {
         let now = Math.floor((new Date()).getTime() / 1000);
         let state = {
             time: now,
