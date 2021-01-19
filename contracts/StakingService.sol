@@ -163,7 +163,7 @@ contract StakingService is PausableByOwner {
         _unstake(msg.sender, msg.sender, amount);
     }
 
-    function unstakeTo(address to, uint256 amount) public {
+    function unstakeTo(address to, uint256 amount) external {
         _unstake(msg.sender, to, amount);
     }
 
