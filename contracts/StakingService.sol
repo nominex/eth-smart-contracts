@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.7.0 <0.8.0;
+pragma abicoder v2;
 
 import "./NmxSupplier.sol";
+import "./Nmx.sol";
 import "./PausableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
@@ -22,10 +24,20 @@ contract StakingService is PausableByOwner {
      * @param reward total nmx amount user got as a reward
      */
     struct Staker {
+        address referrer;
         uint256 amount;
         uint128 initialRewardRate;
         uint128 reward;
         uint256 claimedReward;
+    }
+    /**
+     * @param referrer reward bonus multiplier for referrer
+     * @param referral reward bonus multiplier for referral
+     */
+    struct AffiliateBonusMultipliers {
+        uint256 stakedAmountInUsdt;
+        int128 referrer;
+        int128 referral;
     }
 
     bytes32 public DOMAIN_SEPARATOR;
@@ -61,6 +73,11 @@ contract StakingService is PausableByOwner {
     mapping(address => Staker) public stakers;
 
     /**
+     * @dev multipliers for additional bonuses for members of the referral program
+     */
+    AffiliateBonusMultipliers[] public affiliateBonusMultipliersArray;
+
+    /**
      * @dev event when someone is staked NMXLP
      */
     event Staked(address indexed owner, uint128 amount);
@@ -72,6 +89,14 @@ contract StakingService is PausableByOwner {
      * @dev event when someone is awarded NMX
      */
     event Rewarded(address indexed from, address indexed to, uint128 amount);
+    /**
+     * @dev event when someone receives an NMX from an affiliate referrer bonus
+     */
+    event ReferrerBonus(address indexed referrer, uint128 amount);
+    /**
+     * @dev event when someone receives an NMX from an affiliate referral bonus
+     */
+    event ReferralBonus(address indexed referral, uint128 amount);
 
     constructor(
         address _nmx,
@@ -99,6 +124,45 @@ contract StakingService is PausableByOwner {
             )
         );
 
+    }
+
+    function setReferrerBonusMultiplier(AffiliateBonusMultipliers[] calldata newMultipliersArray) external onlyOwner {
+        int128 maxMultiplier = ABDKMath64x64.fromInt(1);
+        uint256 prevStakedAmountInUsdt = 0;
+        for (uint256 i = 0; i < newMultipliersArray.length; i++) {
+            AffiliateBonusMultipliers calldata newMultiplier = newMultipliersArray[i];
+
+            if (i == 0) {
+                require(newMultiplier.stakedAmountInUsdt >= 0, "NMXSTKSRV: INVALID_FIRST_ITEM");
+            } else {
+                require(newMultiplier.stakedAmountInUsdt > prevStakedAmountInUsdt, "NMXSTKSRV: INVALID_ORDER");
+            }
+
+            require(
+                newMultiplier.referrer >= 0 && newMultiplier.referrer <= maxMultiplier,
+                "NMXSTKSRV: INVALID_REFERRER_BONUS_MULTIPLIER"
+            );
+            require(
+                newMultiplier.referral >= 0 && newMultiplier.referral <= maxMultiplier,
+                "NMXSTKSRV: INVALID_REFERRAL_BONUS_MULTIPLIER"
+            );
+
+            prevStakedAmountInUsdt = newMultiplier.stakedAmountInUsdt;
+        }
+
+        while(affiliateBonusMultipliersArray.length != 0) {
+            affiliateBonusMultipliersArray.pop();
+        }
+        for (uint256 i = 0; i < newMultipliersArray.length; i++) {
+            affiliateBonusMultipliersArray.push(newMultipliersArray[i]);
+        }
+    }
+
+    function setReferrer(address referrer) external {
+        Staker storage staker = stakers[tx.origin];
+        bool validReferrer = staker.referrer == address(0) && referrer != address(0) && tx.origin != referrer;
+        require(validReferrer, "NMXSTKSRV: INVALID_REFERRER");
+        staker.referrer = referrer;
     }
 
     /**
@@ -234,9 +298,54 @@ contract StakingService is PausableByOwner {
 
         uint128 unrewarded =
         ((state.historicalRewardRate - staker.initialRewardRate) *
-        uint128(staker.amount)) / 10**18;
+        uint128(staker.amount)) / 10 ** 18;
+
+        if (staker.referrer != address(0)) {
+            Staker storage referrer = stakers[staker.referrer];
+
+            int128 referrerMultiplier = getReferrerBonusMultiplier(referrer.amount);
+            int128 referralMultiplier = getReferralBonusMultiplier(staker.amount);
+            uint128 referrerBonus = uint128(ABDKMath64x64.mulu(referrerMultiplier, uint256(unrewarded)));
+            uint128 referralBonus = uint128(ABDKMath64x64.mulu(referralMultiplier, uint256(unrewarded)));
+
+            uint128 supplied = Nmx(nmx).requestAffiliateBonus(referrerBonus + referralBonus);
+            if (supplied < referrerBonus) {
+                referrerBonus = supplied;
+            }
+            supplied -= referrerBonus;
+            if (supplied < referralBonus) {
+                referralBonus = supplied;
+            }
+
+            emit ReferrerBonus(staker.referrer, referrerBonus);
+            referrer.reward += referrerBonus;
+
+            emit ReferralBonus(stakerAddress, referralBonus);
+            unrewarded += referralBonus;
+        }
+
         staker.initialRewardRate = state.historicalRewardRate;
         staker.reward += unrewarded;
+    }
+
+    function getReferrerBonusMultiplier(uint256 amount) private returns (int128 multiplier) {
+        return getMultipliers(amount).referrer;
+    }
+
+    function getReferralBonusMultiplier(uint256 amount) private returns (int128) {
+        return getMultipliers(amount).referral;
+    }
+
+    function getMultipliers(uint256 amount) private returns (AffiliateBonusMultipliers memory multipliers) {
+        uint256 amountInUsdt = amount; // todo
+        for (uint256 i = 0; i < affiliateBonusMultipliersArray.length; i++) {
+            AffiliateBonusMultipliers memory _multipliers = affiliateBonusMultipliersArray[i];
+            if (amountInUsdt >= _multipliers.stakedAmountInUsdt) {
+                multipliers = _multipliers;
+            } else {
+                break;
+            }
+        }
     }
 
     function _claimReward(Staker storage staker, address from, address to, uint128 amount) private {
@@ -292,8 +401,8 @@ contract StakingService is PausableByOwner {
         uint128 currentNmxSupply = uint128(NmxSupplier(nmxSupplier).supplyNmx());
         if (state.totalStaked != 0 && currentNmxSupply != 0)
             state.historicalRewardRate +=
-                (currentNmxSupply * 10**18) /
-                state.totalStaked;
+            (currentNmxSupply * 10 ** 18) /
+            state.totalStaked;
     }
 
     function changeNmxSupplier(address newNmxSupplier) external onlyOwner {

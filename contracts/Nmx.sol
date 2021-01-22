@@ -17,6 +17,10 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     mapping(address => MintPool) poolByOwner;
     address[5] poolOwners; // 5 - number of MintPool values
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
+    /// @dev additional pool for bonus payments for members of the referral program
+    uint256 public directAffiliatePoolBalance;
+    mapping(address => bool) public directAffiliatePoolOwnersMap;
+    address[] directAffiliatePoolOwnersArray;
 
     event PoolOwnershipTransferred(
         address indexed previousOwner,
@@ -51,6 +55,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             poolMintState.time = uint40(block.timestamp);
             poolMintState.cycleStartTime = uint40(block.timestamp);
         }
+        directAffiliatePoolBalance = 40*10**6*10**18; // 40kk // todo 18 -> decimals()
         _mint(msg.sender, 117000 * 10**18);
     }
 
@@ -87,6 +92,30 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             "NMX: invalid signature"
         );
         _approve(owner, spender, value);
+    }
+
+    function requestAffiliateBonus(uint128 amount) external returns (uint128) {
+        require(directAffiliatePoolOwnersMap[msg.sender], "NMX: only directAffiliatePoolOwner can use this pool");
+        if (directAffiliatePoolBalance < amount) {
+            amount = uint128(directAffiliatePoolBalance);
+        }
+        directAffiliatePoolBalance -= amount;
+        _mint(msg.sender, amount);
+        return amount;
+    }
+
+    function setAffiliateDirectPoolOwners(address[] calldata newOwners) external onlyOwner {
+        for (uint256 i = 0; i < directAffiliatePoolOwnersArray.length; i++) {
+            address oldOwner = directAffiliatePoolOwnersArray[i];
+            directAffiliatePoolOwnersMap[oldOwner] = false;
+        }
+
+        for (uint256 i = 0; i < newOwners.length; i++) {
+            address newOwner = newOwners[i];
+            directAffiliatePoolOwnersMap[newOwner] = true;
+        }
+
+        directAffiliatePoolOwnersArray = newOwners;
     }
 
     function transferPoolOwnership(MintPool pool, address newOwner) external {
