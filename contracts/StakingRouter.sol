@@ -46,9 +46,13 @@ contract StakingRouter is Ownable, NmxSupplier {
     }
 
     function supplyNmx() external override returns (uint256 supply) {
-        updatePendingSupplies();
-        supply = pendingSupplies[msg.sender];
-        pendingSupplies[msg.sender] = 0;
+        supply = updatePendingSupplies(msg.sender);
+        uint256 pendingSupply = pendingSupplies[msg.sender];
+        if (pendingSupply != 0) {
+            pendingSupplies[msg.sender] = 0;
+            supply += pendingSupply;
+        }
+
         bool transferred = IERC20(nmx).transfer(msg.sender, supply);
         require(transferred, "NMXSTKROU: NMX_FAILED_TRANSFER");
         return supply;
@@ -58,7 +62,7 @@ contract StakingRouter is Ownable, NmxSupplier {
         return activeServices;
     }
 
-    function updatePendingSupplies() private {
+    function updatePendingSupplies(address requestedService) private returns (uint256 serviceSupply) {
         uint256 supply = NmxSupplier(nmx).supplyNmx();
         for (
             uint256 activeServiceIndex = 0;
@@ -67,7 +71,12 @@ contract StakingRouter is Ownable, NmxSupplier {
         ) {
             address activeService = activeServices[activeServiceIndex];
             int128 activeServiceShare = serviceShares[activeService];
-            pendingSupplies[activeService] += ABDKMath64x64.mulu(activeServiceShare, supply);
+            uint256 activeServiceSupply = ABDKMath64x64.mulu(activeServiceShare, supply);
+            if (activeService == requestedService) {
+                serviceSupply = activeServiceSupply;
+            } else {
+                pendingSupplies[activeService] += activeServiceSupply;
+            }
         }
     }
 }
