@@ -10,9 +10,9 @@ contract MintSchedule is Ownable {
 
     struct ScheduleItem {
         uint40 cycleDuration;
-        uint96 cyclesCount;
-        int128 cycleCompletenessMultiplier;
-        int128[] poolShares;
+        uint16 cyclesCount;
+        uint64 cycleCompletenessMultiplier;
+        uint64[] poolShares;
     }
 
     using ABDKMath64x64 for int128;
@@ -35,111 +35,111 @@ contract MintSchedule is Ownable {
         int128 abdk_9_10 = ABDKMath64x64.divu(9, 10);
 
         // 0.0, 0.8 * 0.9, 0.8 * 0.1, 0.2, 0.0
-        int128[5] memory shares_01_28 =
+        uint64[5] memory shares_01_28 =
             [
                 0,
-                abdk_8_10.mul(abdk_9_10),
-                abdk_8_10.mul(abdk_1_10),
-                abdk_2_10,
+                uint64(abdk_8_10.mul(abdk_9_10)),
+                uint64(abdk_8_10.mul(abdk_1_10)),
+                uint64(abdk_2_10),
                 0
             ];
 
         // 0.0, 0.85 * 0.75 * 0.85, 0.85 * 0.75 * 0.15, 0.85 * 0.25 , 0.15
-        int128[5] memory shares_29_56 =
+        uint64[5] memory shares_29_56 =
             [
                 0,
-                abdk_85_100.mul(abdk_75_100).mul(abdk_85_100),
-                abdk_85_100.mul(abdk_75_100).mul(abdk_15_100),
-                abdk_85_100.mul(abdk_25_100),
-                abdk_15_100
+                uint64(abdk_85_100.mul(abdk_75_100).mul(abdk_85_100)),
+                uint64(abdk_85_100.mul(abdk_75_100).mul(abdk_15_100)),
+                uint64(abdk_85_100.mul(abdk_25_100)),
+                uint64(abdk_15_100)
             ];
 
         // 0.0, 0.7 * 0.7 * 0.8, 0.7 * 0.7 * 0.2, 0.7 * 0.3, 0.30
-        int128[5] memory shares_61_xx =
+        uint64[5] memory shares_57_xx =
             [
                 0,
-                abdk_7_10.mul(abdk_7_10).mul(abdk_8_10),
-                abdk_7_10.mul(abdk_7_10).mul(abdk_2_10),
-                abdk_7_10.mul(abdk_3_10),
-                abdk_3_10
+                uint64(abdk_7_10.mul(abdk_7_10).mul(abdk_8_10)),
+                uint64(abdk_7_10.mul(abdk_7_10).mul(abdk_2_10)),
+                uint64(abdk_7_10.mul(abdk_3_10)),
+                uint64(abdk_3_10)
             ];
 
         /*1-28 first 28 days*/
         ScheduleItem storage item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 4;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
         item.poolShares = shares_01_28;
 
         /*29-56 second 28 days*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 4;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
         item.poolShares = shares_29_56;
 
         /*57-182 - 0.5 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 18;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
+        item.poolShares = shares_57_xx;
 
         /*183-371 - 1 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 27;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(996, 1000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(996, 1000));
+        item.poolShares = shares_57_xx;
 
         /*372-735 - 2 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 52;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(998, 1000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(998, 1000));
+        item.poolShares = shares_57_xx;
 
         /*736-1463 - 4 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 104;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(9995, 10000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(9995, 10000));
+        item.poolShares = shares_57_xx;
 
         /*1464-2926 - 8 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 209;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(9997, 10000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(9997, 10000));
+        item.poolShares = shares_57_xx;
 
         /*2927-5481 - 15 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 365;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(99985, 100000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99985, 100000));
+        item.poolShares = shares_57_xx;
 
         /*5481-10962 - 30 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 783;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(99992, 100000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99992, 100000));
+        item.poolShares = shares_57_xx;
 
         /*10963-21917 - 60 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 1565;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(99994, 100000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99994, 100000));
+        item.poolShares = shares_57_xx;
 
         /*21917-36525 - 100 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
         item.cyclesCount = 2087;
-        item.cycleCompletenessMultiplier = ABDKMath64x64.divu(99995, 100000);
-        item.poolShares = shares_61_xx;
+        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99995, 100000));
+        item.poolShares = shares_57_xx;
     }
 
     function setOutputRate(int128 _outputRate) external onlyOwner {
@@ -180,7 +180,7 @@ contract MintSchedule is Ownable {
     ) private pure {
         state.time = time;
         if (time == state.cycleStartTime + item.cycleDuration) {
-            state.nextTickSupply = uint128(item.cycleCompletenessMultiplier.mulu(uint256(state.nextTickSupply)));
+            state.nextTickSupply = uint128(int128(item.cycleCompletenessMultiplier).mulu(uint256(state.nextTickSupply)));
             state.cycleIndex++;
             state.cycleStartTime = time;
             if (state.cycleIndex == item.cyclesCount) {
