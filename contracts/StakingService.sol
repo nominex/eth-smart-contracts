@@ -35,9 +35,9 @@ contract StakingService is PausableByOwner {
      * @param referral reward bonus multiplier for referral
      */
     struct AffiliateBonusMultipliers {
-        uint256 stakedAmountInUsdt;
-        int128 referrer;
-        int128 referral;
+        uint16 stakedAmountInUsdt; // 16.0
+        uint16 referrer; // 8.8
+        uint16 referral; // 8.8
     }
 
     bytes32 public DOMAIN_SEPARATOR;
@@ -138,12 +138,14 @@ contract StakingService is PausableByOwner {
                 require(newMultiplier.stakedAmountInUsdt > prevStakedAmountInUsdt, "NMXSTKSRV: INVALID_ORDER");
             }
 
+            int128 referrerMultiplier = from8x8(newMultiplier.referrer);
             require(
-                newMultiplier.referrer >= 0 && newMultiplier.referrer <= maxMultiplier,
+                newMultiplier.referrer >= 0 && referrerMultiplier <= maxMultiplier,
                 "NMXSTKSRV: INVALID_REFERRER_BONUS_MULTIPLIER"
             );
+            int128 referralMultiplier = from8x8(newMultiplier.referral);
             require(
-                newMultiplier.referral >= 0 && newMultiplier.referral <= maxMultiplier,
+                newMultiplier.referral >= 0 && referralMultiplier <= maxMultiplier,
                 "NMXSTKSRV: INVALID_REFERRAL_BONUS_MULTIPLIER"
             );
 
@@ -156,6 +158,12 @@ contract StakingService is PausableByOwner {
         for (uint256 i = 0; i < newMultipliersArray.length; i++) {
             affiliateBonusMultipliersArray.push(newMultipliersArray[i]);
         }
+    }
+
+    function from8x8(uint16 v) private pure returns (int128) {
+        uint8 MAX_DECIMAL_PART = 99;
+        require(uint8(v) <= MAX_DECIMAL_PART, "NMXSTKSRV: INVALID DECIMALS");
+        return ABDKMath64x64.fromInt(v >> 8) + ABDKMath64x64.divu(uint8(v), 100);
     }
 
     function setReferrer(address referrer) external {
@@ -328,16 +336,17 @@ contract StakingService is PausableByOwner {
         staker.reward += unrewarded;
     }
 
-    function getReferrerBonusMultiplier(uint256 amount) private returns (int128 multiplier) {
-        return getMultipliers(amount).referrer;
+    function getReferrerBonusMultiplier(uint256 amount) private view returns (int128 multiplier) {
+        return from8x8(getMultipliers(amount).referrer);
     }
 
-    function getReferralBonusMultiplier(uint256 amount) private returns (int128) {
-        return getMultipliers(amount).referral;
+    function getReferralBonusMultiplier(uint256 amount) private view returns (int128) {
+        return from8x8(getMultipliers(amount).referral);
     }
 
-    function getMultipliers(uint256 amount) private returns (AffiliateBonusMultipliers memory multipliers) {
+    function getMultipliers(uint256 amount) private view returns (AffiliateBonusMultipliers memory multipliers) {
         uint256 amountInUsdt = amount; // todo
+        amountInUsdt = amountInUsdt/10**ERC20(stakingToken).decimals();
         for (uint256 i = 0; i < affiliateBonusMultipliersArray.length; i++) {
             AffiliateBonusMultipliers memory _multipliers = affiliateBonusMultipliersArray[i];
             if (amountInUsdt >= _multipliers.stakedAmountInUsdt) {
