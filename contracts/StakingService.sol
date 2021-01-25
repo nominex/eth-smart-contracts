@@ -35,7 +35,7 @@ contract StakingService is PausableByOwner {
      * @param referrer reward bonus multiplier for referrer (in 0.0001 parts)
      * @param referral reward bonus multiplier for referral (in 0.0001 parts)
      */
-    struct AffiliateBonusMultipliers {
+    struct DirectBonusMultiplierData {
         uint16 stakedAmountInUsdt;
         uint16 referrer;
         uint16 referral;
@@ -44,10 +44,10 @@ contract StakingService is PausableByOwner {
     bytes32 public DOMAIN_SEPARATOR;
 
     string private constant CLAIM_TYPE = "Claim(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
-    bytes32 public CLAIM_TYPEHASH = keccak256(abi.encodePacked(CLAIM_TYPE));
+    bytes32 public constant CLAIM_TYPEHASH = keccak256(abi.encodePacked(CLAIM_TYPE));
 
     string private constant UNSTAKE_TYPE = "Unstake(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
-    bytes32 public UNSTAKE_TYPEHASH = keccak256(abi.encodePacked(UNSTAKE_TYPE));
+    bytes32 public constant UNSTAKE_TYPEHASH = keccak256(abi.encodePacked(UNSTAKE_TYPE));
 
     mapping(address => uint256) public nonces;
 
@@ -76,7 +76,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev multipliers for additional bonuses for members of the referral program
      */
-    AffiliateBonusMultipliers[] public affiliateBonusMultipliersArray;
+    DirectBonusMultiplierData[] public directBonusMultipliers;
 
     /**
      * @dev event when someone is staked NMXLP
@@ -90,14 +90,20 @@ contract StakingService is PausableByOwner {
      * @dev event when someone is awarded NMX
      */
     event Rewarded(address indexed from, address indexed to, uint128 amount);
+    event ReferrerChanged(address indexed referral, address indexed referrer);
     /**
-     * @dev event when someone receives an NMX from an affiliate referrer bonus
+     * @dev event when someone receives an NMX as a staking bonus
      */
-    event ReferrerBonus(address indexed referrer, uint128 amount);
+    event StakingBonusAccrued(address indexed staker, uint128 amount);
     /**
-     * @dev event when someone receives an NMX from an affiliate referral bonus
+    /**
+     * @dev event when someone receives an NMX from an direct referrer bonus
      */
-    event ReferralBonus(address indexed referral, uint128 amount);
+    event ReferrerBonusAccrued(address indexed referrer, uint128 amount);
+    /**
+     * @dev event when someone receives an NMX from an direct referral bonus
+     */
+    event ReferralBonusAccrued(address indexed referral, uint128 amount);
 
     constructor(
         address _nmx,
@@ -127,10 +133,10 @@ contract StakingService is PausableByOwner {
 
     }
 
-    function setReferrerBonusMultiplier(AffiliateBonusMultipliers[] calldata newMultipliersArray) external onlyOwner {
+    function setDirectBonusMultipliers(DirectBonusMultiplierData[] calldata newMultipliers) external onlyOwner {
         uint256 prevStakedAmountInUsdt = 0;
-        for (uint256 i = 0; i < newMultipliersArray.length; i++) {
-            AffiliateBonusMultipliers calldata newMultiplier = newMultipliersArray[i];
+        for (uint256 i = 0; i < newMultipliers.length; i++) {
+            DirectBonusMultiplierData calldata newMultiplier = newMultipliers[i];
 
             if (i == 0) {
                 require(newMultiplier.stakedAmountInUsdt >= 0, "NMXSTKSRV: INVALID_FIRST_ITEM");
@@ -141,11 +147,11 @@ contract StakingService is PausableByOwner {
             prevStakedAmountInUsdt = newMultiplier.stakedAmountInUsdt;
         }
 
-        while(affiliateBonusMultipliersArray.length != 0) {
-            affiliateBonusMultipliersArray.pop();
+        while(directBonusMultipliers.length != 0) {
+            directBonusMultipliers.pop();
         }
-        for (uint256 i = 0; i < newMultipliersArray.length; i++) {
-            affiliateBonusMultipliersArray.push(newMultipliersArray[i]);
+        for (uint256 i = 0; i < newMultipliers.length; i++) {
+            directBonusMultipliers.push(newMultipliers[i]);
         }
     }
 
@@ -153,6 +159,7 @@ contract StakingService is PausableByOwner {
         Staker storage staker = stakers[tx.origin];
         bool validReferrer = staker.referrer == address(0) && referrer != address(0) && tx.origin != referrer;
         require(validReferrer, "NMXSTKSRV: INVALID_REFERRER");
+        emit ReferrerChanged(tx.origin, referrer);
         staker.referrer = referrer;
     }
 
@@ -290,6 +297,7 @@ contract StakingService is PausableByOwner {
         uint128 unrewarded =
         ((state.historicalRewardRate - staker.initialRewardRate) *
         uint128(staker.amount)) / 10 ** 18;
+        emit StakingBonusAccrued(stakerAddress, unrewarded);
 
         if (staker.referrer != address(0)) {
             Staker storage referrer = stakers[staker.referrer];
@@ -299,7 +307,7 @@ contract StakingService is PausableByOwner {
             uint128 referrerBonus = uint128(ABDKMath64x64.mulu(referrerMultiplier, uint256(unrewarded)));
             uint128 referralBonus = uint128(ABDKMath64x64.mulu(referralMultiplier, uint256(unrewarded)));
 
-            uint128 supplied = Nmx(nmx).requestAffiliateBonus(referrerBonus + referralBonus);
+            uint128 supplied = Nmx(nmx).requestDirectBonus(referrerBonus + referralBonus);
             if (supplied < referrerBonus) {
                 referrerBonus = supplied;
             }
@@ -308,10 +316,10 @@ contract StakingService is PausableByOwner {
                 referralBonus = supplied;
             }
 
-            emit ReferrerBonus(staker.referrer, referrerBonus);
+            emit ReferrerBonusAccrued(staker.referrer, referrerBonus);
             referrer.reward += referrerBonus;
 
-            emit ReferralBonus(stakerAddress, referralBonus);
+            emit ReferralBonusAccrued(stakerAddress, referralBonus);
             unrewarded += referralBonus;
         }
 
@@ -320,18 +328,18 @@ contract StakingService is PausableByOwner {
     }
 
     function getReferrerBonusMultiplier(uint256 amount) private view returns (int128 multiplier) {
-        return ABDKMath64x64.divu(getMultipliers(amount).referrer, 10000);
+        return ABDKMath64x64.divu(getDirectBonusMultipliers(amount).referrer, 10000);
     }
 
     function getReferralBonusMultiplier(uint256 amount) private view returns (int128) {
-        return ABDKMath64x64.divu(getMultipliers(amount).referral, 10000);
+        return ABDKMath64x64.divu(getDirectBonusMultipliers(amount).referral, 10000);
     }
 
-    function getMultipliers(uint256 amount) private view returns (AffiliateBonusMultipliers memory multipliers) {
+    function getDirectBonusMultipliers(uint256 amount) private view returns (DirectBonusMultiplierData memory multipliers) {
         uint256 amountInUsdt = amount; // todo
         amountInUsdt = amountInUsdt/10**ERC20(stakingToken).decimals();
-        for (uint256 i = 0; i < affiliateBonusMultipliersArray.length; i++) {
-            AffiliateBonusMultipliers memory _multipliers = affiliateBonusMultipliersArray[i];
+        for (uint256 i = 0; i < directBonusMultipliers.length; i++) {
+            DirectBonusMultiplierData memory _multipliers = directBonusMultipliers[i];
             if (amountInUsdt >= _multipliers.stakedAmountInUsdt) {
                 multipliers = _multipliers;
             } else {

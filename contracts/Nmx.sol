@@ -8,22 +8,23 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Nmx is ERC20, NmxSupplier, Ownable {
-    uint40 private constant START_TIME = 1609545600; // 2021-02-01T00:00:00Z
-    uint128 private constant MAX_AFFILIATE_RATE = 115740740740740740; // amount per second (18 decimals)
-    uint128 private constant MAX_AFFILIATE_POOL_SUPPLY = 40*10**6*10**18;
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public nonces;
+
     address public mintSchedule;
-    mapping(address => MintPool) poolByOwner;
-    address[5] poolOwners; // 5 - number of MintPool values
+    mapping(address => MintPool) public poolByOwner;
+    address[5] public poolOwners; // 5 - number of MintPool values
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
-    /// @dev additional pool for bonus payments for members of the referral program
-    uint128 public directAffiliatePoolSupply;
-    mapping(address => bool) public directAffiliatePoolOwnersMap;
-    address[] directAffiliatePoolOwnersArray;
+
+    uint40 private constant DIRECT_POOL_START_TIME = 1609545600; // 2021-02-01T00:00:00Z
+    uint128 private constant DIRECT_POOL_RATE = 115740740740740740; // amount per second (18 decimals)
+    uint128 private constant DIRECT_POOL_TOTAL_SUPPLY_LIMIT = 40*10**6*10**18;
+    uint128 public directPoolTotalSupply;
+    mapping(address => bool) public directPoolOwnerByAddress;
+    address[] public directPoolOwners;
 
     event PoolOwnershipTransferred(
         address indexed previousOwner,
@@ -31,7 +32,15 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         MintPool indexed pool
     );
 
-    constructor(address _mintSchedule) ERC20("Nominex utility token", "NMX") {
+    event DirectPoolOwnershipGranted(
+        address indexed owner
+    );
+
+    event DirectPoolOwnershipRevoked(
+        address indexed owner
+    );
+
+    constructor(address _mintSchedule) ERC20("Nominex", "NMX") {
         uint256 chainId;
         assembly {
             chainId := chainid()
@@ -58,7 +67,6 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             poolMintState.time = uint40(block.timestamp);
             poolMintState.cycleStartTime = uint40(block.timestamp);
         }
-        directAffiliatePoolSupply = 40*10**6*10**18; // 40kk // todo 18 -> decimals()
         _mint(msg.sender, 117000 * 10**18);
     }
 
@@ -97,35 +105,37 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         _approve(owner, spender, value);
     }
 
-    function requestAffiliateBonus(uint128 amount) external returns (uint128) {
-        require(directAffiliatePoolOwnersMap[msg.sender], "NMX: only directAffiliatePoolOwner can use this pool");
-        if (block.timestamp < START_TIME) return 0;
-        uint128 affiliatePoolRest = MAX_AFFILIATE_POOL_SUPPLY - directAffiliatePoolSupply;
-        uint128 scheduledRest = uint128((block.timestamp - START_TIME) * MAX_AFFILIATE_RATE) - directAffiliatePoolSupply;
-        if (affiliatePoolRest > scheduledRest) {
-            affiliatePoolRest = scheduledRest;
+    function requestDirectBonus(uint128 amount) external returns (uint128) {
+        require(directPoolOwnerByAddress[msg.sender], "NMX: caller is not the owner of DirectPool");
+        if (block.timestamp < DIRECT_POOL_START_TIME) return 0;
+        uint128 directPoolRest = DIRECT_POOL_TOTAL_SUPPLY_LIMIT - directPoolTotalSupply;
+        uint128 scheduledRest = uint128((block.timestamp - DIRECT_POOL_START_TIME) * DIRECT_POOL_RATE) - directPoolTotalSupply;
+        if (directPoolRest > scheduledRest) {
+            directPoolRest = scheduledRest;
         }
-        if (affiliatePoolRest < amount) {
-            amount = affiliatePoolRest;
+        if (directPoolRest < amount) {
+            amount = directPoolRest;
         }
         if (amount == 0) return 0;
-        directAffiliatePoolSupply += amount;
+        directPoolTotalSupply += amount;
         _mint(msg.sender, amount);
         return amount;
     }
 
-    function setAffiliateDirectPoolOwners(address[] calldata newOwners) external onlyOwner {
-        for (uint256 i = 0; i < directAffiliatePoolOwnersArray.length; i++) {
-            address oldOwner = directAffiliatePoolOwnersArray[i];
-            directAffiliatePoolOwnersMap[oldOwner] = false;
+    function setDirectPoolOwners(address[] calldata newOwners) external onlyOwner {
+        for (uint256 i = 0; i < directPoolOwners.length; i++) {
+            address oldOwner = directPoolOwners[i];
+            emit DirectPoolOwnershipRevoked(oldOwner);
+            directPoolOwnerByAddress[oldOwner] = false;
         }
 
         for (uint256 i = 0; i < newOwners.length; i++) {
             address newOwner = newOwners[i];
-            directAffiliatePoolOwnersMap[newOwner] = true;
+            emit DirectPoolOwnershipGranted(newOwner);
+            directPoolOwnerByAddress[newOwner] = true;
         }
 
-        directAffiliatePoolOwnersArray = newOwners;
+        directPoolOwners = newOwners;
     }
 
     function transferPoolOwnership(MintPool pool, address newOwner) external {

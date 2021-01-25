@@ -134,10 +134,10 @@ contract MintSchedule is Ownable {
         item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99994, 100000));
         item.poolShares = shares_57_xx;
 
-        /*21917-36525 - 100 year*/
+        /*21918-36505 - 100 year*/
         item = items.push();
         item.cycleDuration = sevenDays;
-        item.cyclesCount = 2087;
+        item.cyclesCount = 2084;
         item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99995, 100000));
         item.poolShares = shares_57_xx;
     }
