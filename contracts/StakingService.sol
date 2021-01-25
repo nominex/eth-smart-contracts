@@ -134,16 +134,10 @@ contract StakingService is PausableByOwner {
     }
 
     function setDirectBonusMultipliers(DirectBonusMultiplierData[] calldata newMultipliers) external onlyOwner {
-        uint256 prevStakedAmountInUsdt = 0;
-        for (uint256 i = 0; i < newMultipliers.length; i++) {
+        uint256 prevStakedAmountInUsdt = newMultipliers.length > 0 ? newMultipliers[0].stakedAmountInUsdt : 0;
+        for (uint256 i = 1; i < newMultipliers.length; i++) {
             DirectBonusMultiplierData calldata newMultiplier = newMultipliers[i];
-
-            if (i == 0) {
-                require(newMultiplier.stakedAmountInUsdt >= 0, "NMXSTKSRV: INVALID_FIRST_ITEM");
-            } else {
-                require(newMultiplier.stakedAmountInUsdt > prevStakedAmountInUsdt, "NMXSTKSRV: INVALID_ORDER");
-            }
-
+            require(newMultiplier.stakedAmountInUsdt > prevStakedAmountInUsdt, "NMXSTKSRV: INVALID_ORDER");
             prevStakedAmountInUsdt = newMultiplier.stakedAmountInUsdt;
         }
 
