@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Nmx is ERC20, NmxSupplier, Ownable {
+    uint40 private constant START_TIME = 1609545600; // 2021-02-01T00:00:00Z
+    uint128 private constant MAX_AFFILIATE_RATE = 115740740740740740; // amount per second (18 decimals)
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =
@@ -95,9 +97,14 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     }
 
     function requestAffiliateBonus(uint128 amount) external returns (uint128) {
+        if (block.timestamp < START_TIME) return 0;
         require(directAffiliatePoolOwnersMap[msg.sender], "NMX: only directAffiliatePoolOwner can use this pool");
         if (directAffiliatePoolBalance < amount) {
             amount = uint128(directAffiliatePoolBalance);
+        }
+        uint256 maxScheduledAmount = (block.timestamp - START_TIME) * MAX_AFFILIATE_RATE;
+        if (maxScheduledAmount < amount) {
+            amount = uint128(maxScheduledAmount);
         }
         directAffiliatePoolBalance -= amount;
         _mint(msg.sender, amount);
