@@ -19,7 +19,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     address[5] public poolOwners; // 5 - number of MintPool values
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
 
-    uint40 private constant DIRECT_POOL_START_TIME = 1609545600; // 2021-02-01T00:00:00Z
+    uint40 private constant DISTRIBUTION_START_TIME = 1609545600; // 2021-02-01T00:00:00Z
     uint128 private constant DIRECT_POOL_RATE = 115740740740740740; // amount per second (18 decimals)
     uint128 private constant DIRECT_POOL_TOTAL_SUPPLY_LIMIT = 40*10**6*10**18;
     uint128 public directPoolTotalSupply;
@@ -64,8 +64,8 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         ) {
             MintScheduleState storage poolMintState = poolMintStates[i];
             poolMintState.nextTickSupply = (10000 * 10**18) / uint40(1 days);
-            poolMintState.time = uint40(block.timestamp);
-            poolMintState.cycleStartTime = uint40(block.timestamp);
+            poolMintState.time = DISTRIBUTION_START_TIME;
+            poolMintState.cycleStartTime = DISTRIBUTION_START_TIME;
         }
         _mint(msg.sender, 117000 * 10**18);
     }
@@ -107,9 +107,9 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
 
     function requestDirectBonus(uint128 amount) external returns (uint128) {
         require(directPoolOwnerByAddress[msg.sender], "NMX: caller is not the owner of DirectPool");
-        if (block.timestamp < DIRECT_POOL_START_TIME) return 0;
+        if (block.timestamp < DISTRIBUTION_START_TIME) return 0;
         uint128 directPoolRest = DIRECT_POOL_TOTAL_SUPPLY_LIMIT - directPoolTotalSupply;
-        uint128 scheduledRest = uint128((block.timestamp - DIRECT_POOL_START_TIME) * DIRECT_POOL_RATE) - directPoolTotalSupply;
+        uint128 scheduledRest = uint128((block.timestamp - DISTRIBUTION_START_TIME) * DIRECT_POOL_RATE) - directPoolTotalSupply;
         if (directPoolRest > scheduledRest) {
             directPoolRest = scheduledRest;
         }
