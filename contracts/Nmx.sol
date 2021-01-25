@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract Nmx is ERC20, NmxSupplier, Ownable {
     uint40 private constant START_TIME = 1609545600; // 2021-02-01T00:00:00Z
     uint128 private constant MAX_AFFILIATE_RATE = 115740740740740740; // amount per second (18 decimals)
+    uint128 private constant MAX_AFFILIATE_POOL_SUPPLY = 40*10**6*10**18;
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =
@@ -20,7 +21,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     address[5] poolOwners; // 5 - number of MintPool values
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
     /// @dev additional pool for bonus payments for members of the referral program
-    uint256 public directAffiliatePoolBalance;
+    uint128 public directAffiliatePoolSupply;
     mapping(address => bool) public directAffiliatePoolOwnersMap;
     address[] directAffiliatePoolOwnersArray;
 
@@ -57,7 +58,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             poolMintState.time = uint40(block.timestamp);
             poolMintState.cycleStartTime = uint40(block.timestamp);
         }
-        directAffiliatePoolBalance = 40*10**6*10**18; // 40kk // todo 18 -> decimals()
+        directAffiliatePoolSupply = 40*10**6*10**18; // 40kk // todo 18 -> decimals()
         _mint(msg.sender, 117000 * 10**18);
     }
 
@@ -97,16 +98,18 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     }
 
     function requestAffiliateBonus(uint128 amount) external returns (uint128) {
-        if (block.timestamp < START_TIME) return 0;
         require(directAffiliatePoolOwnersMap[msg.sender], "NMX: only directAffiliatePoolOwner can use this pool");
-        if (directAffiliatePoolBalance < amount) {
-            amount = uint128(directAffiliatePoolBalance);
+        if (block.timestamp < START_TIME) return 0;
+        uint128 affiliatePoolRest = MAX_AFFILIATE_POOL_SUPPLY - directAffiliatePoolSupply;
+        uint128 scheduledRest = uint128((block.timestamp - START_TIME) * MAX_AFFILIATE_RATE) - directAffiliatePoolSupply;
+        if (affiliatePoolRest > scheduledRest) {
+            affiliatePoolRest = scheduledRest;
         }
-        uint256 maxScheduledAmount = (block.timestamp - START_TIME) * MAX_AFFILIATE_RATE;
-        if (maxScheduledAmount < amount) {
-            amount = uint128(maxScheduledAmount);
+        if (affiliatePoolRest < amount) {
+            amount = affiliatePoolRest;
         }
-        directAffiliatePoolBalance -= amount;
+        if (amount == 0) return 0;
+        directAffiliatePoolSupply += amount;
         _mint(msg.sender, amount);
         return amount;
     }
