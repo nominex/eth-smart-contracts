@@ -11,7 +11,7 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 
 contract StakingService is PausableByOwner {
     /**
-     * @param historicalRewardRate how many NMX rewards for one NMXLP
+     * @param historicalRewardRate how many NMX rewards for one NMXLP (<< 40)
      * @param totalStaked how many NMXLP are staked in total
      */
     struct State {
@@ -20,7 +20,7 @@ contract StakingService is PausableByOwner {
     }
     /**
      * @param amount how much NMXLP staked
-     * @param initialRewardRate rice at which the reward was last paid
+     * @param initialRewardRate rice at which the reward was last paid (<< 40)
      * @param reward total nmx amount user got as a reward
      */
     struct Staker {
@@ -290,10 +290,10 @@ contract StakingService is PausableByOwner {
 
         uint128 unrewarded =
         ((state.historicalRewardRate - staker.initialRewardRate) *
-        uint128(staker.amount)) / 10 ** 18;
+        uint128(staker.amount)) >> 40;
         emit StakingBonusAccrued(stakerAddress, unrewarded);
 
-        if (staker.referrer != address(0)) {
+        if (staker.referrer != address(0) && unrewarded > 0) {
             Staker storage referrer = stakers[staker.referrer];
 
             int128 referrerMultiplier = getReferrerMultiplier(referrer.amount);
@@ -395,7 +395,7 @@ contract StakingService is PausableByOwner {
         uint128 currentNmxSupply = uint128(NmxSupplier(nmxSupplier).supplyNmx());
         if (state.totalStaked != 0 && currentNmxSupply != 0)
             state.historicalRewardRate +=
-            (currentNmxSupply * 10 ** 18) /
+            (currentNmxSupply << 40) /
             state.totalStaked;
     }
 
