@@ -5,11 +5,12 @@ pragma abicoder v2;
 import "./NmxSupplier.sol";
 import "./Nmx.sol";
 import "./PausableByOwner.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import "./LiquidityWealthEstimator.sol";
 
-contract StakingService is PausableByOwner {
+contract StakingService is PausableByOwner, LiquidityWealthEstimator {
     /**
      * @param historicalRewardRate how many NMX rewards for one NMXLP (<< 40)
      * @param totalStaked how many NMXLP are staked in total
@@ -105,7 +106,7 @@ contract StakingService is PausableByOwner {
         address _nmx,
         address _stakingToken,
         address _nmxSupplier
-    ) {
+    ) LiquidityWealthEstimator(_nmx, _stakingToken) {
         nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
@@ -404,4 +405,7 @@ contract StakingService is PausableByOwner {
         return state.totalStaked;
     }
 
+    function getStakingToken() internal view override returns (address) {
+        return stakingToken;
+    }
 }
