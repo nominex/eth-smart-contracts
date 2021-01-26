@@ -2,7 +2,7 @@ const Nmx = artifacts.require("Nmx");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const StakingRouter = artifacts.require("StakingRouter");
 const StakingService = artifacts.require("StakingService");
-const { rpcCommand } = require("../../lib/utils.js");
+const { rpcCommand } = require("../utils.js");
 const truffleAssert = require('truffle-assertions');
 const { step } = require("mocha-steps");
 

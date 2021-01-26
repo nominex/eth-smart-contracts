@@ -1,7 +1,7 @@
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const StakingService = artifacts.require("StakingService");
-const {rpcCommand} = require("../../lib/utils.js");
+const {rpcCommand} = require("../utils.js");
 
 contract('StakingService#setDirectBonusMultipliers', (accounts) => {
 

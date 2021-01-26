@@ -1,5 +1,5 @@
 const StakingService = artifacts.require("StakingService");
-const { rpcCommand } = require("../../lib/utils.js");
+const { rpcCommand } = require("../utils.js");
 const { step } = require("mocha-steps");
 
 contract('StakingService; Group: NmxSupplier', (accounts) => {

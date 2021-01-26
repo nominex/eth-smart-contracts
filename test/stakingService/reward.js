@@ -1,7 +1,7 @@
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const StakingService = artifacts.require("StakingService");
-const {rpcCommand, signData, ZERO} = require("../../lib/utils.js");
+const {rpcCommand, signData, ZERO} = require("../utils.js");
 const truffleAssert = require('truffle-assertions');
 
 const toBN = web3.utils.toBN;
