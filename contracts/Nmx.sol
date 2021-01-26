@@ -19,7 +19,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     address[5] public poolOwners; // 5 - number of MintPool values
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
 
-    uint40 private constant DISTRIBUTION_START_TIME = 1609545600; // 2021-02-01T00:00:00Z
+    uint40 private constant DISTRIBUTION_START_TIME = 1612137600; // 2021-02-01T00:00:00Z
     uint128 private constant DIRECT_POOL_RATE = 115740740740740740; // amount per second (18 decimals)
     uint128 private constant DIRECT_POOL_TOTAL_SUPPLY_LIMIT = 40*10**6*10**18;
     uint128 public directPoolTotalSupply;
