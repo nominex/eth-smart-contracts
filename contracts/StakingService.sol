@@ -6,8 +6,6 @@ import "./NmxSupplier.sol";
 import "./Nmx.sol";
 import "./PausableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "abdk-libraries-solidity/ABDKMath64x64.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 
 contract StakingService is PausableByOwner {
     /**
@@ -54,7 +52,7 @@ contract StakingService is PausableByOwner {
     /**
      * @dev Nmx contract
      */
-    address nmx;
+    address public nmx;
     /**
      * @dev ERC20 TODO
      */
@@ -164,25 +162,6 @@ contract StakingService is PausableByOwner {
      * amount - new part of staked NMXLP
      */
     function stake(uint128 amount) external whenNotPaused {
-        _stakeFrom(msg.sender, amount);
-    }
-
-    function stakeWithPermit(
-        uint128 amount,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external whenNotPaused {
-        IUniswapV2ERC20(stakingToken).permit(
-            msg.sender,
-            address(this),
-            amount,
-            deadline,
-            v,
-            r,
-            s
-        );
         _stakeFrom(msg.sender, amount);
     }
 

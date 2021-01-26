@@ -66,7 +66,7 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 10,
-            cycleIndex: 2086,
+            cycleIndex: 2083,
             cycleStartTime: now - DAY * 7 + 1,
             nextTickSupply: 1000000
         };
