@@ -6,7 +6,6 @@
 const Erc20 = artifacts.require("ERC20");
 const StakingRouter = artifacts.require("StakingRouter");
 const StakingService = artifacts.require("StakingService");
-const StakingHelper = artifacts.require("StakingHelper");
 const Nmx = artifacts.require("Nmx");
 const {ChainId, Token, TokenAmount, Pair, FACTORY_ADDRESS} = require("@uniswap/sdk");
 
@@ -128,8 +127,6 @@ module.exports = async (callback) => {
             stakingService = await StakingService.new(nmx.address, pairAddress, stakingRouter.address);
             /*FIXME: add services that were created before*/
             await stakingRouter.changeStakingServiceShares([stakingService.address], [toBN(1).shln(64)]);
-            const stakingHelper = await StakingHelper.new(stakingService.address);
-            config.logger.info(`Staking helper for pair ${pairAddress} has address ${stakingHelper.address}`);
         }
         config.logger.info(`Staking service for pair ${pairAddress} has address ${stakingService.address}`);
         callback();
