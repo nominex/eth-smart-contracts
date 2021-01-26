@@ -33,6 +33,9 @@ The Primary pool is a set of contracts designed to accrue Nmx for staking LP Uni
 5. Nmx mints new tokens to the Primary pool owner's address and returns their number as a result of calling the supplyNmx method.
 6. StakingRouter gets information about how much Nmx has just been added to it. Distributes these Nmx between various StakingService according to their shares (in the degenerate case all received Nmx tokens are credited to one StakingService) and stores changes in the internal state. Then it returns to the caller (particular StakinService) the number of Nmx that have been charged to it since the last call. After that the StakingService updates the internal state based on the number of tokens it has just received so that in the future it will be possible to calculate the reward in Nmx for all addresses that took part in staking LP tokens in proportion to their shares and staking periods.
 
+## DirectBonus Pool
+A system of additional incentives for referral links was introduced to increase interest in the token. Each referral receives an additional 5% Nmx to their staking charges. Each referrer receives a percentage of the income of his referrals. The percentage that the referrer receives depends on the number of NMXLPs he personally stakes expressed in USDT equivalent. For referral and referrer accruals a separate pool of Nmx tokens is allocated which in its essence differs from the other pools determined by the schedule: the staking contract receives tokens from DirectBonus pool as needed, the direct accrual pool may end before 100 years or, on the contrary, not have time to be fully distributed by the end of the token release schedule.However, the total number of all minted Nmx still does not exceed 200 million.
+
 ---
 
 Users interact only with the StakingService contract for staking, unstaking and receiving staking rewards. Non-staking transactions available under the ERC20 standard are performed on an Nmx contract address.
