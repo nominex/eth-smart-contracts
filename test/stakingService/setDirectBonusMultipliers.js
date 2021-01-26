@@ -89,13 +89,6 @@ contract('StakingService#setDirectBonusMultipliers', (accounts) => {
         ]);
     });
 
-    it('first element can start at zero stakedAmountInUsdt', async () => {
-        await stakingService.setDirectBonusMultipliers([
-            {stakedAmountInUsdt: 0, referrer: 1, referral: 2},
-            {stakedAmountInUsdt: 10, referrer: 100, referral: 1000}
-        ]);
-    });
-
     it('first element can start at greater than zero stakedAmountInUsdt', async () => {
         await stakingService.setDirectBonusMultipliers([
             {stakedAmountInUsdt: 5, referrer: 1, referral: 2},
@@ -140,11 +133,13 @@ contract('StakingService#setDirectBonusMultipliers', (accounts) => {
             assert.equal(actual.referral.toString(), expected.referral.toString(), `${i} item referral`);
         }
 
+        let error = null;
         try {
             await stakingService.directBonusMultipliers(newMultipliersArray.length);
-            assert.fail("directBonusMultipliers length is longer than expected");
-        } catch (ignore) {
+        } catch (e) {
+            error = e;
         }
+        assert.isNotNull(error, "directBonusMultipliers length is longer than expected");
     }
 
 });
