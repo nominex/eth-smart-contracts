@@ -389,9 +389,6 @@ contract StakingService is PausableByOwner {
      * @dev update how many NMX rewards for one NMXLP are currently
      */
     function updateHistoricalRewardRate() public {
-        if (paused()) {
-            return;
-        }
         uint128 currentNmxSupply = uint128(NmxSupplier(nmxSupplier).supplyNmx());
         if (state.totalStaked != 0 && currentNmxSupply != 0)
             state.historicalRewardRate +=
