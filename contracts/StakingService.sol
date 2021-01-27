@@ -405,7 +405,7 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
         return state.totalStaked;
     }
 
-    function getStakingToken() internal view override returns (address) {
+    function lpToken() internal view override returns (address) {
         return stakingToken;
     }
 }
