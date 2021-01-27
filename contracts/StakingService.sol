@@ -331,7 +331,7 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
     }
 
     function getDirectBonusMultipliers(uint256 amount) private view returns (ReferrerMultiplierData memory multipliers) {
-        uint256 amountInUsdt = amount; // todo
+        uint256 amountInUsdt = estimateWealth(amount);
         amountInUsdt = amountInUsdt/10**ERC20(stakingToken).decimals();
         for (uint256 i = 0; i < referrerMultipliers.length; i++) {
             ReferrerMultiplierData memory _multipliers = referrerMultipliers[i];
