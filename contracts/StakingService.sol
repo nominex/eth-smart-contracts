@@ -127,7 +127,22 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
                 address(this)
             )
         );
-
+        referralMultiplier = 500; // 500/10000 = 0.0500 = 0.05 = 5%
+        ReferrerMultiplierData storage item = referrerMultipliers.push();
+        item.stakedAmountInUsdt = 100;
+        item.multiplier = 500; // 500/10000 = 0.0500 = 0.05 = 5%
+        item = referrerMultipliers.push();
+        item.stakedAmountInUsdt = 300;
+        item.multiplier = 1000; // 1000/10000 = 0.1000 = 0.10 = 10%
+        item = referrerMultipliers.push();
+        item.stakedAmountInUsdt = 1000;
+        item.multiplier = 1500; // 1500/10000 = 0.1500 = 0.15 = 15%
+        item = referrerMultipliers.push();
+        item.stakedAmountInUsdt = 3000;
+        item.multiplier = 2000; // 2000/10000 = 0.2000 = 0.20 = 20%
+        item = referrerMultipliers.push();
+        item.stakedAmountInUsdt = 10000;
+        item.multiplier = 2500; // 2500/10000 = 0.2500 = 0.25 = 25%
     }
 
     function setReferralMultiplier(uint16 _referralMultiplier) external onlyOwner {
