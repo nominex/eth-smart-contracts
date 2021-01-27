@@ -1,13 +1,14 @@
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const StakingService = artifacts.require("StakingService");
-const { rpcCommand, signData } = require("../utils.js");
+const {rpcCommand, signData, getAssertBN} = require("../utils.js");
 const truffleAssert = require('truffle-assertions');
 const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
-const fromWei = web3.utils.fromWei;
 
 contract('StakingService#unstakeWithAuthorization', async accounts => {
+
+    const assertBN = getAssertBN(0);
 
     let nmx;
     let stakingToken;
@@ -23,9 +24,9 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         stakingService = await StakingService.new(nmx.address, stakingToken.address, nmx.address);
 
         await stakingToken.transfer(unstakeOwner, toWei(toBN(500)));
-        await stakingToken.approve(stakingService.address, toWei(toBN(500)), { from: unstakeOwner });
+        await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: unstakeOwner});
         await stakingService.stakeFrom(unstakeOwner, toWei(toBN(10)));
-        assert.notEqual(unstakeOwner, unstakeSpender, 'owner should be different to spender')
+        assert.notEqual(unstakeOwner, unstakeSpender, 'owner should be different to spender');
     });
 
     beforeEach(async () => {
@@ -69,17 +70,17 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const typedData = {
             types: {
                 EIP712Domain: [
-                    { name: "name", type: "string" },
-                    { name: "version", type: "string" },
-                    { name: "chainId", type: "uint256" },
-                    { name: "verifyingContract", type: "address" }
+                    {name: "name", type: "string"},
+                    {name: "version", type: "string"},
+                    {name: "chainId", type: "uint256"},
+                    {name: "verifyingContract", type: "address"}
                 ],
                 Unstake: [
-                    { name: "owner", type: "address" },
-                    { name: "spender", type: "address" },
-                    { name: "value", type: "uint256" },
-                    { name: "nonce", type: "uint256" },
-                    { name: "deadline", type: "uint256" }
+                    {name: "owner", type: "address"},
+                    {name: "spender", type: "address"},
+                    {name: "value", type: "uint256"},
+                    {name: "nonce", type: "uint256"},
+                    {name: "deadline", type: "uint256"}
                 ],
             },
             primaryType: "Unstake",
@@ -111,7 +112,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, amount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, amount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMXSTKSRV: INVALID_AMOUNT"), `Unexpected error message: ${e.message}`);
@@ -126,7 +127,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, amount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, amount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMXSTKSRV: NOT_ENOUGH_STAKED"), `Unexpected error message: ${e.message}`);
@@ -169,7 +170,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMXSTKSRV: EXPIRED"), `Unexpected error message: ${e.message}`);
@@ -183,7 +184,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
@@ -197,7 +198,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
@@ -211,7 +212,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
@@ -225,7 +226,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         sign.v = sign.v >= 99 ? sign.v - 1 : sign.v + 1;
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
@@ -238,7 +239,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         const sign = await signData(accounts[1], typedData);
 
         try {
-            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+            await stakingService.unstakeWithAuthorization(permitInfo.owner, permitInfo.value, permitInfo.value, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
             assert.fail("Error not occurred");
         } catch (e) {
             assert(e.message.includes("NMX: INVALID_SIGNATURE"), `Unexpected error message: ${e.message}`);
@@ -252,7 +253,7 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         let initialSpenderStakedAmount = (await stakingService.stakers(unstakeSpender)).amount;
         let initialServiceBalance = await stakingToken.balanceOf(stakingService.address);
 
-        let tx = await stakingService.unstakeWithAuthorization(permitInfo.owner, amount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, { from: permitInfo.spender });
+        let tx = await stakingService.unstakeWithAuthorization(permitInfo.owner, amount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
 
         let finalOwnerBalance = await stakingToken.balanceOf(unstakeOwner);
         let finalOwnerStakedAmount = (await stakingService.stakers(unstakeOwner)).amount;
@@ -260,14 +261,14 @@ contract('StakingService#unstakeWithAuthorization', async accounts => {
         let finalSpenderStakedAmount = (await stakingService.stakers(unstakeSpender)).amount;
         let finalServiceBalance = await stakingToken.balanceOf(stakingService.address);
 
-        assert.equal(fromWei(initialOwnerBalance), fromWei(finalOwnerBalance), "owner balance");
-        assert.equal(fromWei(initialOwnerStakedAmount.sub(amount)), fromWei(finalOwnerStakedAmount), "owner staked amount");
-        assert.equal(fromWei(initialSpenderBalance.add(amount)), fromWei(finalSpenderBalance), "spender balance");
-        assert.equal(fromWei(initialSpenderStakedAmount), fromWei(finalSpenderStakedAmount), "spender staked amount");
-        assert.equal(fromWei(initialServiceBalance.sub(amount)), fromWei(finalServiceBalance), "service balance");
+        assertBN(finalOwnerBalance, initialOwnerBalance, "owner balance");
+        assertBN(finalOwnerStakedAmount, initialOwnerStakedAmount.sub(amount), "owner staked amount");
+        assertBN(finalSpenderBalance, initialSpenderBalance.add(amount), "spender balance");
+        assertBN(finalSpenderStakedAmount, initialSpenderStakedAmount, "spender staked amount");
+        assertBN(finalServiceBalance, initialServiceBalance.sub(amount), "service balance");
         truffleAssert.eventEmitted(tx, 'Unstaked', (ev) => {
             return ev.from === unstakeOwner && ev.to === unstakeSpender && ev.amount.eq(amount);
         });
     }
 
-    });
+});

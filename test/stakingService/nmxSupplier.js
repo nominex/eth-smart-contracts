@@ -1,4 +1,5 @@
 const StakingService = artifacts.require("StakingService");
+const MockedStakingToken = artifacts.require("MockedStakingToken");
 const { rpcCommand } = require("../utils.js");
 const { step } = require("mocha-steps");
 
@@ -9,7 +10,8 @@ contract('StakingService; Group: NmxSupplier', (accounts) => {
     let errorMessage = "";
 
     before(async () => {
-        stakingService = await StakingService.new(accounts[1], accounts[2], accounts[3]);
+        let stakingToken = await MockedStakingToken.new();
+        stakingService = await StakingService.new(accounts[1], stakingToken.address, accounts[3]);
     });
 
     function makeSuite(name, tests) {

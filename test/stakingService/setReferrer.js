@@ -5,14 +5,14 @@ const StakingService = artifacts.require("StakingService");
 const {rpcCommand, ZERO_ADDRESS} = require("../utils.js");
 const truffleAssert = require('truffle-assertions');
 
-contract('StakingService#setDirectBonusMultipliers', (accounts) => {
+contract('StakingService#setReferrer', (accounts) => {
 
     let stakingService;
     let setReferrerProxy;
     let snapshotId;
 
-    let userWithoutReferrer = accounts[1];
-    let userWithReferrer = accounts[2];
+    const userWithoutReferrer = accounts[1];
+    const userWithReferrer = accounts[2];
 
     before(async () => {
         let nmx = await MockedNmxToken.new();
@@ -102,11 +102,11 @@ contract('StakingService#setDirectBonusMultipliers', (accounts) => {
     async function test(referral, referrer) {
         let tx = await stakingService.setReferrer(referrer, {from: referral});
         truffleAssert.eventEmitted(tx, 'ReferrerChanged', {referral: referral, referrer: referrer});
-        assertReferrer(referral, referrer);
+        await assertReferrer(referral, referrer);
     }
 
     async function assertReferrer(referral, expectedReferrer) {
-        let actualReferrer = (await stakingService.stakers(referral)).referrer;
+        let actualReferrer = await stakingService.referrers(referral);
         assert.equal(actualReferrer, expectedReferrer, "referrer");
     }
 

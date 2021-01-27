@@ -1,14 +1,11 @@
 const MintSchedule = artifacts.require("MintSchedule");
 const Nmx = artifacts.require('Nmx');
+const {getAssertBN} = require("./utils.js");
 
 const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
-const fromWei = web3.utils.fromWei;
 
 const DAY = 24 * 60 * 60;
-
-// Due to precision and rounding issues, sometimes you have to subtract 1 wei to get the correct expected answer
-const ROUNDING_CORRECTION_VALUE = -1;
 
 const MINT_POOL_DEFAULT_VALUE = 0;
 const MINT_POOL_PRIMARY = 1;
@@ -17,6 +14,8 @@ const MINT_POOL_TEAM = 3;
 const MINT_POOL_NOMINEX = 4;
 
 contract('MintSchedule', (accounts) => {
+
+    let assertBN = getAssertBN(10);
 
     let mintSchedule;
     let now = Math.floor((new Date()).getTime() / 1000);
@@ -58,7 +57,7 @@ contract('MintSchedule', (accounts) => {
             nextTickSupply: 1000000
         };
 
-        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.9 + ROUNDING_CORRECTION_VALUE);
+        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.9);
         await test(state, state.time + 1, MINT_POOL_PRIMARY, expectedNmxSupply, {time: state.time + 1});
     });
 
@@ -71,13 +70,13 @@ contract('MintSchedule', (accounts) => {
             nextTickSupply: 1000000
         };
 
-        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.3 + ROUNDING_CORRECTION_VALUE);
+        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.3);
         let expectedState = {
             time: state.time + 1,
             itemIndex: 11,
             cycleIndex: 0,
             cycleStartTime: state.time + 1,
-            nextTickSupply: Math.floor(state.nextTickSupply * 0.99995 + ROUNDING_CORRECTION_VALUE)
+            nextTickSupply: Math.floor(state.nextTickSupply * 0.99995)
         };
         await test(state, state.time + 1, MINT_POOL_TEAM, expectedNmxSupply, expectedState);
     });
@@ -107,10 +106,10 @@ contract('MintSchedule', (accounts) => {
 
         let newTime = state.time + 1;
         let defaultPoolValueExpectedNmxSupply = state.nextTickSupply * 0;
-        let primaryPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.8 + ROUNDING_CORRECTION_VALUE);
-        let bonusPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2 + ROUNDING_CORRECTION_VALUE);
-        let teamPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.3 + ROUNDING_CORRECTION_VALUE);
-        let nominexPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.3 + ROUNDING_CORRECTION_VALUE);
+        let primaryPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.8);
+        let bonusPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
+        let teamPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.3);
+        let nominexPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.3);
 
         await test(state, newTime, MINT_POOL_DEFAULT_VALUE, defaultPoolValueExpectedNmxSupply, {time: newTime});
         await test(state, newTime, MINT_POOL_PRIMARY, primaryPoolExpectedNmxSupply, {time: newTime});
@@ -128,7 +127,7 @@ contract('MintSchedule', (accounts) => {
             nextTickSupply: 1000000
         };
 
-        let oneSecExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.3 + ROUNDING_CORRECTION_VALUE);
+        let oneSecExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.3);
 
         await test(state, state.time + 1, MINT_POOL_NOMINEX, oneSecExpectedNmxSupply * 1, {time: state.time + 1});
         await test(state, state.time + 2, MINT_POOL_NOMINEX, oneSecExpectedNmxSupply * 2, {time: state.time + 2});
@@ -146,12 +145,12 @@ contract('MintSchedule', (accounts) => {
             nextTickSupply: 1000000
         };
 
-        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.1 + ROUNDING_CORRECTION_VALUE);
+        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.1);
         let expectedState = {
             time: state.time + 1,
             cycleIndex: 1,
             cycleStartTime: state.time + 1,
-            nextTickSupply: Math.floor(state.nextTickSupply * 0.994 + ROUNDING_CORRECTION_VALUE)
+            nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 1, MINT_POOL_BONUS, expectedNmxSupply, expectedState);
     });
@@ -165,14 +164,14 @@ contract('MintSchedule', (accounts) => {
             nextTickSupply: 1000000
         };
 
-        let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.1 + ROUNDING_CORRECTION_VALUE);
-        let newCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.994 * 0.8 * 0.1 + ROUNDING_CORRECTION_VALUE);
+        let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.1);
+        let newCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.994 * 0.8 * 0.1);
         let expectedNmxSupply = oldCycleOneSecNmxSupply * 1 + newCycleOneSecNmxSupply * 2;
         let expectedState = {
             time: state.time + 3,
             cycleIndex: 1,
             cycleStartTime: state.time + 1,
-            nextTickSupply: Math.floor(state.nextTickSupply * 0.994 + ROUNDING_CORRECTION_VALUE)
+            nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 3, MINT_POOL_BONUS, expectedNmxSupply, expectedState);
     });
@@ -187,10 +186,10 @@ contract('MintSchedule', (accounts) => {
         };
 
         let firstCycleNextTickSupply = Math.floor(state.nextTickSupply);
-        let secondCycleNextTickSupply = Math.floor(state.nextTickSupply * 0.994 + ROUNDING_CORRECTION_VALUE);
-        let thirdCycleNextTickSupply = Math.floor(state.nextTickSupply * 0.994 * 0.994 + ROUNDING_CORRECTION_VALUE);
+        let secondCycleNextTickSupply = Math.floor(state.nextTickSupply * 0.994);
+        let thirdCycleNextTickSupply = Math.floor(state.nextTickSupply * 0.994 * 0.994);
 
-        let firstCycleOneSecNmxSupply = Math.floor(firstCycleNextTickSupply * 0.8 * 0.9 + ROUNDING_CORRECTION_VALUE);
+        let firstCycleOneSecNmxSupply = Math.floor(firstCycleNextTickSupply * 0.8 * 0.9);
         let secondCycleOneSecNmxSupply = Math.floor(secondCycleNextTickSupply * 0.8 * 0.9);
         let thirdCycleOneSecNmxSupply = Math.floor(thirdCycleNextTickSupply * 0.8 * 0.9);
 
@@ -204,7 +203,14 @@ contract('MintSchedule', (accounts) => {
             cycleStartTime: state.time + DAY * 7 + 2,
             nextTickSupply: thirdCycleNextTickSupply
         };
-        await test(state, state.time + DAY * 7 + 5, MINT_POOL_PRIMARY, expectedNmxSupply, expectedState);
+        let oldAssertBN = assertBN;
+        try {
+            // accumulation of rounding error over several cycles
+            assertBN = getAssertBN(1000000);
+            await test(state, state.time + DAY * 7 + 5, MINT_POOL_PRIMARY, expectedNmxSupply, expectedState);
+        } finally {
+            assertBN = oldAssertBN;
+        }
     });
 
     it('item change in 1 second', async () => {
@@ -216,13 +222,13 @@ contract('MintSchedule', (accounts) => {
             nextTickSupply: 1000000
         };
 
-        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.3 + ROUNDING_CORRECTION_VALUE);
+        let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.3);
         let expectedState = {
             time: state.time + 1,
             itemIndex: 3,
             cycleIndex: 0,
             cycleStartTime: state.time + 1,
-            nextTickSupply: Math.floor(state.nextTickSupply * 0.994 + ROUNDING_CORRECTION_VALUE)
+            nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 1, MINT_POOL_NOMINEX, expectedNmxSupply, expectedState);
     });
@@ -236,15 +242,15 @@ contract('MintSchedule', (accounts) => {
             nextTickSupply: 1000000
         };
 
-        let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.3 + ROUNDING_CORRECTION_VALUE);
-        let newCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.994 * 0.3 + ROUNDING_CORRECTION_VALUE);
+        let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.3);
+        let newCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.994 * 0.3);
         let expectedNmxSupply = oldCycleOneSecNmxSupply * 1 + newCycleOneSecNmxSupply * 2;
         let expectedState = {
             time: state.time + 3,
             itemIndex: 3,
             cycleIndex: 0,
             cycleStartTime: state.time + 1,
-            nextTickSupply: Math.floor(state.nextTickSupply * 0.994 + ROUNDING_CORRECTION_VALUE)
+            nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 3, MINT_POOL_NOMINEX, expectedNmxSupply, expectedState);
     });
@@ -259,10 +265,10 @@ contract('MintSchedule', (accounts) => {
         };
 
         let oneSecExpectedNmxSupply = state.nextTickSupply * 0.7 * 0.7 * 0.2;
-        let oneSecExpectedNmxSupply05 = Math.floor(oneSecExpectedNmxSupply * 0.5 + ROUNDING_CORRECTION_VALUE);
-        let oneSecExpectedNmxSupply01 = Math.floor(oneSecExpectedNmxSupply * 0.1 + ROUNDING_CORRECTION_VALUE);
+        let oneSecExpectedNmxSupply05 = Math.floor(oneSecExpectedNmxSupply * 0.5);
+        let oneSecExpectedNmxSupply01 = Math.floor(oneSecExpectedNmxSupply * 0.1);
         let oneSecExpectedNmxSupply0 = oneSecExpectedNmxSupply * 0;
-        let oneSecExpectedNmxSupply1 = Math.floor(oneSecExpectedNmxSupply * 1 + ROUNDING_CORRECTION_VALUE);
+        let oneSecExpectedNmxSupply1 = Math.floor(oneSecExpectedNmxSupply * 1);
 
         await mintSchedule.setOutputRate((5n << 64n) / 10n); // 0.5
         await test(state, state.time + 1, MINT_POOL_BONUS, oneSecExpectedNmxSupply05 * 1, {time: state.time + 1});
@@ -315,14 +321,14 @@ contract('MintSchedule', (accounts) => {
     async function test(state, timestamp, mintPool, expectedNmxSupply, expectedState) {
         let result = await mintSchedule.makeProgress(state, timestamp, mintPool);
 
-        assert.equal(result[0], expectedNmxSupply, "nmxSupply");
+        assertBN(result[0], toBN(expectedNmxSupply), "nmxSupply");
 
         expectedState = {...state, ...expectedState};
         assert.equal(result[1].time, expectedState.time, "state.time");
         assert.equal(result[1].itemIndex, expectedState.itemIndex, "state.itemIndex");
         assert.equal(result[1].cycleIndex, expectedState.cycleIndex, "state.cycleIndex");
         assert.equal(result[1].cycleStartTime, expectedState.cycleStartTime, "state.cycleStartTime");
-        assert.equal(result[1].nextTickSupply, expectedState.nextTickSupply, "state.nextTickSupply");
+        assertBN(toBN(result[1].nextTickSupply), toBN(expectedState.nextTickSupply), "state.nextTickSupply");
 
         return result;
     }
@@ -368,13 +374,13 @@ contract('MintSchedule#totalSupply', (accounts) => {
             state.nextTickSupply = result0[1].nextTickSupply;
 
             if (i === 101) {
-                assert(oneYearSupply.isZero(), "supply for 102 year = " + oneYearSupply)
+                assert(oneYearSupply.isZero(), "supply for 102 year = " + oneYearSupply);
             }
         }
 
         let alreadyMintedNmx = await nmx.balanceOf(accounts[0]);
         let totalSupplyWithMinted = totalSupply.add(alreadyMintedNmx);
-        console.log(`Total Nmx supply: ${totalSupplyWithMinted}`)
+        console.log(`Total Nmx supply: ${totalSupplyWithMinted}`);
         assert(totalSupplyWithMinted.lte(toWei(toBN(200000000))), `total NMX supply = ${totalSupplyWithMinted}`);
     });
 

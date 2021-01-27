@@ -1,7 +1,7 @@
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const StakingService = artifacts.require("StakingService");
-const {rpcCommand, signData, ZERO} = require("../utils.js");
+const {rpcCommand, signData, ZERO, getAssertBN} = require("../utils.js");
 const truffleAssert = require('truffle-assertions');
 
 const toBN = web3.utils.toBN;
@@ -9,6 +9,8 @@ const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
 contract('StakingService#claimReward', (accounts) => {
+
+    const assertBN = getAssertBN(toWei(toBN(100), 'mwei'));
 
     let nmx;
     let stakingService;
@@ -90,7 +92,6 @@ contract('StakingService#claimReward', (accounts) => {
 
     it('reward can be claimed if the service is on a pause', async () => {
         await stakingService.stakeFrom(user, toWei(toBN(10)));
-        await stakingService.updateHistoricalRewardRate();
         await stakingService.pause();
         await claimRewardAndVerify(user, (1 / (10 + 10)) * 10, (1 / (10 + 10)) * 10);
     });
@@ -99,16 +100,20 @@ contract('StakingService#claimReward', (accounts) => {
         const initialBalance = await nmx.balanceOf(user);
         let tx = await stakingService.claimReward({from: user});
         const finalBalance = await nmx.balanceOf(user);
-        assert.equal(nmxBalance, fromWei(finalBalance), "nmx balance");
-        assert.equal(rewardAmount, fromWei(finalBalance.sub(initialBalance)), `reward amount`);
+        let actualRewardAmount = finalBalance.sub(initialBalance);
+
+        assertBN(finalBalance, nmxBalance, "nmx balance");
+        assertBN(actualRewardAmount, rewardAmount, `reward amount`);
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
-            return ev.from === user && ev.to === user && fromWei(ev.amount) === rewardAmount.toString();
+            return ev.from === user && ev.to === user && fromWei(ev.amount) === fromWei(actualRewardAmount);
         });
     }
 
 });
 
 contract('StakingService#claimRewardTo', (accounts) => {
+
+    const assertBN = getAssertBN(toWei(toBN(10), 'mwei'));
 
     let nmx;
     let stakingService;
@@ -171,7 +176,6 @@ contract('StakingService#claimRewardTo', (accounts) => {
 
     it('reward can be claimed if the service is on a pause', async () => {
         await stakingService.stakeFrom(user1, toWei(toBN(10)));
-        await stakingService.updateHistoricalRewardRate();
         await stakingService.pause();
         await claimRewardToAndVerify(user1, user2, (1 / (10 + 10)) * 10, (1 / (10 + 10)) * 10);
     });
@@ -182,18 +186,21 @@ contract('StakingService#claimRewardTo', (accounts) => {
         let tx = await stakingService.claimRewardTo(to, {from: from});
         const finalBalanceFrom = await nmx.balanceOf(from);
         const finalBalanceTo = await nmx.balanceOf(to);
+        let actualRewardAmount = finalBalanceTo.sub(initialBalanceTo);
 
-        assert.equal(nmxBalance, fromWei(finalBalanceTo), "nmx balance of 'to'");
-        assert.equal(rewardAmount, fromWei(finalBalanceTo.sub(initialBalanceTo)), `reward amount`);
+        assertBN(finalBalanceTo, nmxBalance, "nmx balance of 'to'");
+        assertBN(actualRewardAmount, rewardAmount, `reward amount`);
         if (from !== to) assert.deepEqual(initialBalanceFrom, finalBalanceFrom, "nmx balance of 'from'");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
-            return ev.from === from && ev.to === to && fromWei(ev.amount) === rewardAmount.toString();
+            return ev.from === from && ev.to === to && fromWei(ev.amount) === fromWei(actualRewardAmount);
         });
     }
 
 });
 
 contract('StakingService#claimWithAuthorization', async accounts => {
+
+    const assertBN = getAssertBN(0);
 
     let nmx;
     let stakingService;
@@ -210,7 +217,7 @@ contract('StakingService#claimWithAuthorization', async accounts => {
         await stakingToken.transfer(rewardOwner, toWei(toBN(500)));
         await stakingToken.approve(stakingService.address, toWei(toBN(500)), {from: rewardOwner});
         await stakingService.stakeFrom(rewardOwner, toWei(toBN(10)));
-        assert.notEqual(rewardOwner, rewardSpender, 'owner should be different to spender')
+        assert.notEqual(rewardOwner, rewardSpender, 'owner should be different to spender');
     });
 
     beforeEach(async () => {
@@ -290,7 +297,7 @@ contract('StakingService#claimWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
+        assertBN(nmxAmount, (await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
             return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
         });
@@ -312,7 +319,10 @@ contract('StakingService#claimWithAuthorization', async accounts => {
     });
 
     it('cannot claim greater than the unclaimed reward', async () => {
-        let nmxAmount = toWei(toBN(1 * 1000), "milli").addn(1);
+        await stakingService.updateHistoricalRewardRate();
+        await nmx.setSupply(0);
+
+        let nmxAmount = (await stakingService.getReward.call({from: rewardOwner})).addn(1);
         let signAmount = nmxAmount;
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
@@ -334,37 +344,39 @@ contract('StakingService#claimWithAuthorization', async accounts => {
         const sign = await signData(permitInfo.owner, typedData);
 
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
+        assertBN(nmxAmount, (await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
             return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
         });
     });
 
     it('can claim whole reward', async () => {
-        let nmxAmount = toWei(toBN(1 * 1000), "milli");
+        await stakingService.updateHistoricalRewardRate();
+        await nmx.setSupply(0);
+
+        let nmxAmount = await stakingService.getReward.call({from: rewardOwner});
         let signAmount = nmxAmount;
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(permitInfo.owner, typedData);
 
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
+        assertBN(nmxAmount, (await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
             return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
         });
     });
 
     it('reward can be claimed if the service is on a pause', async () => {
-        let nmxAmount = toWei(toBN(1 * 1000), "milli");
+        let nmxAmount = toWei(toBN(0.8 * 1000), "milli");
         let signAmount = nmxAmount;
         const permitInfo = await defaultPermitInfo(signAmount);
         const typedData = createPermitMessageData(permitInfo);
         const sign = await signData(permitInfo.owner, typedData);
 
-        await stakingService.updateHistoricalRewardRate();
         await stakingService.pause();
         let tx = await stakingService.claimWithAuthorization(permitInfo.owner, nmxAmount, signAmount, permitInfo.deadline, sign.v, sign.r, sign.s, {from: permitInfo.spender});
-        assert(nmxAmount.eq(await nmx.balanceOf(rewardSpender)), "nmx balance");
+        assertBN(nmxAmount, (await nmx.balanceOf(rewardSpender)), "nmx balance");
         truffleAssert.eventEmitted(tx, 'Rewarded', (ev) => {
             return ev.from === rewardOwner && ev.to === rewardSpender && ev.amount.eq(nmxAmount);
         });
@@ -454,4 +466,3 @@ contract('StakingService#claimWithAuthorization', async accounts => {
     });
 
 });
-

@@ -2,7 +2,7 @@ const Nmx = artifacts.require("Nmx");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const StakingRouter = artifacts.require("StakingRouter");
 const StakingService = artifacts.require("StakingService");
-const { rpcCommand } = require("../utils.js");
+const { rpcCommand, getAssertBN } = require("../utils.js");
 const truffleAssert = require('truffle-assertions');
 const { step } = require("mocha-steps");
 
@@ -11,6 +11,8 @@ const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
 contract('StakingService; Group: Staking', (accounts) => {
+
+    const assertBN = getAssertBN(0);
 
     let nmx;
     let stakingToken;
@@ -464,13 +466,13 @@ contract('StakingService; Group: Staking', (accounts) => {
 
     function verifyUserBalance(address, balance) {
         step(`User "${address}" balance is "${balance}"`, async () => {
-           await assert.equal(balance, fromWei(await stakingToken.balanceOf(address)), "user balance");
+           assertBN(await stakingToken.balanceOf(address), toWei(toBN(balance)), "user balance");
         });
     }
 
     function verifyUserStakedAmount(address, stakedAmount) {
         step(`User "${address}" staked amount is "${stakedAmount}"`, async () => {
-            await assert.equal(stakedAmount, fromWei((await stakingService.stakers(address)).amount), "stakedAmount");
+            assertBN((await stakingService.stakers(address)).amount, stakedAmount, "stakedAmount");
         });
     }
 
@@ -481,13 +483,13 @@ contract('StakingService; Group: Staking', (accounts) => {
 
     function verifyStakingServiceBalance(balance) {
         step(`StakingService balance is "${balance}"`, async () => {
-            await assert.equal(balance, fromWei(await stakingToken.balanceOf(stakingService.address)), "stakingService balance");
+            assertBN(await stakingToken.balanceOf(stakingService.address), balance, "stakingService balance");
         });
     }
 
     function verifyTotalStaked(totalStaked) {
         step(`StakingService totalStaked is "${totalStaked}"`, async () => {
-            await assert.equal(totalStaked, fromWei((await stakingService.state()).totalStaked), "totalStaked");
+            assertBN((await stakingService.state()).totalStaked, totalStaked, "totalStaked");
         });
     }
 

@@ -1,3 +1,12 @@
+const getAssertBN = function (maxDiff = web3.utils.toBN(0)) {
+    maxDiff = web3.utils.isBN(maxDiff) ? maxDiff : web3.utils.toBN(maxDiff);
+    return (actual, expected, message) => {
+        expected = web3.utils.isBN(expected) ? expected : web3.utils.toBN(expected * 10 ** 18);
+        let diff = actual.sub(expected).abs();
+        assert(diff.lte(maxDiff), `${message} expected=${expected.toString()} actual=${actual.toString()} diff=${diff.toString()} maxDiff=${maxDiff}`);
+    }
+};
+
 module.exports = {
 
     rpcCommand: (command, params = []) => {
@@ -24,6 +33,10 @@ module.exports = {
             });
         });
     },
+
+    getAssertBN,
+
+    assertBN: getAssertBN(web3.utils.toBN(0)),
 
     ZERO: web3.utils.toBN(0),
     ZERO_ADDRESS: '0x0000000000000000000000000000000000000000',

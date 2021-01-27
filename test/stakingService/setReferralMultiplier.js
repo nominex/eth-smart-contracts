@@ -25,6 +25,10 @@ contract('StakingService#setReferralMultiplier', (accounts) => {
         await rpcCommand("evm_revert", [snapshotId]);
     });
 
+    it('check default value', async () => {
+        await assertReferralMultiplier(500);
+    });
+
     it('values stored', async () => {
         await setReferralMultiplierAndVerify(5);
     });
@@ -54,8 +58,12 @@ contract('StakingService#setReferralMultiplier', (accounts) => {
 
     async function setReferralMultiplierAndVerify(newMultiplier) {
         await stakingService.setReferralMultiplier(newMultiplier);
+        await assertReferralMultiplier(newMultiplier);
+    }
+
+    async function assertReferralMultiplier(expectedMultiplier) {
         let actual = await stakingService.referralMultiplier();
-        assert.equal(actual.toString(), newMultiplier.toString(), "multiplier");
+        assert.equal(actual.toString(), expectedMultiplier.toString(), "multiplier");
     }
 
 });

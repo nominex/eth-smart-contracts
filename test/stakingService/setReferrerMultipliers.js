@@ -25,6 +25,16 @@ contract('StakingService#setReferrerMultipliers', (accounts) => {
         await rpcCommand("evm_revert", [snapshotId]);
     });
 
+    it('check default value', async () => {
+        await assertReferrerMultipliers([
+            {stakedAmountInUsdt: 100, multiplier: 500},
+            {stakedAmountInUsdt: 300, multiplier: 1000},
+            {stakedAmountInUsdt: 1000, multiplier: 1500},
+            {stakedAmountInUsdt: 3000, multiplier: 2000},
+            {stakedAmountInUsdt: 10000, multiplier: 2500},
+        ]);
+    });
+
     it('values stored', async () => {
         await setReferrerMultipliersAndVerify([
             {stakedAmountInUsdt: 1, multiplier: 23},
@@ -124,9 +134,12 @@ contract('StakingService#setReferrerMultipliers', (accounts) => {
 
     async function setReferrerMultipliersAndVerify(newMultipliersArray) {
         await stakingService.setReferrerMultipliers(newMultipliersArray);
+        await assertReferrerMultipliers(newMultipliersArray);
+    }
 
-        for (let i = 0; i < newMultipliersArray.length; i++) {
-            let expected = newMultipliersArray[i];
+    async function assertReferrerMultipliers(expectedMultipliersArray) {
+        for (let i = 0; i < expectedMultipliersArray.length; i++) {
+            let expected = expectedMultipliersArray[i];
             let actual = await stakingService.referrerMultipliers(i);
             assert.equal(actual.stakedAmountInUsdt.toString(), expected.stakedAmountInUsdt.toString(), `${i} item stakedAmountInUsdt`);
             assert.equal(actual.multiplier.toString(), expected.multiplier.toString(), `${i} item multiplier`);
@@ -134,7 +147,7 @@ contract('StakingService#setReferrerMultipliers', (accounts) => {
 
         let error = null;
         try {
-            await stakingService.referrerMultipliers(newMultipliersArray.length);
+            await stakingService.referrerMultipliers(expectedMultipliersArray.length);
         } catch (e) {
             error = e;
         }
