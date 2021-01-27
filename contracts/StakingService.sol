@@ -2,15 +2,15 @@
 pragma solidity >=0.7.0 <0.8.0;
 pragma abicoder v2;
 
+import "./DirectBonusAware.sol";
 import "./NmxSupplier.sol";
 import "./Nmx.sol";
 import "./PausableByOwner.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-import "./LiquidityWealthEstimator.sol";
 
-contract StakingService is PausableByOwner, LiquidityWealthEstimator {
+contract StakingService is PausableByOwner, DirectBonusAware {
     /**
      * @param historicalRewardRate how many NMX rewards for one NMXLP (<< 40)
      * @param totalStaked how many NMXLP are staked in total
@@ -25,19 +25,10 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
      * @param reward total nmx amount user got as a reward
      */
     struct Staker {
-        address referrer;
         uint256 amount;
         uint128 initialRewardRate;
         uint128 reward;
         uint256 claimedReward;
-    }
-    /**
-     * @param stakedAmountInUsdt staked usdt amount required to get the multipliers (without decimals)
-     * @param multiplier reward bonus multiplier for referrer (in 0.0001 parts)
-     */
-    struct ReferrerMultiplierData {
-        uint16 stakedAmountInUsdt;
-        uint16 multiplier;
     }
 
     bytes32 public DOMAIN_SEPARATOR;
@@ -50,63 +41,22 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
 
     mapping(address => uint256) public nonces;
 
-    /**
-     * @dev Nmx contract
-     */
-    address public nmx;
-    /**
-     * @dev ERC20 TODO
-     */
-    address public stakingToken;
-    /**
-     * @dev to got minted NMX
-     */
+    address public nmx; /// @dev Nmx contract
+    address public stakingToken; /// @dev NmxLp contract of uniswap
     address public nmxSupplier;
-    /**
-     * @dev internal service state
-     */
-    State public state;
+    State public state; /// @dev internal service state
+    mapping(address => Staker) public stakers; /// @dev mapping of staker's address to its state
 
-    /**
-     * @dev mapping a staker's address to his state
-     */
-    mapping(address => Staker) public stakers;
-
-    uint16 public referralMultiplier; /// @dev multiplier for direct bonus for referrals of the referral program
-    ReferrerMultiplierData[] public referrerMultipliers; /// @dev multipliers for direct bonuses for referrers of the referral program
-
-    /**
-     * @dev event when someone is staked NMXLP
-     */
-    event Staked(address indexed owner, uint128 amount);
-    /**
-     * @dev event when someone unstaked NMXLP
-     */
-    event Unstaked(address indexed from, address indexed to, uint128 amount);
-    /**
-     * @dev event when someone is awarded NMX
-     */
-    event Rewarded(address indexed from, address indexed to, uint128 amount);
-    event ReferrerChanged(address indexed referral, address indexed referrer);
-    /**
-     * @dev event when someone receives an NMX as a staking bonus
-     */
-    event StakingBonusAccrued(address indexed staker, uint128 amount);
-    /**
-    /**
-     * @dev event when someone receives an NMX from an direct referrer bonus
-     */
-    event ReferrerBonusAccrued(address indexed referrer, uint128 amount);
-    /**
-     * @dev event when someone receives an NMX from an direct referral bonus
-     */
-    event ReferralBonusAccrued(address indexed referral, uint128 amount);
+    event Staked(address indexed owner, uint128 amount); /// @dev event when someone is staked NMXLP
+    event Unstaked(address indexed from, address indexed to, uint128 amount); /// @dev event when someone unstaked NMXLP
+    event Rewarded(address indexed from, address indexed to, uint128 amount); /// @dev event when someone is awarded NMX    
+    event StakingBonusAccrued(address indexed staker, uint128 amount); /// @dev event when someone receives an NMX as a staking bonus         
 
     constructor(
         address _nmx,
         address _stakingToken,
         address _nmxSupplier
-    ) LiquidityWealthEstimator(_nmx, _stakingToken) {
+    ) DirectBonusAware(_nmx, _stakingToken) {
         nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
@@ -127,51 +77,8 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
                 address(this)
             )
         );
-        referralMultiplier = 500; // 500/10000 = 0.0500 = 0.05 = 5%
-        ReferrerMultiplierData storage item = referrerMultipliers.push();
-        item.stakedAmountInUsdt = 100;
-        item.multiplier = 500; // 500/10000 = 0.0500 = 0.05 = 5%
-        item = referrerMultipliers.push();
-        item.stakedAmountInUsdt = 300;
-        item.multiplier = 1000; // 1000/10000 = 0.1000 = 0.10 = 10%
-        item = referrerMultipliers.push();
-        item.stakedAmountInUsdt = 1000;
-        item.multiplier = 1500; // 1500/10000 = 0.1500 = 0.15 = 15%
-        item = referrerMultipliers.push();
-        item.stakedAmountInUsdt = 3000;
-        item.multiplier = 2000; // 2000/10000 = 0.2000 = 0.20 = 20%
-        item = referrerMultipliers.push();
-        item.stakedAmountInUsdt = 10000;
-        item.multiplier = 2500; // 2500/10000 = 0.2500 = 0.25 = 25%
     }
 
-    function setReferralMultiplier(uint16 _referralMultiplier) external onlyOwner {
-        referralMultiplier = _referralMultiplier;
-    }
-
-    function setReferrerMultipliers(ReferrerMultiplierData[] calldata newMultipliers) external onlyOwner {
-        uint256 prevStakedAmountInUsdt = newMultipliers.length > 0 ? newMultipliers[0].stakedAmountInUsdt : 0;
-        for (uint256 i = 1; i < newMultipliers.length; i++) {
-            ReferrerMultiplierData calldata newMultiplier = newMultipliers[i];
-            require(newMultiplier.stakedAmountInUsdt > prevStakedAmountInUsdt, "NMXSTKSRV: INVALID_ORDER");
-            prevStakedAmountInUsdt = newMultiplier.stakedAmountInUsdt;
-        }
-
-        while(referrerMultipliers.length != 0) {
-            referrerMultipliers.pop();
-        }
-        for (uint256 i = 0; i < newMultipliers.length; i++) {
-            referrerMultipliers.push(newMultipliers[i]);
-        }
-    }
-
-    function setReferrer(address referrer) external {
-        Staker storage staker = stakers[tx.origin];
-        bool validReferrer = staker.referrer == address(0) && referrer != address(0) && tx.origin != referrer;
-        require(validReferrer, "NMXSTKSRV: INVALID_REFERRER");
-        emit ReferrerChanged(tx.origin, referrer);
-        staker.referrer = referrer;
-    }
 
     /**
      * @dev accepts NMXLP staked by the user, also rewards for the previously staked amount at the current rate
@@ -309,53 +216,35 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
         uint128(staker.amount)) >> 40;
         emit StakingBonusAccrued(stakerAddress, unrewarded);
 
-        if (staker.referrer != address(0) && unrewarded > 0) {
-            Staker storage referrer = stakers[staker.referrer];
+        if (unrewarded > 0) {
+            address referrerAddress = referrers[stakerAddress];
+            if (referrerAddress != address(0)) {
+                Staker storage referrer = stakers[referrerAddress];
 
-            int128 referrerMultiplier = getReferrerMultiplier(referrer.amount);
-            int128 referralMultiplier = getReferralMultiplier();
-            uint128 referrerBonus = uint128(ABDKMath64x64.mulu(referrerMultiplier, uint256(unrewarded)));
-            uint128 referralBonus = uint128(ABDKMath64x64.mulu(referralMultiplier, uint256(unrewarded)));
+                int128 referrerMultiplier = getReferrerMultiplier(referrer.amount);
+                int128 referralMultiplier = getReferralMultiplier();
+                uint128 referrerBonus = uint128(ABDKMath64x64.mulu(referrerMultiplier, uint256(unrewarded)));
+                uint128 referralBonus = uint128(ABDKMath64x64.mulu(referralMultiplier, uint256(unrewarded)));
 
-            uint128 supplied = Nmx(nmx).requestDirectBonus(referrerBonus + referralBonus);
-            if (supplied < referrerBonus) {
-                referrerBonus = supplied;
+                uint128 supplied = Nmx(nmx).requestDirectBonus(referrerBonus + referralBonus);
+                if (supplied < referrerBonus) {
+                    referrerBonus = supplied;
+                }
+                supplied -= referrerBonus;
+                if (supplied < referralBonus) {
+                    referralBonus = supplied;
+                }
+
+                emit ReferrerBonusAccrued(referrerAddress, referrerBonus);
+                referrer.reward += referrerBonus;
+
+                emit ReferralBonusAccrued(stakerAddress, referralBonus);
+                unrewarded += referralBonus;
             }
-            supplied -= referrerBonus;
-            if (supplied < referralBonus) {
-                referralBonus = supplied;
-            }
-
-            emit ReferrerBonusAccrued(staker.referrer, referrerBonus);
-            referrer.reward += referrerBonus;
-
-            emit ReferralBonusAccrued(stakerAddress, referralBonus);
-            unrewarded += referralBonus;
         }
 
         staker.initialRewardRate = state.historicalRewardRate;
         staker.reward += unrewarded;
-    }
-
-    function getReferrerMultiplier(uint256 amount) private view returns (int128 multiplier) {
-        return ABDKMath64x64.divu(getDirectBonusMultipliers(amount).multiplier, 10000);
-    }
-
-    function getReferralMultiplier() private view returns (int128) {
-        return ABDKMath64x64.divu(referralMultiplier, 10000);
-    }
-
-    function getDirectBonusMultipliers(uint256 amount) private view returns (ReferrerMultiplierData memory multipliers) {
-        uint256 amountInUsdt = estimateWealth(amount);
-        amountInUsdt = amountInUsdt/10**ERC20(stakingToken).decimals();
-        for (uint256 i = 0; i < referrerMultipliers.length; i++) {
-            ReferrerMultiplierData memory _multipliers = referrerMultipliers[i];
-            if (amountInUsdt >= _multipliers.stakedAmountInUsdt) {
-                multipliers = _multipliers;
-            } else {
-                break;
-            }
-        }
     }
 
     function _claimReward(Staker storage staker, address from, address to, uint128 amount) private {
@@ -420,7 +309,7 @@ contract StakingService is PausableByOwner, LiquidityWealthEstimator {
         return state.totalStaked;
     }
 
-    function lpToken() internal view override returns (address) {
+    function _lpToken() internal view override returns (address) {
         return stakingToken;
     }
 }

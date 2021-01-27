@@ -29,7 +29,7 @@ abstract contract LiquidityWealthEstimator {
      Function is declared as public for testing purposes
     */
     function estimateWealth(uint256 lpAmount) public view returns (uint256) {
-        address lpToken = lpToken();
+        address lpToken = _lpToken();
         uint lpTotalSupply = IUniswapV2Pair(lpToken).totalSupply();
         uint pairedTokenBalance = IERC20(pairedToken).balanceOf(lpToken);
         /*
@@ -42,6 +42,6 @@ abstract contract LiquidityWealthEstimator {
     }
 
     /// @dev should return LP token of uniswap pair
-    function lpToken() internal view virtual returns (address);
+    function _lpToken() internal view virtual returns (address);
 
 }
