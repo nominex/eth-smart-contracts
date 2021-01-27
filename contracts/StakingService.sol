@@ -12,17 +12,18 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
 contract StakingService is PausableByOwner, DirectBonusAware {
     /**
-     * @param historicalRewardRate how many NMX rewards for one NMXLP (<< 40)
-     * @param totalStaked how many NMXLP are staked in total
+     * @param totalStaked amount of NMXLP currently staked in the service
+     * @param historicalRewardRate how many NMX minted per one NMXLP (<< 40). Never decreases.
      */
     struct State {
         uint128 totalStaked;
         uint128 historicalRewardRate;
     }
     /**
-     * @param amount how much NMXLP staked
-     * @param initialRewardRate rice at which the reward was last paid (<< 40)
-     * @param reward total nmx amount user got as a reward
+     * @param amount of NMXLP currently staked by the staker
+     * @param initialRewardRate value of historicalRewardRate before last update of the staker's data
+     * @param reward total amount of Nmx accrued to the staker
+     * @param claimedReward total amount of Nmx the staker transferred from the service already
      */
     struct Staker {
         uint256 amount;
@@ -47,10 +48,10 @@ contract StakingService is PausableByOwner, DirectBonusAware {
     State public state; /// @dev internal service state
     mapping(address => Staker) public stakers; /// @dev mapping of staker's address to its state
 
-    event Staked(address indexed owner, uint128 amount); /// @dev event when someone is staked NMXLP
-    event Unstaked(address indexed from, address indexed to, uint128 amount); /// @dev event when someone unstaked NMXLP
-    event Rewarded(address indexed from, address indexed to, uint128 amount); /// @dev event when someone is awarded NMX    
-    event StakingBonusAccrued(address indexed staker, uint128 amount); /// @dev event when someone receives an NMX as a staking bonus         
+    event Staked(address indexed owner, uint128 amount); /// @dev someone is staked NMXLP
+    event Unstaked(address indexed from, address indexed to, uint128 amount); /// @dev someone unstaked NMXLP
+    event Rewarded(address indexed from, address indexed to, uint128 amount); /// @dev someone transferred Nmx from the service
+    event StakingBonusAccrued(address indexed staker, uint128 amount); /// @dev Nmx accrued to the staker
 
     constructor(
         address _nmx,
@@ -81,10 +82,8 @@ contract StakingService is PausableByOwner, DirectBonusAware {
 
 
     /**
-     * @dev accepts NMXLP staked by the user, also rewards for the previously staked amount at the current rate
-     * emit Staked and Rewarded events
-     *
-     * amount - new part of staked NMXLP
+     @dev function to stake permitted amount of LP tokens from uniswap contract
+     @param amount of NMXLP to be staked in the service
      */
     function stake(uint128 amount) external whenNotPaused {
         _stakeFrom(msg.sender, amount);
@@ -133,10 +132,8 @@ contract StakingService is PausableByOwner, DirectBonusAware {
     }
 
     /**
-     * @dev accepts NMXLP unstaked by the user, also rewards for the previously staked amount at the current rate
-     * emit Unstaked and Rewarded events
-     *
-     * amount - new part of staked NMXLP
+     @dev function to unstake LP tokens from the service and transfer to uniswap contract
+     @param amount of NMXLP to be unstaked from the service
      */
     function unstake(uint128 amount) external {
         _unstake(msg.sender, msg.sender, amount);
@@ -171,7 +168,7 @@ contract StakingService is PausableByOwner, DirectBonusAware {
     }
 
     /**
-     * @dev get the whole reward for yourself
+     * @dev updates current reward and transfers it to the caller's address
      */
     function claimReward() external returns (uint256) {
         Staker storage staker = updateStateAndStaker(msg.sender);
@@ -180,13 +177,15 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         return unclaimedReward;
     }
 
-    /**
-     * @dev receive the entire reward to a different address
-     *
-     * @param to address to receive the award
-     */
     function claimRewardTo(address to) external returns (uint256) {
         Staker storage staker = updateStateAndStaker(msg.sender);
+        uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
+        _claimReward(staker, msg.sender, to, unclaimedReward);
+        return unclaimedReward;
+    }
+
+    function claimRewardToWithoutUpdate(address to) external returns (uint256) {
+        Staker storage staker = stakers[msg.sender];
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, msg.sender, to, unclaimedReward);
         return unclaimedReward;
@@ -283,16 +282,13 @@ contract StakingService is PausableByOwner, DirectBonusAware {
     }
 
     /**
-     * @dev updates state and returns unclaimed reward amount.
+     * @dev updates state and returns unclaimed reward amount. Is supposed to be invoked as call from metamask to display current amount of Nmx available
      */
     function getReward() external returns (uint256 unclaimedReward) {
         Staker memory staker = updateStateAndStaker(msg.sender);
         unclaimedReward = staker.reward - staker.claimedReward;
     }
 
-    /**
-     * @dev update how many NMX rewards for one NMXLP are currently
-     */
     function updateHistoricalRewardRate() public {
         uint128 currentNmxSupply = uint128(NmxSupplier(nmxSupplier).supplyNmx());
         if (state.totalStaked != 0 && currentNmxSupply != 0)

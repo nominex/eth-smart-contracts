@@ -17,6 +17,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     address public mintSchedule;
     mapping(address => MintPool) public poolByOwner;
     address[5] public poolOwners; // 5 - number of MintPool values
+    /** @dev dedicated state for every pool to decrease gas consumtion in case of staking/unstaking - no updates related to other mint pools are required to be persisted */
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
 
     uint40 private constant DISTRIBUTION_START_TIME = 1612137600; // 2021-02-01T00:00:00Z
@@ -26,19 +27,9 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     mapping(address => bool) public directPoolOwnerByAddress;
     address[] public directPoolOwners;
 
-    event PoolOwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner,
-        MintPool indexed pool
-    );
-
-    event DirectPoolOwnershipGranted(
-        address indexed owner
-    );
-
-    event DirectPoolOwnershipRevoked(
-        address indexed owner
-    );
+    event PoolOwnershipTransferred(address indexed previousOwner, address indexed newOwner, MintPool indexed pool);
+    event DirectPoolOwnershipGranted(address indexed owner);
+    event DirectPoolOwnershipRevoked(address indexed owner);
 
     constructor(address _mintSchedule) ERC20("Nominex", "NMX") {
         uint256 chainId;
@@ -63,11 +54,11 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             i++
         ) {
             MintScheduleState storage poolMintState = poolMintStates[i];
-            poolMintState.nextTickSupply = (10000 * 10**18) / uint40(1 days);
+            poolMintState.nextTickSupply = (10000 * 10**18) / uint40(1 days) + 1; // +1 - to coupe with rounding error when daily supply is 9999.9999...
             poolMintState.time = DISTRIBUTION_START_TIME;
             poolMintState.weekStartTime = DISTRIBUTION_START_TIME;
         }
-        _mint(msg.sender, 117000 * 10**18);
+        _mint(msg.sender, 117000 * 10**18); // amount of Nmx has been distributed or sold already at the moment of contract deployment
     }
 
     function permit(
@@ -105,10 +96,12 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         _approve(owner, spender, value);
     }
 
+    /// @dev StakingServices can get arbitrary amount of Nmx from DirectBonus pool
     function requestDirectBonus(uint128 amount) external returns (uint128) {
         require(directPoolOwnerByAddress[msg.sender], "NMX: caller is not the owner of DirectPool");
         if (block.timestamp < DISTRIBUTION_START_TIME) return 0;
         uint128 directPoolRest = DIRECT_POOL_TOTAL_SUPPLY_LIMIT - directPoolTotalSupply;
+        // scheduleRest was made to make it impossible to get all the DirectBonus pool at once
         uint128 scheduledRest = uint128((block.timestamp - DISTRIBUTION_START_TIME) * DIRECT_POOL_RATE) - directPoolTotalSupply;
         if (directPoolRest > scheduledRest) {
             directPoolRest = scheduledRest;
@@ -122,6 +115,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         return amount;
     }
 
+    /// @dev the owner can change the list of DirectPool owners
     function setDirectPoolOwners(address[] calldata newOwners) external onlyOwner {
         for (uint256 i = 0; i < directPoolOwners.length; i++) {
             address oldOwner = directPoolOwners[i];
@@ -138,6 +132,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         directPoolOwners = newOwners;
     }
 
+    /// @dev the contract owner can change any of mint pool owners
     function transferPoolOwnership(MintPool pool, address newOwner) external {
         address currentOwner = poolOwners[uint256(pool)];
         require(
@@ -166,6 +161,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         poolByOwner[newOwner] = pool;
     }
 
+    /// @dev if caller is owner of any mint pool it will be supplied with Nmx based on the schedule and time passed from the moment when the method was invoked by the same mint pool owner last time
     function supplyNmx() external override returns (uint256) {
         MintPool pool = poolByOwner[msg.sender];
         if (pool == MintPool.DEFAULT_VALUE) return 0;
@@ -181,6 +177,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         return supply;
     }
 
+    /// @dev view function to support displaying PRIMARY POOL daily supply on UI
     function rewardRate() external view returns (uint256) {
         (, MintScheduleState memory newState) =
             MintSchedule(mintSchedule).makeProgress(
