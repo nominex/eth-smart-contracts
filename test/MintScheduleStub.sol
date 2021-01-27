@@ -16,8 +16,8 @@ contract MintScheduleStub {
 
         scheduleState.time = uint40(block.timestamp);
         scheduleState.itemIndex += 1;
-        scheduleState.cycleIndex += 1;
-        scheduleState.cycleStartTime = uint40(block.timestamp);
+        scheduleState.weekIndex += 1;
+        scheduleState.weekStartTime = uint40(block.timestamp);
         scheduleState.nextTickSupply *= 2;
         if (pool == MintPool.PRIMARY) {
             scheduleState.nextTickSupply *= 2;

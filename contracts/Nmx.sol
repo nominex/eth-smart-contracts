@@ -65,7 +65,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             MintScheduleState storage poolMintState = poolMintStates[i];
             poolMintState.nextTickSupply = (10000 * 10**18) / uint40(1 days);
             poolMintState.time = DISTRIBUTION_START_TIME;
-            poolMintState.cycleStartTime = DISTRIBUTION_START_TIME;
+            poolMintState.weekStartTime = DISTRIBUTION_START_TIME;
         }
         _mint(msg.sender, 117000 * 10**18);
     }

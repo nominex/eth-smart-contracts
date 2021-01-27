@@ -7,22 +7,26 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MintSchedule is Ownable {
-
+    /**
+     @dev structure to describe the mint schedule. After each week MintScheduleState.nextTickSupply decreases.
+     When the schedule completes weekCount weeks in current item it goes to the next item in the items.
+     @param weekCount duration of the item in weeks
+     @param weekCompletenessMultiplier a number nextTickSupply is multiplied by after each week in the item
+     @param poolShares shares of the mint pool in the item
+     */
     struct ScheduleItem {
-        uint40 cycleDuration;
-        uint16 cyclesCount;
-        uint64 cycleCompletenessMultiplier;
+        uint16 weekCount;
+        uint64 weekCompletenessMultiplier;
         uint64[] poolShares;
     }
+    uint40 constant WEEK_DURATION = 7 days;
 
     using ABDKMath64x64 for int128;
-    int128 public outputRate = ABDKMath64x64.fromInt(1);
-    ScheduleItem[] public items;
+    int128 public outputRate = ABDKMath64x64.fromInt(1); /// @dev in case it will be decided to mint Nmx in another blockchain
+    ScheduleItem[] public items; /// @dev array of shcedule describing items
 
     constructor() {
-        uint40 sevenDays = 7 days;
-
-        // used in shares ABDKMath64x64 consts
+        // used in pool shares ABDKMath64x64 consts
         int128 abdk_1_10 = ABDKMath64x64.divu(1, 10);
         int128 abdk_15_100 = ABDKMath64x64.divu(15, 100);
         int128 abdk_2_10 = ABDKMath64x64.divu(2, 10);
@@ -66,82 +70,82 @@ contract MintSchedule is Ownable {
 
         /*1-28 first 28 days*/
         ScheduleItem storage item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 4;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
+        item.weekCount = 4;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
         item.poolShares = shares_01_28;
 
         /*29-56 second 28 days*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 4;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
+
+        item.weekCount = 4;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
         item.poolShares = shares_29_56;
 
         /*57-182 - 0.5 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 18;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
+
+        item.weekCount = 18;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
         item.poolShares = shares_57_xx;
 
         /*183-371 - 1 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 27;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(996, 1000));
+
+        item.weekCount = 27;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(996, 1000));
         item.poolShares = shares_57_xx;
 
         /*372-735 - 2 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 52;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(998, 1000));
+
+        item.weekCount = 52;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(998, 1000));
         item.poolShares = shares_57_xx;
 
         /*736-1463 - 4 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 104;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(9995, 10000));
+
+        item.weekCount = 104;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(9995, 10000));
         item.poolShares = shares_57_xx;
 
         /*1464-2926 - 8 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 209;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(9997, 10000));
+
+        item.weekCount = 209;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(9997, 10000));
         item.poolShares = shares_57_xx;
 
         /*2927-5481 - 15 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 365;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99985, 100000));
+
+        item.weekCount = 365;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99985, 100000));
         item.poolShares = shares_57_xx;
 
         /*5481-10962 - 30 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 783;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99992, 100000));
+
+        item.weekCount = 783;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99992, 100000));
         item.poolShares = shares_57_xx;
 
         /*10963-21917 - 60 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 1565;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99994, 100000));
+
+        item.weekCount = 1565;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99994, 100000));
         item.poolShares = shares_57_xx;
 
         /*21918-36505 - 100 year*/
         item = items.push();
-        item.cycleDuration = sevenDays;
-        item.cyclesCount = 2084;
-        item.cycleCompletenessMultiplier = uint64(ABDKMath64x64.divu(99995, 100000));
+
+        item.weekCount = 2084;
+        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99995, 100000));
         item.poolShares = shares_57_xx;
     }
 
+    /// @dev the owner can decrease outputRate in case of minting some part of Nmx through another blockchain
     function setOutputRate(int128 _outputRate) external onlyOwner {
         require(
             _outputRate <= ABDKMath64x64.fromInt(1),
@@ -151,6 +155,9 @@ contract MintSchedule is Ownable {
         outputRate = _outputRate;
     }
 
+    /**
+     @dev calculates changes in scheduleState based on the time passed from last update and returns updated state and amount of Nmx to be minted
+     */
     function makeProgress(
         MintScheduleState memory scheduleState,
         uint40 time,
@@ -162,12 +169,13 @@ contract MintSchedule is Ownable {
         ) {
             ScheduleItem storage item = items[scheduleState.itemIndex];
             uint40 boundary =
-                min(time, scheduleState.cycleStartTime + item.cycleDuration);
+                min(time, scheduleState.weekStartTime + WEEK_DURATION);
             uint256 secondsFromLastUpdate = boundary - scheduleState.time;
             nmxSupply +=
                 secondsFromLastUpdate *
-                    outputRate.mul(item.poolShares[uint256(pool)])
-                    .mulu(uint256(scheduleState.nextTickSupply));
+                outputRate.mul(item.poolShares[uint256(pool)]).mulu(
+                    uint256(scheduleState.nextTickSupply)
+                );
             persistStateChange(scheduleState, item, boundary);
         }
         return (nmxSupply, scheduleState);
@@ -179,12 +187,12 @@ contract MintSchedule is Ownable {
         uint40 time
     ) private pure {
         state.time = time;
-        if (time == state.cycleStartTime + item.cycleDuration) {
-            state.nextTickSupply = uint128(int128(item.cycleCompletenessMultiplier).mulu(uint256(state.nextTickSupply)));
-            state.cycleIndex++;
-            state.cycleStartTime = time;
-            if (state.cycleIndex == item.cyclesCount) {
-                state.cycleIndex = 0;
+        if (time == state.weekStartTime + WEEK_DURATION) {
+            state.nextTickSupply = uint128(int128(item.weekCompletenessMultiplier).mulu(uint256(state.nextTickSupply)));
+            state.weekIndex++;
+            state.weekStartTime = time;
+            if (state.weekIndex == item.weekCount) {
+                state.weekIndex = 0;
                 state.itemIndex++;
             }
         }

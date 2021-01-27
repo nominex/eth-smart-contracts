@@ -28,8 +28,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 4,
-            cycleIndex: 4,
-            cycleStartTime: now - 222,
+            weekIndex: 4,
+            weekStartTime: now - 222,
             nextTickSupply: 1000000
         };
 
@@ -40,8 +40,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 4,
-            cycleIndex: 4,
-            cycleStartTime: now - 222,
+            weekIndex: 4,
+            weekStartTime: now - 222,
             nextTickSupply: 1000000
         };
 
@@ -52,8 +52,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 0,
-            cycleIndex: 0,
-            cycleStartTime: now,
+            weekIndex: 0,
+            weekStartTime: now,
             nextTickSupply: 1000000
         };
 
@@ -65,8 +65,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 10,
-            cycleIndex: 2083,
-            cycleStartTime: now - DAY * 7 + 1,
+            weekIndex: 2083,
+            weekStartTime: now - DAY * 7 + 1,
             nextTickSupply: 1000000
         };
 
@@ -74,8 +74,8 @@ contract('MintSchedule', (accounts) => {
         let expectedState = {
             time: state.time + 1,
             itemIndex: 11,
-            cycleIndex: 0,
-            cycleStartTime: state.time + 1,
+            weekIndex: 0,
+            weekStartTime: state.time + 1,
             nextTickSupply: Math.floor(state.nextTickSupply * 0.99995)
         };
         await test(state, state.time + 1, MINT_POOL_TEAM, expectedNmxSupply, expectedState);
@@ -85,8 +85,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 11,
-            cycleIndex: 0,
-            cycleStartTime: now,
+            weekIndex: 0,
+            weekStartTime: now,
             nextTickSupply: 1000000
         };
 
@@ -99,8 +99,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 2,
-            cycleIndex: 3,
-            cycleStartTime: now - 100,
+            weekIndex: 3,
+            weekStartTime: now - 100,
             nextTickSupply: 1000000
         };
 
@@ -122,8 +122,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 5,
-            cycleIndex: 12,
-            cycleStartTime: now - 50,
+            weekIndex: 12,
+            weekStartTime: now - 50,
             nextTickSupply: 1000000
         };
 
@@ -136,31 +136,31 @@ contract('MintSchedule', (accounts) => {
         await test(state, state.time + 10, MINT_POOL_NOMINEX, oneSecExpectedNmxSupply * 10, {time: state.time + 10});
     });
 
-    it('cycle change in 1 second', async () => {
+    it('week change in 1 second', async () => {
         let state = {
             time: now,
             itemIndex: 0,
-            cycleIndex: 0,
-            cycleStartTime: now - DAY * 7 + 1,
+            weekIndex: 0,
+            weekStartTime: now - DAY * 7 + 1,
             nextTickSupply: 1000000
         };
 
         let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.1);
         let expectedState = {
             time: state.time + 1,
-            cycleIndex: 1,
-            cycleStartTime: state.time + 1,
+            weekIndex: 1,
+            weekStartTime: state.time + 1,
             nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 1, MINT_POOL_BONUS, expectedNmxSupply, expectedState);
     });
 
-    it('cycle change in several seconds', async () => {
+    it('week change in several seconds', async () => {
         let state = {
             time: now,
             itemIndex: 0,
-            cycleIndex: 0,
-            cycleStartTime: now - DAY * 7 + 1,
+            weekIndex: 0,
+            weekStartTime: now - DAY * 7 + 1,
             nextTickSupply: 1000000
         };
 
@@ -169,19 +169,19 @@ contract('MintSchedule', (accounts) => {
         let expectedNmxSupply = oldCycleOneSecNmxSupply * 1 + newCycleOneSecNmxSupply * 2;
         let expectedState = {
             time: state.time + 3,
-            cycleIndex: 1,
-            cycleStartTime: state.time + 1,
+            weekIndex: 1,
+            weekStartTime: state.time + 1,
             nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 3, MINT_POOL_BONUS, expectedNmxSupply, expectedState);
     });
 
-    it('changing two cycles at a time', async () => {
+    it('changing two weeks at a time', async () => {
         let state = {
             time: now,
             itemIndex: 0,
-            cycleIndex: 1,
-            cycleStartTime: now - DAY * 7 + 2,
+            weekIndex: 1,
+            weekStartTime: now - DAY * 7 + 2,
             nextTickSupply: 1000000
         };
 
@@ -199,8 +199,8 @@ contract('MintSchedule', (accounts) => {
         expectedNmxSupply += thirdCycleOneSecNmxSupply * 3;
         let expectedState = {
             time: state.time + DAY * 7 + 5,
-            cycleIndex: 3,
-            cycleStartTime: state.time + DAY * 7 + 2,
+            weekIndex: 3,
+            weekStartTime: state.time + DAY * 7 + 2,
             nextTickSupply: thirdCycleNextTickSupply
         };
         let oldAssertBN = assertBN;
@@ -217,8 +217,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 2,
-            cycleIndex: 17,
-            cycleStartTime: now - DAY * 7 + 1,
+            weekIndex: 17,
+            weekStartTime: now - DAY * 7 + 1,
             nextTickSupply: 1000000
         };
 
@@ -226,8 +226,8 @@ contract('MintSchedule', (accounts) => {
         let expectedState = {
             time: state.time + 1,
             itemIndex: 3,
-            cycleIndex: 0,
-            cycleStartTime: state.time + 1,
+            weekIndex: 0,
+            weekStartTime: state.time + 1,
             nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 1, MINT_POOL_NOMINEX, expectedNmxSupply, expectedState);
@@ -237,8 +237,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 2,
-            cycleIndex: 17,
-            cycleStartTime: now - DAY * 7 + 1,
+            weekIndex: 17,
+            weekStartTime: now - DAY * 7 + 1,
             nextTickSupply: 1000000
         };
 
@@ -248,8 +248,8 @@ contract('MintSchedule', (accounts) => {
         let expectedState = {
             time: state.time + 3,
             itemIndex: 3,
-            cycleIndex: 0,
-            cycleStartTime: state.time + 1,
+            weekIndex: 0,
+            weekStartTime: state.time + 1,
             nextTickSupply: Math.floor(state.nextTickSupply * 0.994)
         };
         await test(state, state.time + 3, MINT_POOL_NOMINEX, expectedNmxSupply, expectedState);
@@ -259,8 +259,8 @@ contract('MintSchedule', (accounts) => {
         let state = {
             time: now,
             itemIndex: 8,
-            cycleIndex: 555,
-            cycleStartTime: now - 50,
+            weekIndex: 555,
+            weekStartTime: now - 50,
             nextTickSupply: 1000000
         };
 
@@ -326,8 +326,8 @@ contract('MintSchedule', (accounts) => {
         expectedState = {...state, ...expectedState};
         assert.equal(result[1].time, expectedState.time, "state.time");
         assert.equal(result[1].itemIndex, expectedState.itemIndex, "state.itemIndex");
-        assert.equal(result[1].cycleIndex, expectedState.cycleIndex, "state.cycleIndex");
-        assert.equal(result[1].cycleStartTime, expectedState.cycleStartTime, "state.cycleStartTime");
+        assert.equal(result[1].weekIndex, expectedState.weekIndex, "state.weekIndex");
+        assert.equal(result[1].weekStartTime, expectedState.weekStartTime, "state.weekStartTime");
         assertBN(toBN(result[1].nextTickSupply), toBN(expectedState.nextTickSupply), "state.nextTickSupply");
 
         return result;
@@ -349,8 +349,8 @@ contract('MintSchedule#totalSupply', (accounts) => {
         let state = {
             time: now,
             itemIndex: 0,
-            cycleIndex: 0,
-            cycleStartTime: now,
+            weekIndex: 0,
+            weekStartTime: now,
             nextTickSupply: (10000 * 10 ** 18) / DAY + ''
         };
 
@@ -369,8 +369,8 @@ contract('MintSchedule#totalSupply', (accounts) => {
 
             state.time = parseInt(result0[1].time);
             state.itemIndex = result0[1].itemIndex;
-            state.cycleIndex = result0[1].cycleIndex;
-            state.cycleStartTime = result0[1].cycleStartTime;
+            state.weekIndex = result0[1].weekIndex;
+            state.weekStartTime = result0[1].weekStartTime;
             state.nextTickSupply = result0[1].nextTickSupply;
 
             if (i === 101) {
