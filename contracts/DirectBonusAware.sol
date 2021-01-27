@@ -15,13 +15,13 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
         uint16 stakedAmountInUsdt;
         uint16 multiplier;
     }
-    uint16 public referralMultiplier; /// @dev multiplier for direct bonus for referrals of the referral program
+    uint16 public referralMultiplier; /// @dev multiplier for direct bonus for referrals of the referral program (in 0.0001 parts)
     ReferrerMultiplierData[] public referrerMultipliers; /// @dev multipliers for direct bonuses for referrers of the referral program
-    mapping(address => address) public referrers;
+    mapping(address => address) public referrers; /// @dev referral address => referrer address
     uint8 stakingTokenDecimals;
-    event ReferrerChanged(address indexed referral, address indexed referrer);
-    event ReferrerBonusAccrued(address indexed referrer, uint128 amount); /// @dev event when someone receives an NMX from an direct referrer bonus
-    event ReferralBonusAccrued(address indexed referral, uint128 amount); /// @dev event when someone receives an NMX from an direct referral bonus
+    event ReferrerChanged(address indexed referral, address indexed referrer); /// @dev when referral set its referrer
+    event ReferrerBonusAccrued(address indexed referrer, uint128 amount); /// @dev when someone receives NMX as a direct referrer bonus
+    event ReferralBonusAccrued(address indexed referral, uint128 amount); /// @dev when someone receives NMX as a direct referral bonus
 
     constructor(address _nmx, address _lpToken)
         LiquidityWealthEstimator(_nmx, _lpToken)
@@ -45,6 +45,7 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
         item.multiplier = 2500; // 2500/10000 = 0.2500 = 0.25 = 25%
     }
 
+    /// @dev referral direct bonus multiplier can be changed by the owner
     function setReferralMultiplier(uint16 _referralMultiplier)
         external
         onlyOwner
@@ -52,6 +53,7 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
         referralMultiplier = _referralMultiplier;
     }
 
+    /// @dev referrer direct bonus multipliers can be changed by the owner
     function setReferrerMultipliers(
         ReferrerMultiplierData[] calldata newMultipliers
     ) external onlyOwner {
@@ -76,6 +78,7 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
         }
     }
 
+    /// @dev every referral (address, tx.origin) can set its referrer. But only once. So nobody can change referrer if it has been set already
     function setReferrer(address referrer) external {
         address currentReferrer = referrers[tx.origin];
         bool validReferrer =
@@ -87,6 +90,7 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
         referrers[tx.origin] = referrer;
     }
 
+    /// @dev returns current referrer direct bonus multiplier base on staking lp tokens amount. Result is int128 compatible with ABDKMath64x64 lib
     function getReferrerMultiplier(uint256 amount)
         internal
         view
@@ -99,6 +103,8 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
             );
     }
 
+
+    /// @dev returns current referral direct bonus multiplier. Result is int128 compatible with ABDKMath64x64 lib
     function getReferralMultiplier() internal view returns (int128) {
         return ABDKMath64x64.divu(referralMultiplier, 10000);
     }
