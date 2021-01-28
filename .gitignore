@@ -54,6 +54,9 @@ Thumbs.db
 *.mov
 *.wmv
 
+# vscode
+.vscode/
+
 /bin/
 
 .config.json
