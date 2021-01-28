@@ -18,13 +18,13 @@ Bonus, Team and Nominex pools are addresses owned by the Nominex exchange. Token
 ## Main distribution pool
 The Primary pool is a set of contracts designed to accrue Nmx for staking LP Uniswap tokens. All interaction can be expressed as follows: the contract calls the supplyNmx() ​​method of its Nmx supplier, receives an additional amount of tokens and distributes them to its Nmx consumers somehow. The Nmx suuplier in turn calls a method from its Nmx supplier, etc. The contract interaction scheme is presented below:
 
-`              +---- 1 --->+         +---- 2 --->+          +---- 3 --->+`  
-`              |           |         |           |          |           |`  
-`+----------------+    +----------------+    +----------------+    +----------------+`  
-`| StakingService |    | StakingRouter  |    |      Nmx       |    |  MintSchedule  |`  
-`+----------------+    +----------------+    +----------------+    +----------------+`  
-`              |           |         |           |          |           |`  
-`              +<--- 6 ----+         +<--- 5 ----+          +<--- 4 ----+`
+`              +---- 1 --->+      +---- 2 ->+    +- 3 ---->+`  
+`              |           |      |         |    |         |`  
+`+----------------+   +---------------+   +-------+   +--------------+`  
+`| StakingService |   | StakingRouter |   |  Nmx  |   | MintSchedule |`  
+`+----------------+   +---------------+   +-------+   +--------------+`  
+`              |           |      |         |    |         |`  
+`              +<--- 6 ----+      +<--- 5 --+    +<- 4 ----+`
 
 1. StakingService calls the StakingRouter (its Nmx provider) method to get new tokens on each state change (staking or unstaking).
 2. StakingRouter calls a method from Nmx (its supplier Nmx) to get new tokens.
