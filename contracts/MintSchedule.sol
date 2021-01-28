@@ -106,42 +106,54 @@ contract MintSchedule is Ownable {
         item = items.push();
 
         item.weekCount = 104;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(9995, 10000));
+        item.weekCompletenessMultiplier = uint64(
+            ABDKMath64x64.divu(9995, 10000)
+        );
         item.poolShares = shares_57_xx;
 
         /*1464-2926 - 8 year*/
         item = items.push();
 
         item.weekCount = 209;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(9997, 10000));
+        item.weekCompletenessMultiplier = uint64(
+            ABDKMath64x64.divu(9997, 10000)
+        );
         item.poolShares = shares_57_xx;
 
         /*2927-5481 - 15 year*/
         item = items.push();
 
         item.weekCount = 365;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99985, 100000));
+        item.weekCompletenessMultiplier = uint64(
+            ABDKMath64x64.divu(99985, 100000)
+        );
         item.poolShares = shares_57_xx;
 
         /*5481-10962 - 30 year*/
         item = items.push();
 
         item.weekCount = 783;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99992, 100000));
+        item.weekCompletenessMultiplier = uint64(
+            ABDKMath64x64.divu(99992, 100000)
+        );
         item.poolShares = shares_57_xx;
 
         /*10963-21917 - 60 year*/
         item = items.push();
 
         item.weekCount = 1565;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99994, 100000));
+        item.weekCompletenessMultiplier = uint64(
+            ABDKMath64x64.divu(99994, 100000)
+        );
         item.poolShares = shares_57_xx;
 
         /*21918-36505 - 100 year*/
         item = items.push();
 
         item.weekCount = 2084;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(99995, 100000));
+        item.weekCompletenessMultiplier = uint64(
+            ABDKMath64x64.divu(99995, 100000)
+        );
         item.poolShares = shares_57_xx;
     }
 
@@ -188,7 +200,11 @@ contract MintSchedule is Ownable {
     ) private pure {
         state.time = time;
         if (time == state.weekStartTime + WEEK_DURATION) {
-            state.nextTickSupply = uint128(int128(item.weekCompletenessMultiplier).mulu(uint256(state.nextTickSupply)));
+            state.nextTickSupply = uint128(
+                int128(item.weekCompletenessMultiplier).mulu(
+                    uint256(state.nextTickSupply)
+                )
+            );
             state.weekIndex++;
             state.weekStartTime = time;
             if (state.weekIndex == item.weekCount) {

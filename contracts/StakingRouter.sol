@@ -63,7 +63,10 @@ contract StakingRouter is Ownable, NmxSupplier {
         return activeServices;
     }
 
-    function updatePendingSupplies(address requestedService) private returns (uint256 serviceSupply) {
+    function updatePendingSupplies(address requestedService)
+        private
+        returns (uint256 serviceSupply)
+    {
         uint256 supply = NmxSupplier(nmx).supplyNmx();
         for (
             uint256 activeServiceIndex = 0;
@@ -72,7 +75,8 @@ contract StakingRouter is Ownable, NmxSupplier {
         ) {
             address activeService = activeServices[activeServiceIndex];
             int128 activeServiceShare = serviceShares[activeService];
-            uint256 activeServiceSupply = ABDKMath64x64.mulu(activeServiceShare, supply);
+            uint256 activeServiceSupply =
+                ABDKMath64x64.mulu(activeServiceShare, supply);
             if (activeService == requestedService) {
                 serviceSupply = activeServiceSupply;
             } else {

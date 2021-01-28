@@ -22,12 +22,17 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
 
     uint40 private constant DISTRIBUTION_START_TIME = 1612137600; // 2021-02-01T00:00:00Z
     uint128 private constant DIRECT_POOL_RATE = 115740740740740740; // amount per second (18 decimals)
-    uint128 private constant DIRECT_POOL_TOTAL_SUPPLY_LIMIT = 40*10**6*10**18;
+    uint128 private constant DIRECT_POOL_TOTAL_SUPPLY_LIMIT =
+        40 * 10**6 * 10**18;
     uint128 public directPoolTotalSupply;
     mapping(address => bool) public directPoolOwnerByAddress;
     address[] public directPoolOwners;
 
-    event PoolOwnershipTransferred(address indexed previousOwner, address indexed newOwner, MintPool indexed pool);
+    event PoolOwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner,
+        MintPool indexed pool
+    );
     event DirectPoolOwnershipGranted(address indexed owner);
     event DirectPoolOwnershipRevoked(address indexed owner);
 
@@ -54,7 +59,10 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
             i++
         ) {
             MintScheduleState storage poolMintState = poolMintStates[i];
-            poolMintState.nextTickSupply = (10000 * 10**18) / uint40(1 days) + 1; // +1 - to coupe with rounding error when daily supply is 9999.9999...
+            poolMintState.nextTickSupply =
+                (10000 * 10**18) /
+                uint40(1 days) +
+                1; // +1 - to coupe with rounding error when daily supply is 9999.9999...
             poolMintState.time = DISTRIBUTION_START_TIME;
             poolMintState.weekStartTime = DISTRIBUTION_START_TIME;
         }
@@ -98,11 +106,18 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
 
     /// @dev StakingServices can get arbitrary amount of Nmx from DirectBonus pool
     function requestDirectBonus(uint128 amount) external returns (uint128) {
-        require(directPoolOwnerByAddress[msg.sender], "NMX: caller is not the owner of DirectPool");
+        require(
+            directPoolOwnerByAddress[msg.sender],
+            "NMX: caller is not the owner of DirectPool"
+        );
         if (block.timestamp < DISTRIBUTION_START_TIME) return 0;
-        uint128 directPoolRest = DIRECT_POOL_TOTAL_SUPPLY_LIMIT - directPoolTotalSupply;
+        uint128 directPoolRest =
+            DIRECT_POOL_TOTAL_SUPPLY_LIMIT - directPoolTotalSupply;
         // scheduleRest was made to make it impossible to get all the DirectBonus pool at once
-        uint128 scheduledRest = uint128((block.timestamp - DISTRIBUTION_START_TIME) * DIRECT_POOL_RATE) - directPoolTotalSupply;
+        uint128 scheduledRest =
+            uint128(
+                (block.timestamp - DISTRIBUTION_START_TIME) * DIRECT_POOL_RATE
+            ) - directPoolTotalSupply;
         if (directPoolRest > scheduledRest) {
             directPoolRest = scheduledRest;
         }
@@ -116,7 +131,10 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     }
 
     /// @dev the owner can change the list of DirectPool owners
-    function setDirectPoolOwners(address[] calldata newOwners) external onlyOwner {
+    function setDirectPoolOwners(address[] calldata newOwners)
+        external
+        onlyOwner
+    {
         for (uint256 i = 0; i < directPoolOwners.length; i++) {
             address oldOwner = directPoolOwners[i];
             emit DirectPoolOwnershipRevoked(oldOwner);

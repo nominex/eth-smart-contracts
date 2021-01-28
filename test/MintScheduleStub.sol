@@ -6,7 +6,6 @@ import "../contracts/Lib.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract MintScheduleStub {
-
     function makeProgress(
         MintScheduleState memory scheduleState,
         uint40 time,
@@ -25,5 +24,4 @@ contract MintScheduleStub {
 
         return (nmxSupply, scheduleState);
     }
-
 }

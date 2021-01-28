@@ -34,11 +34,15 @@ contract StakingService is PausableByOwner, DirectBonusAware {
 
     bytes32 public DOMAIN_SEPARATOR;
 
-    string private constant CLAIM_TYPE = "Claim(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
-    bytes32 public constant CLAIM_TYPEHASH = keccak256(abi.encodePacked(CLAIM_TYPE));
+    string private constant CLAIM_TYPE =
+        "Claim(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
+    bytes32 public constant CLAIM_TYPEHASH =
+        keccak256(abi.encodePacked(CLAIM_TYPE));
 
-    string private constant UNSTAKE_TYPE = "Unstake(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
-    bytes32 public constant UNSTAKE_TYPEHASH = keccak256(abi.encodePacked(UNSTAKE_TYPE));
+    string private constant UNSTAKE_TYPE =
+        "Unstake(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
+    bytes32 public constant UNSTAKE_TYPEHASH =
+        keccak256(abi.encodePacked(UNSTAKE_TYPE));
 
     mapping(address => uint256) public nonces;
 
@@ -80,7 +84,6 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         );
     }
 
-
     /**
      @dev function to stake permitted amount of LP tokens from uniswap contract
      @param amount of NMXLP to be staked in the service
@@ -108,20 +111,17 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         _stakeFrom(msg.sender, amount);
     }
 
-    function stakeFrom(
-        address owner,
-        uint128 amount
-    ) external whenNotPaused {
+    function stakeFrom(address owner, uint128 amount) external whenNotPaused {
         _stakeFrom(owner, amount);
     }
 
     function _stakeFrom(address owner, uint128 amount) private {
         bool transferred =
-        IERC20(stakingToken).transferFrom(
-            owner,
-            address(this),
-            uint256(amount)
-        );
+            IERC20(stakingToken).transferFrom(
+                owner,
+                address(this),
+                uint256(amount)
+            );
         require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
 
         Staker storage staker = updateStateAndStaker(owner);
@@ -150,13 +150,27 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         uint256 deadline,
         uint8 v,
         bytes32 r,
-        bytes32 s) external {
+        bytes32 s
+    ) external {
         require(amount <= signedAmount, "NMXSTKSRV: INVALID_AMOUNT");
-        verifySignature(UNSTAKE_TYPEHASH, owner, msg.sender, signedAmount, deadline, v, r, s);
+        verifySignature(
+            UNSTAKE_TYPEHASH,
+            owner,
+            msg.sender,
+            signedAmount,
+            deadline,
+            v,
+            r,
+            s
+        );
         _unstake(owner, msg.sender, amount);
     }
 
-    function _unstake(address from, address to, uint128 amount) private {
+    function _unstake(
+        address from,
+        address to,
+        uint128 amount
+    ) private {
         Staker storage staker = updateStateAndStaker(from);
         require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
         bool transferred = IERC20(stakingToken).transfer(to, amount);
@@ -198,21 +212,34 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         uint256 deadline,
         uint8 v,
         bytes32 r,
-        bytes32 s) external {
+        bytes32 s
+    ) external {
         require(nmxAmount <= signedAmount, "NMXSTKSRV: INVALID_NMX_AMOUNT");
-        verifySignature(CLAIM_TYPEHASH, owner, msg.sender, signedAmount, deadline, v, r, s);
+        verifySignature(
+            CLAIM_TYPEHASH,
+            owner,
+            msg.sender,
+            signedAmount,
+            deadline,
+            v,
+            r,
+            s
+        );
 
         Staker storage staker = updateStateAndStaker(owner);
         _claimReward(staker, owner, msg.sender, nmxAmount);
     }
 
-    function updateStateAndStaker(address stakerAddress) private returns (Staker storage staker) {
+    function updateStateAndStaker(address stakerAddress)
+        private
+        returns (Staker storage staker)
+    {
         updateHistoricalRewardRate();
         staker = stakers[stakerAddress];
 
         uint128 unrewarded =
-        ((state.historicalRewardRate - staker.initialRewardRate) *
-        uint128(staker.amount)) >> 40;
+            ((state.historicalRewardRate - staker.initialRewardRate) *
+                uint128(staker.amount)) >> 40;
         emit StakingBonusAccrued(stakerAddress, unrewarded);
 
         if (unrewarded > 0) {
@@ -220,12 +247,26 @@ contract StakingService is PausableByOwner, DirectBonusAware {
             if (referrerAddress != address(0)) {
                 Staker storage referrer = stakers[referrerAddress];
 
-                int128 referrerMultiplier = getReferrerMultiplier(referrer.amount);
+                int128 referrerMultiplier =
+                    getReferrerMultiplier(referrer.amount);
                 int128 referralMultiplier = getReferralMultiplier();
-                uint128 referrerBonus = uint128(ABDKMath64x64.mulu(referrerMultiplier, uint256(unrewarded)));
-                uint128 referralBonus = uint128(ABDKMath64x64.mulu(referralMultiplier, uint256(unrewarded)));
+                uint128 referrerBonus =
+                    uint128(
+                        ABDKMath64x64.mulu(
+                            referrerMultiplier,
+                            uint256(unrewarded)
+                        )
+                    );
+                uint128 referralBonus =
+                    uint128(
+                        ABDKMath64x64.mulu(
+                            referralMultiplier,
+                            uint256(unrewarded)
+                        )
+                    );
 
-                uint128 supplied = Nmx(nmx).requestDirectBonus(referrerBonus + referralBonus);
+                uint128 supplied =
+                    Nmx(nmx).requestDirectBonus(referrerBonus + referralBonus);
                 if (supplied < referrerBonus) {
                     referrerBonus = supplied;
                 }
@@ -246,7 +287,12 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         staker.reward += unrewarded;
     }
 
-    function _claimReward(Staker storage staker, address from, address to, uint128 amount) private {
+    function _claimReward(
+        Staker storage staker,
+        address from,
+        address to,
+        uint128 amount
+    ) private {
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         require(amount <= unclaimedReward, "NMXSTKSRV: NOT_ENOUGH_BALANCE");
         emit Rewarded(from, to, amount);
@@ -255,25 +301,34 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         staker.claimedReward += amount;
     }
 
-    function verifySignature(bytes32 typehash, address owner, address spender, uint128 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) private {
+    function verifySignature(
+        bytes32 typehash,
+        address owner,
+        address spender,
+        uint128 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) private {
         require(deadline >= block.timestamp, "NMXSTKSRV: EXPIRED");
         bytes32 digest =
-        keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode(
-                        typehash,
-                        owner,
-                        spender,
-                        value,
-                        nonces[owner]++,
-                        deadline
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    DOMAIN_SEPARATOR,
+                    keccak256(
+                        abi.encode(
+                            typehash,
+                            owner,
+                            spender,
+                            value,
+                            nonces[owner]++,
+                            deadline
+                        )
                     )
                 )
-            )
-        );
+            );
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
             recoveredAddress != address(0) && recoveredAddress == owner,
@@ -290,11 +345,12 @@ contract StakingService is PausableByOwner, DirectBonusAware {
     }
 
     function updateHistoricalRewardRate() public {
-        uint128 currentNmxSupply = uint128(NmxSupplier(nmxSupplier).supplyNmx());
+        uint128 currentNmxSupply =
+            uint128(NmxSupplier(nmxSupplier).supplyNmx());
         if (state.totalStaked != 0 && currentNmxSupply != 0)
             state.historicalRewardRate +=
-            (currentNmxSupply << 40) /
-            state.totalStaked;
+                (currentNmxSupply << 40) /
+                state.totalStaked;
     }
 
     function changeNmxSupplier(address newNmxSupplier) external onlyOwner {

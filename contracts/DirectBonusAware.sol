@@ -103,7 +103,6 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
             );
     }
 
-
     /// @dev returns current referral direct bonus multiplier. Result is int128 compatible with ABDKMath64x64 lib
     function getReferralMultiplier() internal view returns (int128) {
         return ABDKMath64x64.divu(referralMultiplier, 10000);

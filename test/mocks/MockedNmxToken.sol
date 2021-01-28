@@ -6,11 +6,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../../contracts/NmxSupplier.sol";
 
 contract MockedNmxToken is ERC20, NmxSupplier {
+    uint256 public supply = 10**18;
 
-    uint256 public supply = 10 ** 18;
-
-    constructor() ERC20("Nominex", "NMX") {
-    }
+    constructor() ERC20("Nominex", "NMX") {}
 
     function supplyNmx() external override returns (uint256) {
         _mint(msg.sender, supply);
@@ -20,5 +18,4 @@ contract MockedNmxToken is ERC20, NmxSupplier {
     function setSupply(uint256 newSupply) public {
         supply = newSupply;
     }
-
 }
