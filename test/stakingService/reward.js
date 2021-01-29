@@ -119,6 +119,16 @@ contract("StakingService#claimReward", (accounts) => {
     );
   });
 
+  it("no overflow errors for large numbers", async () => {
+    await stakingService.stakeFrom(user, toWei(toBN(10)));
+    await nmx.setSupply(900000n * 10n**18n);
+    await claimRewardAndVerify(
+      user,
+        toWei(toBN((900000 / (10 + 10)) * 10)),
+        toWei(toBN((900000 / (10 + 10)) * 10))
+    );
+  });
+
   async function claimRewardAndVerify(user, nmxBalance, rewardAmount) {
     const initialBalance = await nmx.balanceOf(user);
     let tx = await stakingService.claimReward({ from: user });
