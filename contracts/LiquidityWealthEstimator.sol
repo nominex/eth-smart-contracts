@@ -13,10 +13,12 @@ interface IERC20Extented is IERC20 {
 /// @dev mixin for estimating cost of uniswap liquididity token
 abstract contract LiquidityWealthEstimator {
     address private pairedToken; // USDT in pair NMX_USDT
+    uint8 pairedTokenDecimal;
 
     constructor(address nmx, address lpToken) {
         address t0 = IUniswapV2Pair(lpToken).token0();
         pairedToken = t0 != nmx ? t0 : IUniswapV2Pair(lpToken).token1();
+        pairedTokenDecimal = IERC20Extented(pairedToken).decimals();
     }
 
     /**
@@ -35,6 +37,11 @@ abstract contract LiquidityWealthEstimator {
          so the numerator fits to 141 bits
         */
         return (lpAmount * pairedTokenBalance * 2) / lpTotalSupply;
+    }
+
+    /// @dev returns decimals of paired token
+    function _pairedTokenDecimal() public view returns (uint8) {
+        return pairedTokenDecimal;
     }
 
     /// @dev should return LP token of uniswap pair
