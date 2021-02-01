@@ -3,6 +3,7 @@ pragma solidity >=0.7.0 <0.8.0;
 pragma abicoder v2;
 
 import "./DirectBonusAware.sol";
+import "./LiquidityWealthEstimator.sol";
 import "./NmxSupplier.sol";
 import "./Nmx.sol";
 import "./PausableByOwner.sol";
@@ -10,7 +11,7 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-contract StakingService is PausableByOwner, DirectBonusAware {
+contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEstimator {
     /**
      * @param totalStaked amount of NMXLP currently staked in the service
      * @param historicalRewardRate how many NMX minted per one NMXLP (<< 40). Never decreases.
@@ -61,7 +62,7 @@ contract StakingService is PausableByOwner, DirectBonusAware {
         address _nmx,
         address _stakingToken,
         address _nmxSupplier
-    ) DirectBonusAware(_nmx, _stakingToken) {
+    ) DirectBonusAware() LiquidityWealthEstimator(_nmx, _stakingToken) {
         nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
@@ -248,7 +249,7 @@ contract StakingService is PausableByOwner, DirectBonusAware {
                 Staker storage referrer = stakers[referrerAddress];
 
                 int128 referrerMultiplier =
-                    getReferrerMultiplier(referrer.amount);
+                    getReferrerMultiplier(estimateWealth(referrer.amount), _pairedTokenDecimals());
                 int128 referralMultiplier = getReferralMultiplier();
                 uint128 referrerBonus =
                     uint128(

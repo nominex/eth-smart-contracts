@@ -4,9 +4,8 @@ pragma abicoder v2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
-import "./LiquidityWealthEstimator.sol";
 
-abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
+abstract contract DirectBonusAware is Ownable {
     /**
      * @param stakedAmountInUsdt staked usdt amount required to get the multipliers (without decimals)
      * @param multiplier reward bonus multiplier for referrer (in 0.0001 parts)
@@ -18,15 +17,11 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
     uint16 public referralMultiplier; /// @dev multiplier for direct bonus for referrals of the referral program (in 0.0001 parts)
     ReferrerMultiplierData[] public referrerMultipliers; /// @dev multipliers for direct bonuses for referrers of the referral program
     mapping(address => address) public referrers; /// @dev referral address => referrer address
-    uint8 stakingTokenDecimals;
     event ReferrerChanged(address indexed referral, address indexed referrer); /// @dev when referral set its referrer
     event ReferrerBonusAccrued(address indexed referrer, uint128 amount); /// @dev when someone receives NMX as a direct referrer bonus
     event ReferralBonusAccrued(address indexed referral, uint128 amount); /// @dev when someone receives NMX as a direct referral bonus
 
-    constructor(address _nmx, address _lpToken)
-        LiquidityWealthEstimator(_nmx, _lpToken)
-    {
-        stakingTokenDecimals = IERC20Extented(_lpToken).decimals();
+    constructor() {
         referralMultiplier = 500; // 500/10000 = 0.0500 = 0.05 = 5%
         ReferrerMultiplierData storage item = referrerMultipliers.push();
         item.stakedAmountInUsdt = 100;
@@ -90,15 +85,20 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
         referrers[tx.origin] = referrer;
     }
 
-    /// @dev returns current referrer direct bonus multiplier base on staking lp tokens amount. Result is int128 compatible with ABDKMath64x64 lib
-    function getReferrerMultiplier(uint256 amount)
+    /**
+     * @dev returns current referrer direct bonus multiplier. Result is int128 compatible with ABDKMath64x64 lib.
+     *
+     * @param amountInUsdt staking lp tokens amount in USDT
+     * @param pairedTokenDecimals amount of decimals of paired token
+     */
+    function getReferrerMultiplier(uint256 amountInUsdt, uint8 pairedTokenDecimals)
         internal
         view
         returns (int128)
     {
         return
             ABDKMath64x64.divu(
-                getReferrerMultipliers(amount).multiplier,
+                getReferrerMultipliers(amountInUsdt / 10**pairedTokenDecimals).multiplier,
                 10000
             );
     }
@@ -108,13 +108,11 @@ abstract contract DirectBonusAware is Ownable, LiquidityWealthEstimator {
         return ABDKMath64x64.divu(referralMultiplier, 10000);
     }
 
-    function getReferrerMultipliers(uint256 amount)
+    function getReferrerMultipliers(uint256 amountInUsdt)
         private
         view
         returns (ReferrerMultiplierData memory multipliers)
     {
-        uint256 amountInUsdt = estimateWealth(amount);
-        amountInUsdt = amountInUsdt / 10**stakingTokenDecimals;
         for (uint256 i = 0; i < referrerMultipliers.length; i++) {
             ReferrerMultiplierData memory _multipliers = referrerMultipliers[i];
             if (amountInUsdt >= _multipliers.stakedAmountInUsdt) {
