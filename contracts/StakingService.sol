@@ -249,7 +249,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
                 Staker storage referrer = stakers[referrerAddress];
 
                 int128 referrerMultiplier =
-                    getReferrerMultiplier(estimateWealth(referrer.amount), _pairedTokenDecimal());
+                    getReferrerMultiplier(estimateWealth(referrer.amount), _pairedTokenDecimals());
                 int128 referralMultiplier = getReferralMultiplier();
                 uint128 referrerBonus =
                     uint128(

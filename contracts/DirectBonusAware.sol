@@ -89,16 +89,16 @@ abstract contract DirectBonusAware is Ownable {
      * @dev returns current referrer direct bonus multiplier. Result is int128 compatible with ABDKMath64x64 lib.
      *
      * @param amountInUsdt staking lp tokens amount in USDT
-     * @param pairedTokenDecimal amount of decimals of paired token
+     * @param pairedTokenDecimals amount of decimals of paired token
      */
-    function getReferrerMultiplier(uint256 amountInUsdt, uint8 pairedTokenDecimal)
+    function getReferrerMultiplier(uint256 amountInUsdt, uint8 pairedTokenDecimals)
         internal
         view
         returns (int128)
     {
         return
             ABDKMath64x64.divu(
-                getReferrerMultipliers(amountInUsdt, pairedTokenDecimal).multiplier,
+                getReferrerMultipliers(amountInUsdt / 10**pairedTokenDecimals).multiplier,
                 10000
             );
     }
@@ -108,12 +108,11 @@ abstract contract DirectBonusAware is Ownable {
         return ABDKMath64x64.divu(referralMultiplier, 10000);
     }
 
-    function getReferrerMultipliers(uint256 amountInUsdt, uint8 pairedTokenDecimal)
+    function getReferrerMultipliers(uint256 amountInUsdt)
         private
         view
         returns (ReferrerMultiplierData memory multipliers)
     {
-        amountInUsdt = amountInUsdt / 10**pairedTokenDecimal;
         for (uint256 i = 0; i < referrerMultipliers.length; i++) {
             ReferrerMultiplierData memory _multipliers = referrerMultipliers[i];
             if (amountInUsdt >= _multipliers.stakedAmountInUsdt) {
