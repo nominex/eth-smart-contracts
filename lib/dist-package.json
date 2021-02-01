@@ -1,6 +1,6 @@
 {
   "name": "@nominex/contracts-abi",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "ABI of the Nominex smart contracts",
   "keywords": [
     "nominex",
