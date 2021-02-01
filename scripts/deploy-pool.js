@@ -72,7 +72,7 @@ module.exports = async (callback) => {
             const secondTknBalance = await pairedTkn.balanceOf.call(accounts[0]);
 
             const router = await IUniswapV2Router02.at("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D");
-            const amountToAddToPool = 10;
+            const amountToAddToPool = 100;
             if (secondTknBalance.isZero()) {
                 config.logger.info("Converting eth to supplied token");
                 const lastBlock = await web3.eth.getBlock("latest");

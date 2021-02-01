@@ -65,7 +65,7 @@ module.exports = {
                 const wallet = new Wallet(new Buffer(privateKey, "hex"));
                 const engine = new ProviderEngine();
                 engine.addProvider(new WalletSubprovider(wallet, {}));
-                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://127.0.0.1:8545", {
+                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://10.0.3.5:8545", {
                     keepAlive: false,
                     timeout: 1000000
                 })));

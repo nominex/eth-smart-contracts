@@ -20,7 +20,7 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
     /** @dev dedicated state for every pool to decrease gas consumtion in case of staking/unstaking - no updates related to other mint pools are required to be persisted */
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
 
-    uint40 private constant DISTRIBUTION_START_TIME = 1612137600; // 2021-02-01T00:00:00Z
+    uint40 private constant DISTRIBUTION_START_TIME = 1611705600; // 2021-01-27T00:00:00Z
     uint128 private constant DIRECT_POOL_RATE = 115740740740740740; // amount per second (18 decimals)
     uint128 private constant DIRECT_POOL_TOTAL_SUPPLY_LIMIT =
         40 * 10**6 * 10**18;
