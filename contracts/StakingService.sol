@@ -33,7 +33,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         uint256 claimedReward;
     }
 
-    bytes32 public DOMAIN_SEPARATOR;
+    bytes32 immutable public DOMAIN_SEPARATOR;
 
     string private constant CLAIM_TYPE =
         "Claim(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
@@ -47,8 +47,8 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
 
     mapping(address => uint256) public nonces;
 
-    address public nmx; /// @dev Nmx contract
-    address public stakingToken; /// @dev NmxLp contract of uniswap
+    address immutable public nmx; /// @dev Nmx contract
+    address immutable public stakingToken; /// @dev NmxLp contract of uniswap
     address public nmxSupplier;
     State public state; /// @dev internal service state
     mapping(address => Staker) public stakers; /// @dev mapping of staker's address to its state

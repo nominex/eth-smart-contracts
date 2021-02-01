@@ -8,13 +8,13 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Nmx is ERC20, NmxSupplier, Ownable {
-    bytes32 public DOMAIN_SEPARATOR;
+    bytes32 immutable public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public nonces;
 
-    address public mintSchedule;
+    address immutable public mintSchedule;
     mapping(address => MintPool) public poolByOwner;
     address[5] public poolOwners; // 5 - number of MintPool values
     /** @dev dedicated state for every pool to decrease gas consumtion in case of staking/unstaking - no updates related to other mint pools are required to be persisted */

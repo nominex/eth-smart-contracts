@@ -8,7 +8,7 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
 contract StakingRouter is Ownable, NmxSupplier {
     using ABDKMath64x64 for int128;
-    address public nmx;
+    address immutable public nmx;
     mapping(address => int128) public serviceShares; /// @dev different StakingServices could have different shares in PRIMARY POOL
     address[] activeServices;
     mapping(address => uint256) public pendingSupplies; /// @dev If there is more than one StakingService it is necessary to store supplied amount of Nmx between the invocations of particular service to return correct amount of supplied tokens
