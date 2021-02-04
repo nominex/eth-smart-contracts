@@ -334,7 +334,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
             recoveredAddress != address(0) && recoveredAddress == owner,
-            "NMX: INVALID_SIGNATURE"
+            "NMXSTKSRV: INVALID_SIGNATURE"
         );
     }
 
