@@ -123,7 +123,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
                 address(this),
                 uint256(amount)
             );
-        require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
+        require(transferred, "NmxStakingService: LP_FAILED_TRANSFER");
 
         Staker storage staker = updateStateAndStaker(owner);
 
@@ -153,7 +153,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         bytes32 r,
         bytes32 s
     ) external {
-        require(amount <= signedAmount, "NMXSTKSRV: INVALID_AMOUNT");
+        require(amount <= signedAmount, "NmxStakingService: INVALID_AMOUNT");
         verifySignature(
             UNSTAKE_TYPEHASH,
             owner,
@@ -173,14 +173,14 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         uint128 amount
     ) private {
         Staker storage staker = updateStateAndStaker(from);
-        require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
+        require(staker.amount >= amount, "NmxStakingService: NOT_ENOUGH_STAKED");
 
         emit Unstaked(from, to, amount);
         state.totalStaked -= amount;
         staker.amount -= amount;
 
         bool transferred = IERC20(stakingToken).transfer(to, amount);
-        require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
+        require(transferred, "NmxStakingService: LP_FAILED_TRANSFER");
     }
 
     /**
@@ -216,7 +216,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         bytes32 r,
         bytes32 s
     ) external {
-        require(nmxAmount <= signedAmount, "NMXSTKSRV: INVALID_NMX_AMOUNT");
+        require(nmxAmount <= signedAmount, "NmxStakingService: INVALID_NMX_AMOUNT");
         verifySignature(
             CLAIM_TYPEHASH,
             owner,
@@ -296,11 +296,11 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         uint128 amount
     ) private {
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
-        require(amount <= unclaimedReward, "NMXSTKSRV: NOT_ENOUGH_BALANCE");
+        require(amount <= unclaimedReward, "NmxStakingService: NOT_ENOUGH_BALANCE");
         emit Rewarded(from, to, amount);
         staker.claimedReward += amount;
         bool transferred = IERC20(nmx).transfer(to, amount);
-        require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
+        require(transferred, "NmxStakingService: NMX_FAILED_TRANSFER");
     }
 
     function verifySignature(
@@ -313,7 +313,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         bytes32 r,
         bytes32 s
     ) private {
-        require(deadline >= block.timestamp, "NMXSTKSRV: EXPIRED");
+        require(deadline >= block.timestamp, "NmxStakingService: EXPIRED");
         bytes32 digest =
             keccak256(
                 abi.encodePacked(
@@ -334,7 +334,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         address recoveredAddress = ecrecover(digest, v, r, s);
         require(
             recoveredAddress != address(0) && recoveredAddress == owner,
-            "NMXSTKSRV: INVALID_SIGNATURE"
+            "NmxStakingService: INVALID_SIGNATURE"
         );
     }
 

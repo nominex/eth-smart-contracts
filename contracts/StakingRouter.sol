@@ -24,16 +24,16 @@ contract StakingRouter is Ownable, NmxSupplier {
     ) external onlyOwner {
         require(
             addresses.length == shares.length,
-            "NMXSTKROU: addresses must be the same length as shares"
+            "NmxStakingRouter: addresses must be the same length as shares"
         );
         int128 cumulativeShare = 0;
         for (uint256 i = 0; i < shares.length; i++) {
-            require(shares[i] > 0, "NMXSTKROU: shares must be positive");
+            require(shares[i] > 0, "NmxStakingRouter: shares must be positive");
             cumulativeShare += shares[i];
         }
         require(
             cumulativeShare <= ABDKMath64x64.fromInt(1),
-            "NMXSTKROU: shares must be le 1<<64 in total"
+            "NmxStakingRouter: shares must be le 1<<64 in total"
         );
 
         for (uint256 i = 0; i < activeServices.length; i++) {
@@ -55,7 +55,7 @@ contract StakingRouter is Ownable, NmxSupplier {
         }
 
         bool transferred = IERC20(nmx).transfer(msg.sender, supply);
-        require(transferred, "NMXSTKROU: NMX_FAILED_TRANSFER");
+        require(transferred, "NmxStakingRouter: NMX_FAILED_TRANSFER");
         return supply;
     }
 

@@ -125,7 +125,7 @@ contract("StakingService#setReferrerMultipliers", (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_ORDER"),
+        e.message.includes("NmxStakingService: INVALID_ORDER"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -142,7 +142,7 @@ contract("StakingService#setReferrerMultipliers", (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_ORDER"),
+        e.message.includes("NmxStakingService: INVALID_ORDER"),
         `Unexpected error message: ${e.message}`
       );
     }

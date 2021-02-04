@@ -431,7 +431,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_NMX_AMOUNT"),
+        e.message.includes("NmxStakingService: INVALID_NMX_AMOUNT"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -463,7 +463,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: NOT_ENOUGH_BALANCE"),
+        e.message.includes("NmxStakingService: NOT_ENOUGH_BALANCE"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -574,7 +574,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: EXPIRED"),
+        e.message.includes("NmxStakingService: EXPIRED"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -600,7 +600,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_SIGNATURE"),
+        e.message.includes("NmxStakingService: INVALID_SIGNATURE"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -626,7 +626,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_SIGNATURE"),
+        e.message.includes("NmxStakingService: INVALID_SIGNATURE"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -652,7 +652,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_SIGNATURE"),
+        e.message.includes("NmxStakingService: INVALID_SIGNATURE"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -678,7 +678,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_SIGNATURE"),
+        e.message.includes("NmxStakingService: INVALID_SIGNATURE"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -703,7 +703,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_SIGNATURE"),
+        e.message.includes("NmxStakingService: INVALID_SIGNATURE"),
         `Unexpected error message: ${e.message}`
       );
     }

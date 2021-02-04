@@ -60,7 +60,7 @@ abstract contract DirectBonusAware is Ownable {
             ReferrerMultiplierData calldata newMultiplier = newMultipliers[i];
             require(
                 newMultiplier.stakedAmountInUsdt > prevStakedAmountInUsdt,
-                "NMXSTKSRV: INVALID_ORDER"
+                "NmxStakingService: INVALID_ORDER"
             );
             prevStakedAmountInUsdt = newMultiplier.stakedAmountInUsdt;
         }
@@ -80,7 +80,7 @@ abstract contract DirectBonusAware is Ownable {
             currentReferrer == address(0) &&
                 referrer != address(0) &&
                 tx.origin != referrer;
-        require(validReferrer, "NMXSTKSRV: INVALID_REFERRER");
+        require(validReferrer, "NmxStakingService: INVALID_REFERRER");
         emit ReferrerChanged(tx.origin, referrer);
         referrers[tx.origin] = referrer;
     }

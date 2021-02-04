@@ -48,7 +48,7 @@ contract("StakingService#setReferrer", (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_REFERRER"),
+        e.message.includes("NmxStakingService: INVALID_REFERRER"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -60,7 +60,7 @@ contract("StakingService#setReferrer", (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_REFERRER"),
+        e.message.includes("NmxStakingService: INVALID_REFERRER"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -72,7 +72,7 @@ contract("StakingService#setReferrer", (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_REFERRER"),
+        e.message.includes("NmxStakingService: INVALID_REFERRER"),
         `Unexpected error message: ${e.message}`
       );
     }
@@ -86,7 +86,7 @@ contract("StakingService#setReferrer", (accounts) => {
       assert.fail("Error not occurred");
     } catch (e) {
       assert(
-        e.message.includes("NMXSTKSRV: INVALID_REFERRER"),
+        e.message.includes("NmxStakingService: INVALID_REFERRER"),
         `Unexpected error message: ${e.message}`
       );
     }

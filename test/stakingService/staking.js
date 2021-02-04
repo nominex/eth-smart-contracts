@@ -198,7 +198,7 @@ contract("StakingService; Group: Staking", (accounts) => {
 
   makeSuite("Error occurred when user unstake without staking", () => {
     unstake(15, accounts[1]);
-    checkErrorOccurred("NMXSTKSRV: NOT_ENOUGH_STAKED");
+    checkErrorOccurred("NmxStakingService: NOT_ENOUGH_STAKED");
     checkStakingEventNotEmitted("Unstaked");
     verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
     verifyStakingServiceBalanceAndTotalStaked(0);
@@ -207,7 +207,7 @@ contract("StakingService; Group: Staking", (accounts) => {
   makeSuite("Error occurred when user unstake more than staked", () => {
     stake(20, accounts[1]);
     unstake(21, accounts[1]);
-    checkErrorOccurred("NMXSTKSRV: NOT_ENOUGH_STAKED");
+    checkErrorOccurred("NmxStakingService: NOT_ENOUGH_STAKED");
     checkStakingEventNotEmitted("Unstaked");
     verifyUserBalanceAndStakedAmount(accounts[1], 980, 20);
     verifyStakingServiceBalanceAndTotalStaked(20);
@@ -381,7 +381,7 @@ contract("StakingService; Group: Staking", (accounts) => {
   makeSuite("Error occurred when user unstakeTo more than staked", () => {
     stake(10, accounts[1]);
     unstakeTo(11, accounts[3], accounts[1]);
-    checkErrorOccurred("NMXSTKSRV: NOT_ENOUGH_STAKED");
+    checkErrorOccurred("NmxStakingService: NOT_ENOUGH_STAKED");
     checkStakingEventNotEmitted("Unstaked");
     verifyUserBalanceAndStakedAmount(accounts[1], 990, 10);
     verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);

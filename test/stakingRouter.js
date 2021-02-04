@@ -46,7 +46,7 @@ contract(
       } catch (e) {
         assert(
           e.message.includes(
-            "NMXSTKROU: addresses must be the same length as shares"
+            "NmxStakingRouter: addresses must be the same length as shares"
           ),
           `Unexpected error message: ${e.message}`
         );
@@ -59,7 +59,7 @@ contract(
         assert.fail("Error not occurred");
       } catch (e) {
         assert(
-          e.message.includes("NMXSTKROU: shares must be positive"),
+          e.message.includes("NmxStakingRouter: shares must be positive"),
           `Unexpected error message: ${e.message}`
         );
       }
@@ -71,7 +71,7 @@ contract(
         assert.fail("Error not occurred");
       } catch (e) {
         assert(
-          e.message.includes("NMXSTKROU: shares must be positive"),
+          e.message.includes("NmxStakingRouter: shares must be positive"),
           `Unexpected error message: ${e.message}`
         );
       }
@@ -86,7 +86,7 @@ contract(
         assert.fail("Error not occurred");
       } catch (e) {
         assert(
-          e.message.includes("NMXSTKROU: shares must be le 1<<64"),
+          e.message.includes("NmxStakingRouter: shares must be le 1<<64"),
           `Unexpected error message: ${e.message}`
         );
       }
@@ -112,7 +112,7 @@ contract(
         assert.fail("Error not occurred");
       } catch (e) {
         assert(
-          e.message.includes("NMXSTKROU: shares must be le 1<<64 in total"),
+          e.message.includes("NmxStakingRouter: shares must be le 1<<64 in total"),
           `Unexpected error message: ${e.message}`
         );
       }
