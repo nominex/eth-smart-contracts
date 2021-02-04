@@ -174,12 +174,13 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
     ) private {
         Staker storage staker = updateStateAndStaker(from);
         require(staker.amount >= amount, "NMXSTKSRV: NOT_ENOUGH_STAKED");
-        bool transferred = IERC20(stakingToken).transfer(to, amount);
-        require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
 
         emit Unstaked(from, to, amount);
         state.totalStaked -= amount;
         staker.amount -= amount;
+
+        bool transferred = IERC20(stakingToken).transfer(to, amount);
+        require(transferred, "NMXSTKSRV: LP_FAILED_TRANSFER");
     }
 
     /**
@@ -297,9 +298,9 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         require(amount <= unclaimedReward, "NMXSTKSRV: NOT_ENOUGH_BALANCE");
         emit Rewarded(from, to, amount);
+        staker.claimedReward += amount;
         bool transferred = IERC20(nmx).transfer(to, amount);
         require(transferred, "NMXSTKSRV: NMX_FAILED_TRANSFER");
-        staker.claimedReward += amount;
     }
 
     function verifySignature(
