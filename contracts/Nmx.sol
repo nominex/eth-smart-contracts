@@ -135,7 +135,8 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         external
         onlyOwner
     {
-        for (uint256 i = 0; i < directPoolOwners.length; i++) {
+        uint256 directPoolOwnersLength = directPoolOwners.length;
+        for (uint256 i = 0; i < directPoolOwnersLength; i++) {
             address oldOwner = directPoolOwners[i];
             emit DirectPoolOwnershipRevoked(oldOwner);
             directPoolOwnerByAddress[oldOwner] = false;

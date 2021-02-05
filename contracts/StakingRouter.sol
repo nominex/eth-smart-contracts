@@ -36,7 +36,8 @@ contract StakingRouter is Ownable, NmxSupplier {
             "NmxStakingRouter: shares must be le 1<<64 in total"
         );
 
-        for (uint256 i = 0; i < activeServices.length; i++) {
+        uint256 activeServicesLength = activeServices.length;
+        for (uint256 i = 0; i < activeServicesLength; i++) {
             address service = activeServices[i];
             serviceShares[service] = 0;
         }
@@ -68,9 +69,10 @@ contract StakingRouter is Ownable, NmxSupplier {
         returns (uint256 serviceSupply)
     {
         uint256 supply = NmxSupplier(nmx).supplyNmx();
+        uint256 activeServicesLength = activeServices.length;
         for (
             uint256 activeServiceIndex = 0;
-            activeServiceIndex < activeServices.length;
+            activeServiceIndex < activeServicesLength;
             activeServiceIndex++
         ) {
             address activeService = activeServices[activeServiceIndex];

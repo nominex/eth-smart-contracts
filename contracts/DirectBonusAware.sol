@@ -65,9 +65,7 @@ abstract contract DirectBonusAware is Ownable {
             prevStakedAmountInUsdt = newMultiplier.stakedAmountInUsdt;
         }
 
-        while (referrerMultipliers.length != 0) {
-            referrerMultipliers.pop();
-        }
+        delete referrerMultipliers;
         for (uint256 i = 0; i < newMultipliers.length; i++) {
             referrerMultipliers.push(newMultipliers[i]);
         }
@@ -113,7 +111,8 @@ abstract contract DirectBonusAware is Ownable {
         view
         returns (ReferrerMultiplierData memory multipliers)
     {
-        for (uint256 i = 0; i < referrerMultipliers.length; i++) {
+        uint256 referrerMultipliersLength = referrerMultipliers.length;
+        for (uint256 i = 0; i < referrerMultipliersLength; i++) {
             ReferrerMultiplierData memory _multipliers = referrerMultipliers[i];
             if (amountInUsdt >= _multipliers.stakedAmountInUsdt) {
                 multipliers = _multipliers;
