@@ -6,7 +6,7 @@ import "../contracts/NmxSupplier.sol";
 contract NmxStub is ERC20, NmxSupplier {
     constructor() ERC20("Nmx Stub", "NMXSTB") {}
 
-    function supplyNmx() external override returns (uint256 supply) {
+    function supplyNmx(uint40 endTime) external override returns (uint256 supply) {
         supply = 1 * 10**18;
         _mint(msg.sender, supply);
     }

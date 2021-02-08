@@ -180,15 +180,20 @@ contract Nmx is ERC20, NmxSupplier, Ownable {
         poolByOwner[newOwner] = pool;
     }
 
-    /// @dev if caller is owner of any mint pool it will be supplied with Nmx based on the schedule and time passed from the moment when the method was invoked by the same mint pool owner last time
-    function supplyNmx() external override returns (uint256) {
+    /**
+      @dev if caller is owner of any mint pool it will be supplied with Nmx based on the schedule and time passed from the moment
+      when the method was invoked by the same mint pool owner last time
+      @param maxTime the upper limit of the time to make calculations
+    */
+    function supplyNmx(uint40 maxTime) external override returns (uint256) {
+        if (maxTime > uint40(block.timestamp)) maxTime = uint40(block.timestamp);
         MintPool pool = poolByOwner[msg.sender];
         if (pool == MintPool.DEFAULT_VALUE) return 0;
         MintScheduleState storage state = poolMintStates[uint256(pool)];
         (uint256 supply, MintScheduleState memory newState) =
             MintSchedule(mintSchedule).makeProgress(
                 state,
-                uint40(block.timestamp),
+                maxTime,
                 pool
             );
         poolMintStates[uint256(pool)] = newState;

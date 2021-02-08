@@ -11,7 +11,7 @@ contract MockedNmxToken is ERC20, NmxSupplier {
 
     constructor() ERC20("Nominex", "NMX") {}
 
-    function supplyNmx() external override returns (uint256) {
+    function supplyNmx(uint40 endTime) external override returns (uint256) {
         _mint(msg.sender, supply);
         return supply;
     }

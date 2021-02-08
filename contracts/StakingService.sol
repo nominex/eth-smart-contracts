@@ -348,7 +348,7 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
 
     function updateHistoricalRewardRate() public {
         uint128 currentNmxSupply =
-            uint128(NmxSupplier(nmxSupplier).supplyNmx());
+            uint128(NmxSupplier(nmxSupplier).supplyNmx(uint40(block.timestamp)));
         if (state.totalStaked != 0 && currentNmxSupply != 0)
             state.historicalRewardRate +=
                 (currentNmxSupply << 40) /

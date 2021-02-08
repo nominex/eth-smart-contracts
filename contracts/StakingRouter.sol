@@ -47,8 +47,8 @@ contract StakingRouter is Ownable, NmxSupplier {
         activeServices = addresses;
     }
 
-    function supplyNmx() external override returns (uint256 supply) {
-        supply = updatePendingSupplies(msg.sender);
+    function supplyNmx(uint40 maxTime) external override returns (uint256 supply) {
+        supply = updatePendingSupplies(msg.sender, maxTime);
         uint256 pendingSupply = pendingSupplies[msg.sender];
         if (pendingSupply != 0) {
             pendingSupplies[msg.sender] = 0;
@@ -64,11 +64,11 @@ contract StakingRouter is Ownable, NmxSupplier {
         return activeServices;
     }
 
-    function updatePendingSupplies(address requestedService)
+    function updatePendingSupplies(address requestedService, uint40 maxTime)
         private
         returns (uint256 serviceSupply)
     {
-        uint256 supply = NmxSupplier(nmx).supplyNmx();
+        uint256 supply = NmxSupplier(nmx).supplyNmx(maxTime);
         uint256 activeServicesLength = activeServices.length;
         for (
             uint256 activeServiceIndex = 0;

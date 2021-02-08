@@ -149,6 +149,7 @@ contract(
 contract("StakingRouter - changeStakingServiceShares - stubbed", (accounts) => {
   let nmxStub;
   let router;
+  let now = Math.floor(new Date().getTime() / 1000);
 
   before(async () => {
     nmxStub = await NmxStub.new();
@@ -159,7 +160,7 @@ contract("StakingRouter - changeStakingServiceShares - stubbed", (accounts) => {
   it("pending supplies not changed on shares changed", async () => {
     assert((await router.pendingSupplies(accounts[0])).toNumber() === 0);
 
-    await router.supplyNmx({ from: accounts[1] });
+    await router.supplyNmx(now, { from: accounts[1] });
     const initialPendingSupply = await router.pendingSupplies(accounts[0]);
     assert(
       !initialPendingSupply.eq(web3.utils.toBN(0)),
@@ -177,6 +178,7 @@ contract("StakingRouter - changeStakingServiceShares - stubbed", (accounts) => {
 contract("StakingRouter - supplyNmx", (accounts) => {
   let nmxStub;
   let router;
+  let now = Math.floor(new Date().getTime() / 1000);
 
   beforeEach(async () => {
     nmxStub = await NmxStub.new();
@@ -190,7 +192,7 @@ contract("StakingRouter - supplyNmx", (accounts) => {
     );
     const initialPendingSupply = await router.pendingSupplies(accounts[0]);
 
-    await router.supplyNmx({ from: accounts[1] });
+    await router.supplyNmx(now, { from: accounts[1] });
     const finalPendingSupply = await router.pendingSupplies(accounts[0]);
     assert(
       initialPendingSupply.lt(finalPendingSupply),
@@ -202,7 +204,7 @@ contract("StakingRouter - supplyNmx", (accounts) => {
     await router.changeStakingServiceShares([accounts[0]], [1n << 64n]);
     const initialSupply = await nmxStub.balanceOf(accounts[0]);
 
-    await router.supplyNmx();
+    await router.supplyNmx(now);
     const finalSupply = await nmxStub.balanceOf(accounts[0]);
     assert(
       initialSupply.lt(finalSupply),
@@ -214,8 +216,8 @@ contract("StakingRouter - supplyNmx", (accounts) => {
     await router.changeStakingServiceShares([accounts[0]], [1n << 64n]);
     const initialSupply = await nmxStub.balanceOf(accounts[0]);
 
-    const supply = await router.supplyNmx.call(); // call to estimate supply
-    await router.supplyNmx(); // actual transaction to transfer supply
+    const supply = await router.supplyNmx.call(now); // call to estimate supply
+    await router.supplyNmx(now); // actual transaction to transfer supply
     const finalSupply = await nmxStub.balanceOf(accounts[0]);
     assert(
       finalSupply.sub(initialSupply).eq(supply),

@@ -4,6 +4,7 @@ const { signData, ZERO } = require("./utils.js");
 
 contract("Nmx - initializing", (accounts) => {
   let nmx;
+  let now = Math.floor(new Date().getTime() / 1000);
 
   beforeEach(async () => {
     const mintScheduleStub = await MintScheduleStub.new();
@@ -20,7 +21,7 @@ contract("Nmx - initializing", (accounts) => {
 
   it("default state initialized with 0 nextTickSupply", async () => {
     await nmx.transferPoolOwnership(0, accounts[0]);
-    const rewardRate = await nmx.supplyNmx.call();
+    const rewardRate = await nmx.supplyNmx.call(now);
     assert(
       rewardRate.isZero(),
       `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
@@ -29,7 +30,7 @@ contract("Nmx - initializing", (accounts) => {
 
   it("primary state initialized with non 0 nextTickSupply", async () => {
     await nmx.transferPoolOwnership(1, accounts[0]);
-    const rewardRate = await nmx.supplyNmx.call();
+    const rewardRate = await nmx.supplyNmx.call(now);
     assert(
       rewardRate.gt(ZERO),
       `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
@@ -38,7 +39,7 @@ contract("Nmx - initializing", (accounts) => {
 
   it("bonus state initialized with non 0 nextTickSupply", async () => {
     await nmx.transferPoolOwnership(2, accounts[0]);
-    const rewardRate = await nmx.supplyNmx.call();
+    const rewardRate = await nmx.supplyNmx.call(now);
     assert(
       rewardRate.gt(ZERO),
       `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
@@ -47,7 +48,7 @@ contract("Nmx - initializing", (accounts) => {
 
   it("team state initialized with non 0 nextTickSupply", async () => {
     await nmx.transferPoolOwnership(3, accounts[0]);
-    const rewardRate = await nmx.supplyNmx.call();
+    const rewardRate = await nmx.supplyNmx.call(now);
     assert(
       rewardRate.gt(ZERO),
       `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
@@ -56,7 +57,7 @@ contract("Nmx - initializing", (accounts) => {
 
   it("nominex state initialized with non 0 nextTickSupply", async () => {
     await nmx.transferPoolOwnership(4, accounts[0]);
-    const rewardRate = await nmx.supplyNmx.call();
+    const rewardRate = await nmx.supplyNmx.call(now);
     assert(
       rewardRate.gt(ZERO),
       `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
@@ -66,6 +67,7 @@ contract("Nmx - initializing", (accounts) => {
 
 contract("Nmx - transfer pool ownership", (accounts) => {
   let nmx;
+  let now = Math.floor(new Date().getTime() / 1000);
 
   beforeEach(async () => {
     const mintScheduleStub = await MintScheduleStub.new();
@@ -129,7 +131,7 @@ contract("Nmx - transfer pool ownership", (accounts) => {
   it("old owner got 0 nmx on supplyNmx invocation", async () => {
     await nmx.transferPoolOwnership(1, accounts[0]);
     await nmx.transferPoolOwnership(1, accounts[1]);
-    const rewardRate = await nmx.supplyNmx.call();
+    const rewardRate = await nmx.supplyNmx.call(now);
     assert(
       rewardRate.isZero(),
       `Unexpected rewardRate after pool ownership loosing ${rewardRate}`
@@ -139,6 +141,7 @@ contract("Nmx - transfer pool ownership", (accounts) => {
 
 contract("Nmx - supplyNmx", (accounts) => {
   let nmx;
+  let now = Math.floor(new Date().getTime() / 1000);
 
   before(async () => {
     const mintScheduleStub = await MintScheduleStub.new();
@@ -149,7 +152,7 @@ contract("Nmx - supplyNmx", (accounts) => {
   });
 
   it("arbitrary caller got 0", async () => {
-    const rewardRate = await nmx.supplyNmx.call({ from: accounts[6] });
+    const rewardRate = await nmx.supplyNmx.call(now, { from: accounts[6] });
     assert(
       rewardRate.isZero(),
       `Unexpected rewardRate for arbitrary caller ${rewardRate}`
@@ -157,7 +160,7 @@ contract("Nmx - supplyNmx", (accounts) => {
   });
 
   it("pool owner got gt 0", async () => {
-    const rewardRate = await nmx.supplyNmx.call({ from: accounts[1] });
+    const rewardRate = await nmx.supplyNmx.call(now, { from: accounts[1] });
     assert(
       rewardRate.gt(ZERO),
       `Unexpected rewardRate for arbitrary caller ${rewardRate}`
@@ -166,8 +169,8 @@ contract("Nmx - supplyNmx", (accounts) => {
 
   it("pool owner actually got nmx on balance", async () => {
     const initialBalance = await nmx.balanceOf(accounts[1]);
-    const rewardRate = await nmx.supplyNmx.call({ from: accounts[1] });
-    await nmx.supplyNmx({ from: accounts[1] });
+    const rewardRate = await nmx.supplyNmx.call(now, { from: accounts[1] });
+    await nmx.supplyNmx(now, { from: accounts[1] });
     const finalBalance = await nmx.balanceOf(accounts[1]);
     assert(
       rewardRate.gt(ZERO),
@@ -181,14 +184,14 @@ contract("Nmx - supplyNmx", (accounts) => {
 
   it("pool state changes", async () => {
     const initialState = await nmx.poolMintStates(1);
-    await nmx.supplyNmx({ from: accounts[1] });
+    await nmx.supplyNmx(now, { from: accounts[1] });
     const finalState = await nmx.poolMintStates(1);
     assert.notDeepEqual(finalState, initialState, "State was not changed");
   });
 
   it("another pool state does not change", async () => {
     const initialState = await nmx.poolMintStates(1);
-    await nmx.supplyNmx({ from: accounts[2] });
+    await nmx.supplyNmx(now, { from: accounts[2] });
     const finalState = await nmx.poolMintStates(1);
     assert.deepEqual(
       finalState,
