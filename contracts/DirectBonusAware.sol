@@ -14,6 +14,10 @@ abstract contract DirectBonusAware is Ownable {
         uint16 stakedAmountInUsdt;
         uint16 multiplier;
     }
+
+    string private constant SET_REFERRER_TYPE = "SetReferrer(address owner,address referrer,uint256 deadline)";
+    bytes32 public constant SET_REFERRER_TYPEHASH = keccak256(abi.encodePacked(SET_REFERRER_TYPE));
+
     uint16 public referralMultiplier; /// @dev multiplier for direct bonus for referrals of the referral program (in 0.0001 parts)
     ReferrerMultiplierData[] public referrerMultipliers; /// @dev multipliers for direct bonuses for referrers of the referral program
     mapping(address => address) public referrers; /// @dev referral address => referrer address
@@ -71,16 +75,33 @@ abstract contract DirectBonusAware is Ownable {
         }
     }
 
-    /// @dev every referral (address, tx.origin) can set its referrer. But only once. So nobody can change referrer if it has been set already
+    /// @dev every referral (address, msg.sender) can set its referrer. But only once. So nobody can change referrer if it has been set already
     function setReferrer(address referrer) external {
-        address currentReferrer = referrers[tx.origin];
+        _setReferrer(msg.sender, referrer);
+    }
+
+    /// @dev set a referrer for the signature owner
+    function setReferrerWithAuthorization(address owner, address referrer, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
+        verifySetReferrerSignature(
+            owner,
+            referrer,
+            deadline,
+            v,
+            r,
+            s
+        );
+        _setReferrer(owner, referrer);
+    }
+
+    function _setReferrer(address referral, address referrer) private {
+        address currentReferrer = referrers[referral];
         bool validReferrer =
             currentReferrer == address(0) &&
                 referrer != address(0) &&
-                tx.origin != referrer;
+                referral != referrer;
         require(validReferrer, "NmxStakingService: INVALID_REFERRER");
-        emit ReferrerChanged(tx.origin, referrer);
-        referrers[tx.origin] = referrer;
+        emit ReferrerChanged(referral, referrer);
+        referrers[referral] = referrer;
     }
 
     /**
@@ -121,4 +142,38 @@ abstract contract DirectBonusAware is Ownable {
             }
         }
     }
+
+    function verifySetReferrerSignature(
+        address owner,
+        address referrer,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) private {
+        require(deadline >= block.timestamp, "NmxStakingService: EXPIRED");
+        bytes32 digest =
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    getDomainSeparator(),
+                    keccak256(
+                        abi.encode(
+                            SET_REFERRER_TYPEHASH,
+                            owner,
+                            referrer,
+                            deadline
+                        )
+                    )
+                )
+            );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(
+            recoveredAddress != address(0) && recoveredAddress == owner,
+            "NmxStakingService: INVALID_SIGNATURE"
+        );
+    }
+
+    function getDomainSeparator() internal view virtual returns (bytes32);
+
 }

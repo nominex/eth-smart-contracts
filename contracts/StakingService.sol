@@ -366,4 +366,9 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
     function _lpToken() internal view override returns (address) {
         return stakingToken;
     }
+
+    function getDomainSeparator() internal view override returns (bytes32) {
+        return DOMAIN_SEPARATOR;
+    }
+
 }
