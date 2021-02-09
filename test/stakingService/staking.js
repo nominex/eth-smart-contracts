@@ -1,5 +1,6 @@
 const Nmx = artifacts.require("Nmx");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
+const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const StakingRouter = artifacts.require("StakingRouter");
 const StakingService = artifacts.require("StakingService");
 const { rpcCommand, getAssertBN } = require("../utils.js");
@@ -25,7 +26,8 @@ contract("StakingService; Group: Staking", (accounts) => {
   before(async () => {
     nmx = await Nmx.deployed();
 
-    stakingToken = await MockedStakingToken.new();
+    let usdtToken = await MockedUsdtToken.new();
+    stakingToken = await MockedStakingToken.new(usdtToken.address);
 
     stakingRouter = await StakingRouter.new(nmx.address);
     nmx.transferPoolOwnership(1, stakingRouter.address);

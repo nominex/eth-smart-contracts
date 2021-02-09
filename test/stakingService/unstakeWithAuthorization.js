@@ -1,5 +1,6 @@
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
+const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const StakingService = artifacts.require("StakingService");
 const { rpcCommand, signData, getAssertBN } = require("../utils.js");
 const truffleAssert = require("truffle-assertions");
@@ -19,7 +20,8 @@ contract("StakingService#unstakeWithAuthorization", async (accounts) => {
 
   before(async () => {
     nmx = await MockedNmxToken.new();
-    stakingToken = await MockedStakingToken.new();
+    let usdtToken = await MockedUsdtToken.new();
+    stakingToken = await MockedStakingToken.new(usdtToken.address);
     stakingService = await StakingService.new(
       nmx.address,
       stakingToken.address,

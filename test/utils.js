@@ -12,6 +12,21 @@ const getAssertBN = function (maxDiff = web3.utils.toBN(0)) {
   };
 };
 
+const getComparesEqualBN = function (maxDiff = 0) {
+  maxDiff = web3.utils.isBN(maxDiff) ? maxDiff : web3.utils.toBN(maxDiff);
+  return (first, second) => {
+    first = web3.utils.isBN(first)
+        ? first
+        : web3.utils.toBN(first * 10 ** 18);
+    second = web3.utils.isBN(second)
+        ? second
+        : web3.utils.toBN(second * 10 ** 18);
+    let diff = first.sub(second).abs();
+    return diff.lte(maxDiff);
+  }
+};
+
+
 module.exports = {
   rpcCommand: (command, params = []) => {
     return new Promise((resolve, reject) => {
@@ -48,7 +63,7 @@ module.exports = {
 
   getAssertBN,
 
-  assertBN: getAssertBN(web3.utils.toBN(0)),
+  getComparesEqualBN,
 
   ZERO: web3.utils.toBN(0),
   ZERO_ADDRESS: "0x0000000000000000000000000000000000000000",

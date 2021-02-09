@@ -7,6 +7,7 @@ import "../../contracts/NmxSupplier.sol";
 
 contract MockedNmxToken is ERC20, NmxSupplier {
     uint256 public supply = 10**18;
+    uint128 public maxDirectBonus = 100 * 10 ** 18;
 
     constructor() ERC20("Nominex", "NMX") {}
 
@@ -15,7 +16,15 @@ contract MockedNmxToken is ERC20, NmxSupplier {
         return supply;
     }
 
-    function setSupply(uint256 newSupply) public {
+    function setSupply(uint256 newSupply) external {
         supply = newSupply;
+    }
+
+    function requestDirectBonus(uint128 amount) external returns (uint128) {
+        return amount < maxDirectBonus ? amount : maxDirectBonus;
+    }
+
+    function setMaxDirectBonus(uint128 newMaxDirectBonus) external {
+        maxDirectBonus = newMaxDirectBonus;
     }
 }

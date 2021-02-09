@@ -1,4 +1,5 @@
 const MockedStakingToken = artifacts.require("MockedStakingToken");
+const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const SetReferrerProxy = artifacts.require("SetReferrerProxy");
 const StakingService = artifacts.require("StakingService");
@@ -15,7 +16,8 @@ contract("StakingService#setReferrer", (accounts) => {
 
   before(async () => {
     let nmx = await MockedNmxToken.new();
-    let stakingToken = await MockedStakingToken.new();
+    let usdtToken = await MockedUsdtToken.new();
+    let stakingToken = await MockedStakingToken.new(usdtToken.address);
     stakingService = await StakingService.new(
       nmx.address,
       stakingToken.address,
