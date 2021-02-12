@@ -42,22 +42,15 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
         for (uint256 i = 0; i < activeServicesLength; i++) {
             address service = activeServices[i];
             serviceShares[service] = 0;
-            if (!contains(service, addresses)) {
-                _pendingSupplyOfInactiveServices += pendingSupplies[service];
-            }
+            _pendingSupplyOfInactiveServices += pendingSupplies[service];
         }
-        pendingSupplyOfInactiveServices += _pendingSupplyOfInactiveServices;
         for (uint256 i = 0; i < shares.length; i++) {
             serviceShares[addresses[i]] = shares[i];
+            address service = addresses[i];
+            _pendingSupplyOfInactiveServices -= pendingSupplies[service];
         }
+        pendingSupplyOfInactiveServices += _pendingSupplyOfInactiveServices;
         activeServices = addresses;
-    }
-
-    function contains(address key, address[] calldata a) private pure returns (bool) {
-        for(uint256 i = 0; i < a.length; i++) {
-            if (a[i] == key) return true;
-        }
-        return false;
     }
 
     function supplyNmx(uint40 maxTime) external override returns (uint256 supply) {
