@@ -3,10 +3,10 @@ pragma solidity >=0.7.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./Lib.sol";
+import "./RecoverableByOwner.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MintSchedule is Ownable {
+contract MintSchedule is RecoverableByOwner {
     /**
      @dev structure to describe the mint schedule. After each week MintScheduleState.nextTickSupply decreases.
      When the schedule completes weekCount weeks in current item it goes to the next item in the items.

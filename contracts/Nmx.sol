@@ -4,10 +4,10 @@ pragma experimental ABIEncoderV2;
 
 import "./NmxSupplier.sol";
 import "./MintSchedule.sol";
+import "./RecoverableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Nmx is ERC20, NmxSupplier, Ownable {
+contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
     bytes32 immutable public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH =

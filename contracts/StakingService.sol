@@ -7,11 +7,12 @@ import "./LiquidityWealthEstimator.sol";
 import "./NmxSupplier.sol";
 import "./Nmx.sol";
 import "./PausableByOwner.sol";
+import "./RecoverableByOwner.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEstimator {
+contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware, LiquidityWealthEstimator {
     /**
      * @param totalStaked amount of NMXLP currently staked in the service
      * @param historicalRewardRate how many NMX minted per one NMXLP (<< 40). Never decreases.
@@ -369,6 +370,18 @@ contract StakingService is PausableByOwner, DirectBonusAware, LiquidityWealthEst
 
     function getDomainSeparator() internal view override returns (bytes32) {
         return DOMAIN_SEPARATOR;
+    }
+
+    function getRecoverableAmount(address tokenAddress) override internal view returns (uint256) {
+        // there is no way to know exact amount of nmx service owns to the stakers
+        require(tokenAddress != nmx, 'NmxStakingService: INVALID_RECOVERABLE_TOKEN');
+        if (tokenAddress == stakingToken) {
+            uint256 _totalStaked = state.totalStaked;
+            uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
+            assert(balance >= _totalStaked);
+            return balance - _totalStaked;
+        }
+        return RecoverableByOwner.getRecoverableAmount(tokenAddress);
     }
 
 }

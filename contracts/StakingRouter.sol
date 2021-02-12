@@ -2,15 +2,16 @@
 pragma solidity >=0.7.0 <0.8.0;
 
 import "./Nmx.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./RecoverableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
-contract StakingRouter is Ownable, NmxSupplier {
+contract StakingRouter is RecoverableByOwner, NmxSupplier {
     using ABDKMath64x64 for int128;
     address immutable public nmx;
     mapping(address => int128) public serviceShares; /// @dev different StakingServices could have different shares in PRIMARY POOL
     address[] activeServices;
+    uint256 pendingSupplyOfInactiveServices;
     mapping(address => uint256) public pendingSupplies; /// @dev If there is more than one StakingService it is necessary to store supplied amount of Nmx between the invocations of particular service to return correct amount of supplied tokens
 
     constructor(address _nmx) {
@@ -37,22 +38,36 @@ contract StakingRouter is Ownable, NmxSupplier {
         );
 
         uint256 activeServicesLength = activeServices.length;
+        uint256 _pendingSupplyOfInactiveServices = 0;
         for (uint256 i = 0; i < activeServicesLength; i++) {
             address service = activeServices[i];
             serviceShares[service] = 0;
+            if (!contains(service, addresses)) {
+                _pendingSupplyOfInactiveServices += pendingSupplies[service];
+            }
         }
+        pendingSupplyOfInactiveServices += _pendingSupplyOfInactiveServices;
         for (uint256 i = 0; i < shares.length; i++) {
             serviceShares[addresses[i]] = shares[i];
         }
         activeServices = addresses;
     }
 
+    function contains(address key, address[] calldata a) private pure returns (bool) {
+        for(uint256 i = 0; i < a.length; i++) {
+            if (a[i] == key) return true;
+        }
+        return false;
+    }
+
     function supplyNmx(uint40 maxTime) external override returns (uint256 supply) {
-        supply = updatePendingSupplies(msg.sender, maxTime);
+        bool serviceActive;
+        (supply, serviceActive) = updatePendingSupplies(msg.sender, maxTime);
         uint256 pendingSupply = pendingSupplies[msg.sender];
         if (pendingSupply != 0) {
             pendingSupplies[msg.sender] = 0;
             supply += pendingSupply;
+            if (!serviceActive) pendingSupplyOfInactiveServices -= pendingSupply;
         }
 
         bool transferred = IERC20(nmx).transfer(msg.sender, supply);
@@ -66,7 +81,7 @@ contract StakingRouter is Ownable, NmxSupplier {
 
     function updatePendingSupplies(address requestedService, uint40 maxTime)
         private
-        returns (uint256 serviceSupply)
+        returns (uint256 serviceSupply, bool serviceActive)
     {
         uint256 supply = NmxSupplier(nmx).supplyNmx(maxTime);
         uint256 activeServicesLength = activeServices.length;
@@ -81,9 +96,24 @@ contract StakingRouter is Ownable, NmxSupplier {
                 ABDKMath64x64.mulu(activeServiceShare, supply);
             if (activeService == requestedService) {
                 serviceSupply = activeServiceSupply;
+                serviceActive = true;
             } else {
                 pendingSupplies[activeService] += activeServiceSupply;
             }
         }
+        return (serviceSupply, serviceActive);
     }
+
+    function getRecoverableAmount(address tokenAddress) override internal view returns (uint256) {
+        if (tokenAddress != nmx) return RecoverableByOwner.getRecoverableAmount(tokenAddress);
+        uint256 pendingSupply = pendingSupplyOfInactiveServices;
+        address[] memory _activeServices = activeServices;
+        for(uint256 i = 0; i < _activeServices.length; i++) {
+            pendingSupply += pendingSupplies[_activeServices[i]];
+        }
+        uint256 balance = IERC20(nmx).balanceOf(address(this));
+        assert(balance >= pendingSupply);
+        return balance - pendingSupply;
+    }
+
 }
