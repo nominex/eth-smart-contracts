@@ -17,7 +17,7 @@ contract MintSchedule is RecoverableByOwner {
     struct ScheduleItem {
         uint16 weekCount;
         int128 weekCompletenessMultiplier;
-        uint64[] poolShares;
+        int128[] poolShares;
     }
     uint40 constant WEEK_DURATION = 7 days;
 
@@ -39,33 +39,33 @@ contract MintSchedule is RecoverableByOwner {
         int128 abdk_9_10 = ABDKMath64x64.divu(9, 10);
 
         // 0.0, 0.8 * 0.9, 0.8 * 0.1, 0.2, 0.0
-        uint64[5] memory shares_01_28 =
+        int128[5] memory shares_01_28 =
             [
                 0,
-                uint64(abdk_8_10.mul(abdk_9_10)),
-                uint64(abdk_8_10.mul(abdk_1_10)),
-                uint64(abdk_2_10),
+                abdk_8_10.mul(abdk_9_10),
+                abdk_8_10.mul(abdk_1_10),
+                abdk_2_10,
                 0
             ];
 
         // 0.0, 0.85 * 0.75 * 0.85, 0.85 * 0.75 * 0.15, 0.85 * 0.25 , 0.15
-        uint64[5] memory shares_29_56 =
+        int128[5] memory shares_29_56 =
             [
                 0,
-                uint64(abdk_85_100.mul(abdk_75_100).mul(abdk_85_100)),
-                uint64(abdk_85_100.mul(abdk_75_100).mul(abdk_15_100)),
-                uint64(abdk_85_100.mul(abdk_25_100)),
-                uint64(abdk_15_100)
+                abdk_85_100.mul(abdk_75_100).mul(abdk_85_100),
+                abdk_85_100.mul(abdk_75_100).mul(abdk_15_100),
+                abdk_85_100.mul(abdk_25_100),
+                abdk_15_100
             ];
 
         // 0.0, 0.7 * 0.7 * 0.8, 0.7 * 0.7 * 0.2, 0.7 * 0.3, 0.30
-        uint64[5] memory shares_57_xx =
+        int128[5] memory shares_57_xx =
             [
                 0,
-                uint64(abdk_7_10.mul(abdk_7_10).mul(abdk_8_10)),
-                uint64(abdk_7_10.mul(abdk_7_10).mul(abdk_2_10)),
-                uint64(abdk_7_10.mul(abdk_3_10)),
-                uint64(abdk_3_10)
+                abdk_7_10.mul(abdk_7_10).mul(abdk_8_10),
+                abdk_7_10.mul(abdk_7_10).mul(abdk_2_10),
+                abdk_7_10.mul(abdk_3_10),
+                abdk_3_10
             ];
 
         /*1-28 first 28 days*/
