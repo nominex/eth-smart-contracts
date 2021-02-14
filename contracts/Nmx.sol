@@ -162,17 +162,8 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
             msg.sender == owner() || msg.sender == currentOwner,
             "NMX: only owner can transfer pool ownership"
         );
-        for (
-            uint256 existentPool = uint256(MintPool.PRIMARY);
-            existentPool <= uint256(MintPool.NOMINEX);
-            existentPool++
-        ) {
-            address existentOwner = poolOwners[uint256(existentPool)];
-            require(
-                newOwner != existentOwner || newOwner == address(0),
-                "NMX: every pool must have dedicated owner"
-            );
-        }
+        MintPool existentPoolOfNewOwner = poolByOwner[newOwner];
+        require(MintPool.DEFAULT_VALUE == existentPoolOfNewOwner || newOwner == address(0), "NMX: every pool must have dedicated owner");
 
         emit PoolOwnershipTransferred(currentOwner, newOwner, pool);
         poolOwners[uint256(pool)] = newOwner;
