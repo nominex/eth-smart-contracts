@@ -90,7 +90,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      @dev function to stake permitted amount of LP tokens from uniswap contract
      @param amount of NMXLP to be staked in the service
      */
-    function stake(uint128 amount) external whenNotPaused {
+    function stake(uint128 amount) external {
         _stakeFrom(msg.sender, amount);
     }
 
@@ -100,7 +100,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external whenNotPaused {
+    ) external {
         IUniswapV2ERC20(stakingToken).permit(
             msg.sender,
             address(this),
@@ -113,11 +113,11 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         _stakeFrom(msg.sender, amount);
     }
 
-    function stakeFrom(address owner, uint128 amount) external whenNotPaused {
+    function stakeFrom(address owner, uint128 amount) external {
         _stakeFrom(owner, amount);
     }
 
-    function _stakeFrom(address owner, uint128 amount) private {
+    function _stakeFrom(address owner, uint128 amount) private whenNotPaused {
         bool transferred =
             IERC20(stakingToken).transferFrom(
                 owner,
