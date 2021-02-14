@@ -282,7 +282,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
   let snapshotId;
 
   const rewardOwner = accounts[3];
-  const rewardSpender = accounts[0];
+  const rewardSpender = accounts[4];
 
   before(async () => {
     nmx = await MockedNmxToken.new();
@@ -370,7 +370,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
         Claim: [
           { name: "owner", type: "address" },
           { name: "spender", type: "address" },
-          { name: "value", type: "uint256" },
+          { name: "value", type: "uint128" },
           { name: "nonce", type: "uint256" },
           { name: "deadline", type: "uint256" },
         ],

@@ -89,7 +89,7 @@ contract("StakingService#unstakeWithAuthorization", async (accounts) => {
         Unstake: [
           { name: "owner", type: "address" },
           { name: "spender", type: "address" },
-          { name: "value", type: "uint256" },
+          { name: "value", type: "uint128" },
           { name: "nonce", type: "uint256" },
           { name: "deadline", type: "uint256" },
         ],

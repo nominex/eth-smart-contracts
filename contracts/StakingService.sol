@@ -37,12 +37,12 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
     bytes32 immutable public DOMAIN_SEPARATOR;
 
     string private constant CLAIM_TYPE =
-        "Claim(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
+        "Claim(address owner,address spender,uint128 value,uint256 nonce,uint256 deadline)";
     bytes32 public constant CLAIM_TYPEHASH =
         keccak256(abi.encodePacked(CLAIM_TYPE));
 
     string private constant UNSTAKE_TYPE =
-        "Unstake(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)";
+        "Unstake(address owner,address spender,uint128 value,uint256 nonce,uint256 deadline)";
     bytes32 public constant UNSTAKE_TYPEHASH =
         keccak256(abi.encodePacked(UNSTAKE_TYPE));
 
