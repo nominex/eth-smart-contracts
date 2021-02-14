@@ -16,7 +16,7 @@ contract MintSchedule is RecoverableByOwner {
      */
     struct ScheduleItem {
         uint16 weekCount;
-        uint64 weekCompletenessMultiplier;
+        int128 weekCompletenessMultiplier;
         uint64[] poolShares;
     }
     uint40 constant WEEK_DURATION = 7 days;
@@ -71,89 +71,77 @@ contract MintSchedule is RecoverableByOwner {
         /*1-28 first 28 days*/
         ScheduleItem storage item = items.push();
         item.weekCount = 4;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
         item.poolShares = shares_01_28;
 
         /*29-56 second 28 days*/
         item = items.push();
 
         item.weekCount = 4;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
         item.poolShares = shares_29_56;
 
         /*57-182 - 0.5 year*/
         item = items.push();
 
         item.weekCount = 18;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(994, 1000));
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
         item.poolShares = shares_57_xx;
 
         /*183-371 - 1 year*/
         item = items.push();
 
         item.weekCount = 27;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(996, 1000));
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(996, 1000);
         item.poolShares = shares_57_xx;
 
         /*372-735 - 2 year*/
         item = items.push();
 
         item.weekCount = 52;
-        item.weekCompletenessMultiplier = uint64(ABDKMath64x64.divu(998, 1000));
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(998, 1000);
         item.poolShares = shares_57_xx;
 
         /*736-1463 - 4 year*/
         item = items.push();
 
         item.weekCount = 104;
-        item.weekCompletenessMultiplier = uint64(
-            ABDKMath64x64.divu(9995, 10000)
-        );
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9995, 10000);
         item.poolShares = shares_57_xx;
 
         /*1464-2926 - 8 year*/
         item = items.push();
 
         item.weekCount = 209;
-        item.weekCompletenessMultiplier = uint64(
-            ABDKMath64x64.divu(9997, 10000)
-        );
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9997, 10000);
         item.poolShares = shares_57_xx;
 
         /*2927-5481 - 15 year*/
         item = items.push();
 
         item.weekCount = 365;
-        item.weekCompletenessMultiplier = uint64(
-            ABDKMath64x64.divu(99985, 100000)
-        );
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(99985, 100000);
         item.poolShares = shares_57_xx;
 
         /*5481-10962 - 30 year*/
         item = items.push();
 
         item.weekCount = 783;
-        item.weekCompletenessMultiplier = uint64(
-            ABDKMath64x64.divu(99992, 100000)
-        );
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(99992, 100000);
         item.poolShares = shares_57_xx;
 
         /*10963-21917 - 60 year*/
         item = items.push();
 
         item.weekCount = 1565;
-        item.weekCompletenessMultiplier = uint64(
-            ABDKMath64x64.divu(99994, 100000)
-        );
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(99994, 100000);
         item.poolShares = shares_57_xx;
 
         /*21918-36505 - 100 year*/
         item = items.push();
 
         item.weekCount = 2084;
-        item.weekCompletenessMultiplier = uint64(
-            ABDKMath64x64.divu(99995, 100000)
-        );
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(99995, 100000);
         item.poolShares = shares_57_xx;
     }
 
@@ -201,7 +189,7 @@ contract MintSchedule is RecoverableByOwner {
         state.time = time;
         if (time == state.weekStartTime + WEEK_DURATION) {
             state.nextTickSupply = uint128(
-                int128(item.weekCompletenessMultiplier).mulu(
+                item.weekCompletenessMultiplier.mulu(
                     uint256(state.nextTickSupply)
                 )
             );
