@@ -350,10 +350,13 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
     function updateHistoricalRewardRate() public {
         uint128 currentNmxSupply =
             uint128(NmxSupplier(nmxSupplier).supplyNmx(uint40(block.timestamp)));
-        if (state.totalStaked != 0 && currentNmxSupply != 0)
+        if (state.totalStaked != 0 && currentNmxSupply != 0) {
             state.historicalRewardRate +=
                 (currentNmxSupply << 40) /
                 state.totalStaked;
+        } else {
+            ERC20(nmx).transfer(owner(), currentNmxSupply);
+        }
     }
 
     function changeNmxSupplier(address newNmxSupplier) external onlyOwner {
