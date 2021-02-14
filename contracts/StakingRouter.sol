@@ -37,6 +37,8 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
             "NmxStakingRouter: shares must be le 1<<64 in total"
         );
 
+        updatePendingSupplies(address(0), uint40(block.timestamp));
+
         uint256 activeServicesLength = activeServices.length;
         uint256 _pendingSupplyOfInactiveServices = 0;
         for (uint256 i = 0; i < activeServicesLength; i++) {
