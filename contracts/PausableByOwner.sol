@@ -16,7 +16,7 @@ abstract contract PausableByOwner is Pausable, Ownable {
      *
      * - The contract must not be paused.
      */
-    function pause() external virtual whenNotPaused onlyOwner {
+    function pause() external virtual onlyOwner {
         _pause();
     }
 
@@ -27,7 +27,7 @@ abstract contract PausableByOwner is Pausable, Ownable {
      *
      * - The contract must be paused.
      */
-    function unpause() external virtual whenPaused onlyOwner {
+    function unpause() external virtual onlyOwner {
         _unpause();
     }
 }
