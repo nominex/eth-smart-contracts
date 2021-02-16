@@ -75,9 +75,9 @@ abstract contract DirectBonusAware is Ownable {
         }
     }
 
-    /// @dev every referral (address, msg.sender) can set its referrer. But only once. So nobody can change referrer if it has been set already
+    /// @dev every referral (address, _msgSender()) can set its referrer. But only once. So nobody can change referrer if it has been set already
     function setReferrer(address referrer) external {
-        _setReferrer(msg.sender, referrer);
+        _setReferrer(_msgSender(), referrer);
     }
 
     /// @dev set a referrer for the signature owner

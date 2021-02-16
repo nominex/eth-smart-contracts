@@ -7,6 +7,6 @@ contract MockedUsdtToken is ERC20 {
 
     constructor() ERC20("Mocked USDT", "USDT") {
         _setupDecimals(6);
-        _mint(msg.sender, TOTAL_SUPPLY);
+        _mint(_msgSender(), TOTAL_SUPPLY);
     }
 }

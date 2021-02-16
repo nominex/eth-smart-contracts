@@ -91,7 +91,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      @param amount of NMXLP to be staked in the service
      */
     function stake(uint128 amount) external {
-        _stakeFrom(msg.sender, amount);
+        _stakeFrom(_msgSender(), amount);
     }
 
     function stakeWithPermit(
@@ -102,7 +102,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         bytes32 s
     ) external {
         IUniswapV2ERC20(stakingToken).permit(
-            msg.sender,
+            _msgSender(),
             address(this),
             amount,
             deadline,
@@ -110,7 +110,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
             r,
             s
         );
-        _stakeFrom(msg.sender, amount);
+        _stakeFrom(_msgSender(), amount);
     }
 
     function stakeFrom(address owner, uint128 amount) external {
@@ -138,11 +138,11 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      @param amount of NMXLP to be unstaked from the service
      */
     function unstake(uint128 amount) external {
-        _unstake(msg.sender, msg.sender, amount);
+        _unstake(_msgSender(), _msgSender(), amount);
     }
 
     function unstakeTo(address to, uint128 amount) external {
-        _unstake(msg.sender, to, amount);
+        _unstake(_msgSender(), to, amount);
     }
 
     function unstakeWithAuthorization(
@@ -158,14 +158,14 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         verifySignature(
             UNSTAKE_TYPEHASH,
             owner,
-            msg.sender,
+            _msgSender(),
             signedAmount,
             deadline,
             v,
             r,
             s
         );
-        _unstake(owner, msg.sender, amount);
+        _unstake(owner, _msgSender(), amount);
     }
 
     function _unstake(
@@ -188,23 +188,23 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      * @dev updates current reward and transfers it to the caller's address
      */
     function claimReward() external returns (uint256) {
-        Staker storage staker = updateStateAndStaker(msg.sender);
+        Staker storage staker = updateStateAndStaker(_msgSender());
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
-        _claimReward(staker, msg.sender, msg.sender, unclaimedReward);
+        _claimReward(staker, _msgSender(), _msgSender(), unclaimedReward);
         return unclaimedReward;
     }
 
     function claimRewardTo(address to) external returns (uint256) {
-        Staker storage staker = updateStateAndStaker(msg.sender);
+        Staker storage staker = updateStateAndStaker(_msgSender());
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
-        _claimReward(staker, msg.sender, to, unclaimedReward);
+        _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
     }
 
     function claimRewardToWithoutUpdate(address to) external returns (uint256) {
-        Staker storage staker = stakers[msg.sender];
+        Staker storage staker = stakers[_msgSender()];
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
-        _claimReward(staker, msg.sender, to, unclaimedReward);
+        _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
     }
 
@@ -221,7 +221,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         verifySignature(
             CLAIM_TYPEHASH,
             owner,
-            msg.sender,
+            _msgSender(),
             signedAmount,
             deadline,
             v,
@@ -230,7 +230,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         );
 
         Staker storage staker = updateStateAndStaker(owner);
-        _claimReward(staker, owner, msg.sender, nmxAmount);
+        _claimReward(staker, owner, _msgSender(), nmxAmount);
     }
 
     function updateStateAndStaker(address stakerAddress)
@@ -343,7 +343,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      * @dev updates state and returns unclaimed reward amount. Is supposed to be invoked as call from metamask to display current amount of Nmx available
      */
     function getReward() external returns (uint256 unclaimedReward) {
-        Staker memory staker = updateStateAndStaker(msg.sender);
+        Staker memory staker = updateStateAndStaker(_msgSender());
         unclaimedReward = staker.reward - staker.claimedReward;
     }
 

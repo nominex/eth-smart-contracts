@@ -8,6 +8,6 @@ contract NmxStub is ERC20, NmxSupplier {
 
     function supplyNmx(uint40 endTime) external override returns (uint256 supply) {
         supply = 1 * 10**18;
-        _mint(msg.sender, supply);
+        _mint(_msgSender(), supply);
     }
 }

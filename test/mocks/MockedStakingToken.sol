@@ -8,7 +8,7 @@ contract MockedStakingToken is ERC20 {
 
     constructor(address _usdtToken) ERC20("Nominex LP", "NMXLP") {
         usdtToken = _usdtToken;
-        _mint(msg.sender, TOTAL_SUPPLY);
+        _mint(_msgSender(), TOTAL_SUPPLY);
     }
 
     function token0() external view returns (address) {

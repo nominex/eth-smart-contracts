@@ -66,7 +66,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
             poolMintState.time = DISTRIBUTION_START_TIME;
             poolMintState.weekStartTime = DISTRIBUTION_START_TIME;
         }
-        _mint(msg.sender, 117000 * 10**18); // amount of Nmx has been distributed or sold already at the moment of contract deployment
+        _mint(_msgSender(), 117000 * 10**18); // amount of Nmx has been distributed or sold already at the moment of contract deployment
     }
 
     function permit(
@@ -107,7 +107,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
     /// @dev StakingServices can get arbitrary amount of Nmx from DirectBonus pool
     function requestDirectBonus(uint128 amount) external returns (uint128) {
         require(
-            directPoolOwnerByAddress[msg.sender],
+            directPoolOwnerByAddress[_msgSender()],
             "NMX: caller is not the owner of DirectPool"
         );
         if (block.timestamp < DISTRIBUTION_START_TIME) return 0;
@@ -126,7 +126,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
         }
         if (amount == 0) return 0;
         directPoolTotalSupply += amount;
-        _mint(msg.sender, amount);
+        _mint(_msgSender(), amount);
         return amount;
     }
 
@@ -159,7 +159,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
             "NMX: new owner must differs from the old one"
         );
         require(
-            msg.sender == owner() || msg.sender == currentOwner,
+            _msgSender() == owner() || _msgSender() == currentOwner,
             "NMX: only owner can transfer pool ownership"
         );
         MintPool existentPoolOfNewOwner = poolByOwner[newOwner];
@@ -178,7 +178,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
     */
     function supplyNmx(uint40 maxTime) external override returns (uint256) {
         if (maxTime > uint40(block.timestamp)) maxTime = uint40(block.timestamp);
-        MintPool pool = poolByOwner[msg.sender];
+        MintPool pool = poolByOwner[_msgSender()];
         if (pool == MintPool.DEFAULT_VALUE) return 0;
         MintScheduleState storage state = poolMintStates[uint256(pool)];
         (uint256 supply, MintScheduleState memory newState) =
@@ -188,7 +188,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
                 pool
             );
         poolMintStates[uint256(pool)] = newState;
-        _mint(msg.sender, supply);
+        _mint(_msgSender(), supply);
         return supply;
     }
 

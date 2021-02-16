@@ -57,15 +57,15 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
 
     function supplyNmx(uint40 maxTime) external override returns (uint256 supply) {
         bool serviceActive;
-        (supply, serviceActive) = updatePendingSupplies(msg.sender, maxTime);
-        uint256 pendingSupply = pendingSupplies[msg.sender];
+        (supply, serviceActive) = updatePendingSupplies(_msgSender(), maxTime);
+        uint256 pendingSupply = pendingSupplies[_msgSender()];
         if (pendingSupply != 0) {
-            pendingSupplies[msg.sender] = 0;
+            pendingSupplies[_msgSender()] = 0;
             supply += pendingSupply;
             if (!serviceActive) pendingSupplyOfInactiveServices -= pendingSupply;
         }
 
-        bool transferred = IERC20(nmx).transfer(msg.sender, supply);
+        bool transferred = IERC20(nmx).transfer(_msgSender(), supply);
         require(transferred, "NmxStakingRouter: NMX_FAILED_TRANSFER");
         return supply;
     }
