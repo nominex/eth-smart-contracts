@@ -149,7 +149,8 @@ contract("StakingService#setReferrerWithAuthorization", (accounts) => {
 
   before(async () => {
     let nmx = await MockedNmxToken.new();
-    let stakingToken = await MockedStakingToken.new();
+    let usdtToken = await MockedUsdtToken.new();
+    let stakingToken = await MockedStakingToken.new(usdtToken.address);
     stakingService = await StakingService.new(
         nmx.address,
         stakingToken.address,

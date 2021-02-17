@@ -1,5 +1,6 @@
 const Nmx = artifacts.require("Nmx");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
+const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const MockedBinaryMintSchedule = artifacts.require("MockedBinaryMintSchedule");
 const StakingRouter = artifacts.require("StakingRouter");
 const StakingService = artifacts.require("StakingService");
@@ -19,13 +20,19 @@ contract('Integration', (accounts) => {
     before(async () => {
         const mockedBinaryMintSchedule = await MockedBinaryMintSchedule.new();
         nmx = await Nmx.new(mockedBinaryMintSchedule.address);
-        stakingToken = await MockedStakingToken.new();
+        let usdtToken = await MockedUsdtToken.new();
+        stakingToken = await MockedStakingToken.new(usdtToken.address);
 
         stakingRouter = await StakingRouter.new(nmx.address);
         nmx.transferPoolOwnership(1, stakingRouter.address);
 
         stakingService = await StakingService.new(nmx.address, stakingToken.address, stakingRouter.address);
         await stakingRouter.changeStakingServiceShares([stakingService.address], [1n << 64n]);
+
+        await stakingToken.transfer(accounts[3], 500);
+        await stakingToken.approve(stakingService.address, 500, {from: accounts[3]});
+        // so that the totalStacked is filled and the supplied NMX is not transferred to the owner
+        await stakingService.stakeFrom(accounts[3], 10);
     });
 
     beforeEach(async () => {
@@ -40,21 +47,21 @@ contract('Integration', (accounts) => {
     });
 
     it('stakingService uses block.timestamp', async () => {
-        assert.equal(await nmx.balanceOf(stakingService.address), 0)
+        assert.equal(await nmx.balanceOf(stakingService.address), 0);
         await stakingService.updateHistoricalRewardRate();
         assert.equal(await nmx.balanceOf(stakingService.address), 1);
     });
 
     it('endTime used when correct param passed', async () => {
-        assert.equal(await nmx.balanceOf(stakingRouter.address), 0)
+        assert.equal(await nmx.balanceOf(stakingRouter.address), 1);
         await stakingRouter.supplyNmx(now - day);
-        assert.equal(await nmx.balanceOf(stakingRouter.address), 2);
+        assert.equal(await nmx.balanceOf(stakingRouter.address), 3);
     });
 
     it('block.timestamp used when endTime > now', async () => {
-        assert.equal(await nmx.balanceOf(stakingRouter.address), 0)
-        await stakingRouter.supplyNmx(now + day);
         assert.equal(await nmx.balanceOf(stakingRouter.address), 1);
+        await stakingRouter.supplyNmx(now + day);
+        assert.equal(await nmx.balanceOf(stakingRouter.address), 2);
     });
 
 });

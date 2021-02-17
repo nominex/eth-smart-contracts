@@ -157,7 +157,7 @@ contract("StakingRouter - changeStakingServiceShares - stubbed", (accounts) => {
     await router.changeStakingServiceShares([accounts[0]], [1n << 64n]);
   });
 
-  it("pending supplies not changed on shares changed", async () => {
+  it("pending supplies changed on shares changed", async () => {
     assert((await router.pendingSupplies(accounts[0])).toNumber() === 0);
 
     await router.supplyNmx(now, { from: accounts[1] });
@@ -169,8 +169,8 @@ contract("StakingRouter - changeStakingServiceShares - stubbed", (accounts) => {
     await router.changeStakingServiceShares([], []);
     const finalPendingSupply = await router.pendingSupplies(accounts[0]);
     assert(
-      initialPendingSupply.eq(finalPendingSupply),
-      `Pending supply was changed ${initialPendingSupply} ${finalPendingSupply}`
+      !initialPendingSupply.eq(finalPendingSupply),
+      `Pending supply not changed ${initialPendingSupply} ${finalPendingSupply}`
     );
   });
 });
