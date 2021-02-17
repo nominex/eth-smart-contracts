@@ -48,8 +48,8 @@ abstract contract RecoverableByOwner is Ownable {
         uint256 amount,
         address to
     ) private {
-        bool transferred =
-            IERC20(tokenAddress).transferFrom(address(this), to, amount);
-        require(transferred, 'RecoverableByOwner: FAILED_TRANSFER"');
+        // bytes4(keccak256(bytes('transfer(address,uint256)')));
+        (bool success, bytes memory data) = tokenAddress.call(abi.encodeWithSelector(0xa9059cbb, to, amount));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'RecoverableByOwner: TRANSFER_FAILED');
     }
 }
