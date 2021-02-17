@@ -126,7 +126,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
             );
         require(transferred, "NmxStakingService: LP_FAILED_TRANSFER");
 
-        Staker storage staker = updateStateAndStaker(owner);
+        Staker storage staker = updateStateAndStaker(owner, amount > 0);
 
         emit Staked(owner, amount);
         state.totalStaked += amount;
@@ -138,11 +138,13 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      @param amount of NMXLP to be unstaked from the service
      */
     function unstake(uint128 amount) external {
-        _unstake(_msgSender(), _msgSender(), amount);
+        Staker storage staker = updateStateAndStaker(_msgSender(), false);
+        _unstake(staker, _msgSender(), _msgSender(), amount);
     }
 
     function unstakeTo(address to, uint128 amount) external {
-        _unstake(_msgSender(), to, amount);
+        Staker storage staker = updateStateAndStaker(_msgSender(), false);
+        _unstake(staker, _msgSender(), to, amount);
     }
 
     function unstakeWithAuthorization(
@@ -165,15 +167,16 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
             r,
             s
         );
-        _unstake(owner, _msgSender(), amount);
+        Staker storage staker = updateStateAndStaker(owner, amount > 0);
+        _unstake(staker, owner, _msgSender(), amount);
     }
 
     function _unstake(
+        Staker storage staker,
         address from,
         address to,
         uint128 amount
     ) private {
-        Staker storage staker = updateStateAndStaker(from);
         require(staker.amount >= amount, "NmxStakingService: NOT_ENOUGH_STAKED");
 
         emit Unstaked(from, to, amount);
@@ -188,14 +191,14 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      * @dev updates current reward and transfers it to the caller's address
      */
     function claimReward() external returns (uint256) {
-        Staker storage staker = updateStateAndStaker(_msgSender());
+        Staker storage staker = updateStateAndStaker(_msgSender(), false);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), _msgSender(), unclaimedReward);
         return unclaimedReward;
     }
 
     function claimRewardTo(address to) external returns (uint256) {
-        Staker storage staker = updateStateAndStaker(_msgSender());
+        Staker storage staker = updateStateAndStaker(_msgSender(), false);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -229,14 +232,18 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
             s
         );
 
-        Staker storage staker = updateStateAndStaker(owner);
+        Staker storage staker = updateStateAndStaker(owner, nmxAmount > 0);
         _claimReward(staker, owner, _msgSender(), nmxAmount);
     }
 
-    function updateStateAndStaker(address stakerAddress)
+    function updateStateAndStaker(address stakerAddress, bool ignoreValidation)
         private
         returns (Staker storage staker)
     {
+        require(
+            ignoreValidation || stakerAddress == _msgSender() || stakerAddress == tx.origin,
+            "NmxStakingService: PERMISSION_DENIED"
+        );
         updateHistoricalRewardRate();
         staker = stakers[stakerAddress];
 
@@ -343,7 +350,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
      * @dev updates state and returns unclaimed reward amount. Is supposed to be invoked as call from metamask to display current amount of Nmx available
      */
     function getReward() external returns (uint256 unclaimedReward) {
-        Staker memory staker = updateStateAndStaker(_msgSender());
+        Staker memory staker = updateStateAndStaker(_msgSender(), false);
         unclaimedReward = staker.reward - staker.claimedReward;
     }
 
