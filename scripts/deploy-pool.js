@@ -72,15 +72,16 @@ module.exports = async (callback) => {
             const secondTknBalance = await pairedTkn.balanceOf.call(accounts[0]);
 
             const router = await IUniswapV2Router02.at("0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D");
-            const amountToAddToPool = 100;
+            const amountUsdt = 10000;
+            const amountNMX = 100000;
             if (secondTknBalance.isZero()) {
                 config.logger.info("Converting eth to supplied token");
                 const lastBlock = await web3.eth.getBlock("latest");
                 const deadline = lastBlock.timestamp + 10 * 1000 * 60;
                 const wethAddress = await router.WETH.call();
-                [wethAmount,] = await router.getAmountsIn.call(toBN(amountToAddToPool).mul(pairedTokenMultiplier), [wethAddress, pairedTkn.address]);
+                [wethAmount,] = await router.getAmountsIn.call(toBN(amountUsdt).mul(pairedTokenMultiplier), [wethAddress, pairedTkn.address]);
                 const swapResult = await router.swapETHForExactTokens(
-                    toBN(amountToAddToPool).mul(pairedTokenMultiplier),
+                    toBN(amountUsdt).mul(pairedTokenMultiplier),
                     [wethAddress, pairedTkn.address],
                     accounts[0],
                     deadline,
@@ -88,19 +89,19 @@ module.exports = async (callback) => {
                 );
             }
 
-            await nmx.approve(router.address, toWei(toBN(amountToAddToPool)));
+            await nmx.approve(router.address, toWei(toBN(amountNMX)));
             await pairedTkn.approve(router.address, toBN(0));
-            await pairedTkn.approve(router.address, toBN(amountToAddToPool).mul(pairedTokenMultiplier));
+            await pairedTkn.approve(router.address, toBN(amountUsdt).mul(pairedTokenMultiplier));
             const lastBlock = await web3.eth.getBlock("latest");
             const deadline = lastBlock.timestamp + 10 * 1000 * 60;
             config.logger.info("Adding liquidity to pool");
             const addedLiquidity = await router.addLiquidity(
                 nmx.address,
                 pairedTkn.address,
-                toBN(amountToAddToPool).mul(nmxMultiplier),
-                toBN(amountToAddToPool).mul(pairedTokenMultiplier),
-                toBN(amountToAddToPool).mul(nmxMultiplier),
-                toBN(amountToAddToPool).mul(pairedTokenMultiplier),
+                toBN(amountNMX).mul(nmxMultiplier),
+                toBN(amountUsdt).mul(pairedTokenMultiplier),
+                toBN(amountNMX).mul(nmxMultiplier),
+                toBN(amountUsdt).mul(pairedTokenMultiplier),
                 accounts[0],
                 deadline
             );

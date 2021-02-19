@@ -65,7 +65,25 @@ module.exports = {
                 const wallet = new Wallet(new Buffer(privateKey, "hex"));
                 const engine = new ProviderEngine();
                 engine.addProvider(new WalletSubprovider(wallet, {}));
-                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://10.0.3.5:8545", {
+                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://10.0.0.20:8545", {
+                    keepAlive: false,
+                    timeout: 1000000
+                })));
+                engine.on = undefined;
+                engine.start();
+                return engine;
+            },
+            networkCheckTimeout: 1000000,
+        },
+        bsc: {
+            network_id: "56",
+            provider: () => {
+                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
+                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
+                const wallet = new Wallet(new Buffer(privateKey, "hex"));
+                const engine = new ProviderEngine();
+                engine.addProvider(new WalletSubprovider(wallet, {}));
+                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("https://bsc-dataseed.binance.org", {
                     keepAlive: false,
                     timeout: 1000000
                 })));
