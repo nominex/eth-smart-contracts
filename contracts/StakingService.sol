@@ -247,9 +247,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         updateHistoricalRewardRate();
         staker = stakers[stakerAddress];
 
-        uint128 unrewarded =
-            ((state.historicalRewardRate - staker.initialRewardRate) *
-                uint128(staker.amount)) >> 40;
+        uint128 unrewarded = uint128(((state.historicalRewardRate - staker.initialRewardRate) * staker.amount) >> 40);
         emit StakingBonusAccrued(stakerAddress, unrewarded);
 
         if (unrewarded > 0) {
@@ -355,12 +353,10 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
     }
 
     function updateHistoricalRewardRate() public {
-        uint128 currentNmxSupply =
-            uint128(NmxSupplier(nmxSupplier).supplyNmx(uint40(block.timestamp)));
+        uint256 currentNmxSupply = NmxSupplier(nmxSupplier).supplyNmx(uint40(block.timestamp));
         if (state.totalStaked != 0 && currentNmxSupply != 0) {
-            state.historicalRewardRate +=
-                (currentNmxSupply << 40) /
-                state.totalStaked;
+            uint128 additionalRewardRate = uint128((currentNmxSupply << 40) / state.totalStaked);
+            state.historicalRewardRate += additionalRewardRate;
         } else {
             ERC20(nmx).transfer(owner(), currentNmxSupply);
         }
