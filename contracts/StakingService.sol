@@ -2,7 +2,6 @@
 pragma solidity >=0.7.0 <0.8.0;
 pragma abicoder v2;
 
-import "./DirectBonusAware.sol";
 import "./LiquidityWealthEstimator.sol";
 import "./NmxSupplier.sol";
 import "./Nmx.sol";
@@ -12,7 +11,7 @@ import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware, LiquidityWealthEstimator {
+contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthEstimator {
     /**
      * @param totalStaked amount of NMXLP currently staked in the service
      * @param historicalRewardRate how many NMX minted per one NMXLP (<< 40). Never decreases.
@@ -63,7 +62,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         address _nmx,
         address _stakingToken,
         address _nmxSupplier
-    ) DirectBonusAware() LiquidityWealthEstimator(_nmx, _stakingToken) {
+    ) LiquidityWealthEstimator(_nmx, _stakingToken) {
         nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
@@ -250,47 +249,6 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
         uint128 unrewarded = uint128(((state.historicalRewardRate - staker.initialRewardRate) * staker.amount) >> 40);
         emit StakingBonusAccrued(stakerAddress, unrewarded);
 
-        if (unrewarded > 0) {
-            address referrerAddress = referrers[stakerAddress];
-            if (referrerAddress != address(0)) {
-                Staker storage referrer = stakers[referrerAddress];
-
-                int128 referrerMultiplier =
-                    getReferrerMultiplier(estimateWealth(referrer.amount), _pairedTokenDecimals());
-                int128 referralMultiplier = getReferralMultiplier();
-                uint128 referrerBonus =
-                    uint128(
-                        ABDKMath64x64.mulu(
-                            referrerMultiplier,
-                            uint256(unrewarded)
-                        )
-                    );
-                uint128 referralBonus =
-                    uint128(
-                        ABDKMath64x64.mulu(
-                            referralMultiplier,
-                            uint256(unrewarded)
-                        )
-                    );
-
-                uint128 supplied =
-                    Nmx(nmx).requestDirectBonus(referrerBonus + referralBonus);
-                if (supplied < referrerBonus) {
-                    referrerBonus = supplied;
-                }
-                supplied -= referrerBonus;
-                if (supplied < referralBonus) {
-                    referralBonus = supplied;
-                }
-
-                emit ReferrerBonusAccrued(referrerAddress, referrerBonus);
-                referrer.reward += referrerBonus;
-
-                emit ReferralBonusAccrued(stakerAddress, referralBonus);
-                unrewarded += referralBonus;
-            }
-        }
-
         staker.initialRewardRate = state.historicalRewardRate;
         staker.reward += unrewarded;
     }
@@ -372,10 +330,6 @@ contract StakingService is PausableByOwner, RecoverableByOwner, DirectBonusAware
 
     function _lpToken() internal view override returns (address) {
         return stakingToken;
-    }
-
-    function getDomainSeparator() internal view override returns (bytes32) {
-        return DOMAIN_SEPARATOR;
     }
 
     function getRecoverableAmount(address tokenAddress) override internal view returns (uint256) {

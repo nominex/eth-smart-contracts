@@ -21,20 +21,12 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
     MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
 
     uint40 private constant DISTRIBUTION_START_TIME = 1611705600; // 2021-01-27T00:00:00Z
-    uint128 private constant DIRECT_POOL_RATE = 115740740740740740; // amount per second (18 decimals)
-    uint128 private constant DIRECT_POOL_TOTAL_SUPPLY_LIMIT =
-        40 * 10**6 * 10**18;
-    uint128 public directPoolTotalSupply;
-    mapping(address => bool) public directPoolOwnerByAddress;
-    address[] public directPoolOwners;
 
     event PoolOwnershipTransferred(
         address indexed previousOwner,
         address indexed newOwner,
         MintPool indexed pool
     );
-    event DirectPoolOwnershipGranted(address indexed owner);
-    event DirectPoolOwnershipRevoked(address indexed owner);
 
     constructor(address _mintSchedule) ERC20("Nominex", "NMX") {
         uint256 chainId;
@@ -102,53 +94,6 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
             "NMX: invalid signature"
         );
         _approve(owner, spender, value);
-    }
-
-    /// @dev StakingServices can get arbitrary amount of Nmx from DirectBonus pool
-    function requestDirectBonus(uint128 amount) external returns (uint128) {
-        require(
-            directPoolOwnerByAddress[_msgSender()],
-            "NMX: caller is not the owner of DirectPool"
-        );
-        if (block.timestamp < DISTRIBUTION_START_TIME) return 0;
-        uint128 directPoolRest =
-            DIRECT_POOL_TOTAL_SUPPLY_LIMIT - directPoolTotalSupply;
-        // scheduleRest was made to make it impossible to get all the DirectBonus pool at once
-        uint128 scheduledRest =
-            uint128(
-                (block.timestamp - DISTRIBUTION_START_TIME) * DIRECT_POOL_RATE
-            ) - directPoolTotalSupply;
-        if (directPoolRest > scheduledRest) {
-            directPoolRest = scheduledRest;
-        }
-        if (directPoolRest < amount) {
-            amount = directPoolRest;
-        }
-        if (amount == 0) return 0;
-        directPoolTotalSupply += amount;
-        _mint(_msgSender(), amount);
-        return amount;
-    }
-
-    /// @dev the owner can change the list of DirectPool owners
-    function setDirectPoolOwners(address[] calldata newOwners)
-        external
-        onlyOwner
-    {
-        uint256 directPoolOwnersLength = directPoolOwners.length;
-        for (uint256 i = 0; i < directPoolOwnersLength; i++) {
-            address oldOwner = directPoolOwners[i];
-            emit DirectPoolOwnershipRevoked(oldOwner);
-            directPoolOwnerByAddress[oldOwner] = false;
-        }
-
-        for (uint256 i = 0; i < newOwners.length; i++) {
-            address newOwner = newOwners[i];
-            emit DirectPoolOwnershipGranted(newOwner);
-            directPoolOwnerByAddress[newOwner] = true;
-        }
-
-        directPoolOwners = newOwners;
     }
 
     /// @dev the contract owner can change any of mint pool owners
