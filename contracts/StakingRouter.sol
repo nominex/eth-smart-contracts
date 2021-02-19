@@ -29,8 +29,12 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
         );
         int128 cumulativeShare = 0;
         for (uint256 i = 0; i < shares.length; i++) {
+            require(addresses[i] != address(0), "NmxStakingRouter: zero address is invalid");
             require(shares[i] > 0, "NmxStakingRouter: shares must be positive");
             cumulativeShare += shares[i];
+            for (uint256 j = i + 1; j < shares.length; j++) {
+                require(addresses[i] != addresses[j], "NmxStakingRouter: duplicate addresses are not possible");
+            }
         }
         require(
             cumulativeShare <= ABDKMath64x64.fromInt(1),
@@ -47,8 +51,8 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
             _pendingSupplyOfInactiveServices += pendingSupplies[service];
         }
         for (uint256 i = 0; i < shares.length; i++) {
-            serviceShares[addresses[i]] = shares[i];
             address service = addresses[i];
+            serviceShares[service] = shares[i];
             _pendingSupplyOfInactiveServices -= pendingSupplies[service];
         }
         pendingSupplyOfInactiveServices = _pendingSupplyOfInactiveServices;

@@ -55,7 +55,7 @@ contract(
 
     it("shares can not be negative", async () => {
       try {
-        await router.changeStakingServiceShares([ZERO_ADDRESS], [-1n << 64n]);
+        await router.changeStakingServiceShares([accounts[1]], [-1n << 64n]);
         assert.fail("Error not occurred");
       } catch (e) {
         assert(
@@ -67,7 +67,7 @@ contract(
 
     it("shares can not be zero", async () => {
       try {
-        await router.changeStakingServiceShares([ZERO_ADDRESS], [0n]);
+        await router.changeStakingServiceShares([accounts[1]], [0n]);
         assert.fail("Error not occurred");
       } catch (e) {
         assert(
@@ -80,7 +80,7 @@ contract(
     it("shares must le 1", async () => {
       try {
         await router.changeStakingServiceShares(
-          [ZERO_ADDRESS],
+          [accounts[1]],
           [(1n << 64n) + 1n]
         );
         assert.fail("Error not occurred");
@@ -93,7 +93,7 @@ contract(
     });
 
     it("1 is correct share", async () => {
-      await router.changeStakingServiceShares([ZERO_ADDRESS], [1n << 64n]);
+      await router.changeStakingServiceShares([accounts[1]], [1n << 64n]);
     });
 
     it("1 is correct total share", async () => {
@@ -113,6 +113,36 @@ contract(
       } catch (e) {
         assert(
           e.message.includes("NmxStakingRouter: shares must be le 1<<64 in total"),
+          `Unexpected error message: ${e.message}`
+        );
+      }
+    });
+
+    it("duplicated address", async () => {
+      try {
+        await router.changeStakingServiceShares(
+          [accounts[0], accounts[1], accounts[2], accounts[1]],
+          [(1n << 64n) - 10n, 2, 3, 4]
+        );
+        assert.fail("Error not occurred");
+      } catch (e) {
+        assert(
+          e.message.includes("NmxStakingRouter: duplicate addresses are not possible"),
+          `Unexpected error message: ${e.message}`
+        );
+      }
+    });
+
+    it("zero address is invalid", async () => {
+      try {
+        await router.changeStakingServiceShares(
+          [accounts[0], ZERO_ADDRESS, accounts[2], accounts[1]],
+          [(1n << 64n) - 10n, 2, 3, 4]
+        );
+        assert.fail("Error not occurred");
+      } catch (e) {
+        assert(
+          e.message.includes("NmxStakingRouter: zero address is invalid"),
           `Unexpected error message: ${e.message}`
         );
       }
