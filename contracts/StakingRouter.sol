@@ -40,7 +40,7 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
         updatePendingSupplies(address(0), uint40(block.timestamp));
 
         uint256 activeServicesLength = activeServices.length;
-        uint256 _pendingSupplyOfInactiveServices = 0;
+        uint256 _pendingSupplyOfInactiveServices = pendingSupplyOfInactiveServices;
         for (uint256 i = 0; i < activeServicesLength; i++) {
             address service = activeServices[i];
             serviceShares[service] = 0;
@@ -51,7 +51,7 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
             address service = addresses[i];
             _pendingSupplyOfInactiveServices -= pendingSupplies[service];
         }
-        pendingSupplyOfInactiveServices += _pendingSupplyOfInactiveServices;
+        pendingSupplyOfInactiveServices = _pendingSupplyOfInactiveServices;
         activeServices = addresses;
     }
 
