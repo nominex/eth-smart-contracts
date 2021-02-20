@@ -9,9 +9,7 @@ const DAY = 24 * 60 * 60;
 
 const MINT_POOL_DEFAULT_VALUE = 0;
 const MINT_POOL_PRIMARY = 1;
-const MINT_POOL_BONUS = 2;
-const MINT_POOL_TEAM = 3;
-const MINT_POOL_NOMINEX = 4;
+const MINT_POOL_NOMINEX = 2;
 
 contract("MintSchedule", (accounts) => {
   let assertBN = getAssertBN(10);
@@ -44,7 +42,7 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    await test(state, state.time, MINT_POOL_BONUS, 0);
+    await test(state, state.time, MINT_POOL_NOMINEX, 0);
   });
 
   it("first second", async () => {
@@ -71,7 +69,7 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.3);
+    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
     let expectedState = {
       time: state.time + 1,
       itemIndex: 11,
@@ -82,7 +80,7 @@ contract("MintSchedule", (accounts) => {
     await test(
       state,
       state.time + 1,
-      MINT_POOL_TEAM,
+      MINT_POOL_NOMINEX,
       expectedNmxSupply,
       expectedState
     );
@@ -97,9 +95,9 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    await test(state, state.time + 1, MINT_POOL_TEAM, 0);
-    await test(state, state.time + 2, MINT_POOL_TEAM, 0);
-    await test(state, state.time + DAY * 7 + 3, MINT_POOL_TEAM, 0);
+    await test(state, state.time + 1, MINT_POOL_NOMINEX, 0);
+    await test(state, state.time + 2, MINT_POOL_NOMINEX, 0);
+    await test(state, state.time + DAY * 7 + 3, MINT_POOL_NOMINEX, 0);
   });
 
   it("nmxSupply in 1 sec for all pools", async () => {
@@ -116,13 +114,9 @@ contract("MintSchedule", (accounts) => {
     let primaryPoolExpectedNmxSupply = Math.floor(
       state.nextTickSupply * 0.7 * 0.7 * 0.8
     );
-    let bonusPoolExpectedNmxSupply = Math.floor(
+    let nominexPoolExpectedNmxSupply = Math.floor(
       state.nextTickSupply * 0.7 * 0.7 * 0.2
     );
-    let teamPoolExpectedNmxSupply = Math.floor(
-      state.nextTickSupply * 0.7 * 0.3
-    );
-    let nominexPoolExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.3);
 
     await test(
       state,
@@ -138,19 +132,9 @@ contract("MintSchedule", (accounts) => {
       primaryPoolExpectedNmxSupply,
       { time: newTime }
     );
-    await test(state, newTime, MINT_POOL_BONUS, bonusPoolExpectedNmxSupply, {
+    await test(state, newTime, MINT_POOL_NOMINEX, nominexPoolExpectedNmxSupply, {
       time: newTime,
     });
-    await test(state, newTime, MINT_POOL_TEAM, teamPoolExpectedNmxSupply, {
-      time: newTime,
-    });
-    await test(
-      state,
-      newTime,
-      MINT_POOL_NOMINEX,
-      nominexPoolExpectedNmxSupply,
-      { time: newTime }
-    );
   });
 
   it("nmxSupply in several seconds", async () => {
@@ -162,7 +146,7 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let oneSecExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.3);
+    let oneSecExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
 
     await test(
       state,
@@ -220,7 +204,7 @@ contract("MintSchedule", (accounts) => {
     await test(
       state,
       state.time + 1,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       expectedNmxSupply,
       expectedState
     );
@@ -250,7 +234,7 @@ contract("MintSchedule", (accounts) => {
     await test(
       state,
       state.time + 3,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       expectedNmxSupply,
       expectedState
     );
@@ -316,7 +300,7 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.3);
+    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
     let expectedState = {
       time: state.time + 1,
       itemIndex: 3,
@@ -342,9 +326,9 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.3);
+    let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
     let newCycleOneSecNmxSupply = Math.floor(
-      state.nextTickSupply * 0.994 * 0.3
+      state.nextTickSupply * 0.994 * 0.7 * 0.7 * 0.2
     );
     let expectedNmxSupply =
       oldCycleOneSecNmxSupply * 1 + newCycleOneSecNmxSupply * 2;
@@ -383,14 +367,14 @@ contract("MintSchedule", (accounts) => {
     await test(
       state,
       state.time + 1,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply05 * 1,
       { time: state.time + 1 }
     );
     await test(
       state,
       state.time + 2,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply05 * 2,
       { time: state.time + 2 }
     );
@@ -399,14 +383,14 @@ contract("MintSchedule", (accounts) => {
     await test(
       state,
       state.time + 1,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply01 * 1,
       { time: state.time + 1 }
     );
     await test(
       state,
       state.time + 3,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply01 * 3,
       { time: state.time + 3 }
     );
@@ -415,14 +399,14 @@ contract("MintSchedule", (accounts) => {
     await test(
       state,
       state.time + 1,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply0 * 1,
       { time: state.time + 1 }
     );
     await test(
       state,
       state.time + 4,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply0 * 4,
       { time: state.time + 4 }
     );
@@ -431,14 +415,14 @@ contract("MintSchedule", (accounts) => {
     await test(
       state,
       state.time + 1,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply1 * 1,
       { time: state.time + 1 }
     );
     await test(
       state,
       state.time + 5,
-      MINT_POOL_BONUS,
+      MINT_POOL_NOMINEX,
       oneSecExpectedNmxSupply1 * 5,
       { time: state.time + 5 }
     );
@@ -560,24 +544,12 @@ contract("MintSchedule#totalSupply", (accounts) => {
       let result2 = await mintSchedule.makeProgress(
         state,
         newTime,
-        MINT_POOL_BONUS
-      );
-      let result3 = await mintSchedule.makeProgress(
-        state,
-        newTime,
-        MINT_POOL_TEAM
-      );
-      let result4 = await mintSchedule.makeProgress(
-        state,
-        newTime,
         MINT_POOL_NOMINEX
       );
 
       let oneYearSupply = result0[0]
         .add(result1[0])
-        .add(result2[0])
-        .add(result3[0])
-        .add(result4[0]);
+        .add(result2[0]);
       totalSupply = totalSupply.add(oneYearSupply);
 
       state.time = parseInt(result0[1].time);

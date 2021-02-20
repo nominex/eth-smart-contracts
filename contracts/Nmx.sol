@@ -16,9 +16,9 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
 
     address immutable public mintSchedule;
     mapping(address => MintPool) public poolByOwner;
-    address[5] public poolOwners; // 5 - number of MintPool values
+    address[3] public poolOwners; // 3 - number of MintPool values
     /** @dev dedicated state for every pool to decrease gas consumtion in case of staking/unstaking - no updates related to other mint pools are required to be persisted */
-    MintScheduleState[5] public poolMintStates; // 5 - number of MintPool values
+    MintScheduleState[3] public poolMintStates; // 3 - number of MintPool values
 
     uint40 private constant DISTRIBUTION_START_TIME = 1611705600; // 2021-01-27T00:00:00Z
 

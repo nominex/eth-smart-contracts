@@ -37,26 +37,8 @@ contract("Nmx - initializing", (accounts) => {
     );
   });
 
-  it("bonus state initialized with non 0 nextTickSupply", async () => {
-    await nmx.transferPoolOwnership(2, accounts[0]);
-    const rewardRate = await nmx.supplyNmx.call(now);
-    assert(
-      rewardRate.gt(ZERO),
-      `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
-    );
-  });
-
-  it("team state initialized with non 0 nextTickSupply", async () => {
-    await nmx.transferPoolOwnership(3, accounts[0]);
-    const rewardRate = await nmx.supplyNmx.call(now);
-    assert(
-      rewardRate.gt(ZERO),
-      `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
-    );
-  });
-
   it("nominex state initialized with non 0 nextTickSupply", async () => {
-    await nmx.transferPoolOwnership(4, accounts[0]);
+    await nmx.transferPoolOwnership(2, accounts[0]);
     const rewardRate = await nmx.supplyNmx.call(now);
     assert(
       rewardRate.gt(ZERO),
@@ -146,7 +128,7 @@ contract("Nmx - supplyNmx", (accounts) => {
   before(async () => {
     const mintScheduleStub = await MintScheduleStub.new();
     nmx = await Nmx.new(mintScheduleStub.address);
-    for (let i = 1; i < 5; i++) {
+    for (let i = 1; i < 3; i++) {
       await nmx.transferPoolOwnership(i, accounts[i]);
     }
   });

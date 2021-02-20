@@ -38,34 +38,28 @@ contract MintSchedule is RecoverableByOwner {
         int128 abdk_85_100 = ABDKMath64x64.divu(85, 100);
         int128 abdk_9_10 = ABDKMath64x64.divu(9, 10);
 
-        // 0.0, 0.8 * 0.9, 0.8 * 0.1, 0.2, 0.0
-        int128[5] memory shares_01_28 =
+        // 0.0, 0.8 * 0.9, 0.8 * 0.1
+        int128[3] memory shares_01_28 =
             [
                 0,
                 abdk_8_10.mul(abdk_9_10),
-                abdk_8_10.mul(abdk_1_10),
-                abdk_2_10,
-                0
+                abdk_8_10.mul(abdk_1_10)
             ];
 
-        // 0.0, 0.85 * 0.75 * 0.85, 0.85 * 0.75 * 0.15, 0.85 * 0.25 , 0.15
-        int128[5] memory shares_29_56 =
+        // 0.0, 0.85 * 0.75 * 0.85, 0.85 * 0.75 * 0.15
+        int128[3] memory shares_29_56 =
             [
                 0,
                 abdk_85_100.mul(abdk_75_100).mul(abdk_85_100),
-                abdk_85_100.mul(abdk_75_100).mul(abdk_15_100),
-                abdk_85_100.mul(abdk_25_100),
-                abdk_15_100
+                abdk_85_100.mul(abdk_75_100).mul(abdk_15_100)
             ];
 
-        // 0.0, 0.7 * 0.7 * 0.8, 0.7 * 0.7 * 0.2, 0.7 * 0.3, 0.30
-        int128[5] memory shares_57_xx =
+        // 0.0, 0.7 * 0.7 * 0.8, 0.7 * 0.7 * 0.2
+        int128[3] memory shares_57_xx =
             [
                 0,
                 abdk_7_10.mul(abdk_7_10).mul(abdk_8_10),
-                abdk_7_10.mul(abdk_7_10).mul(abdk_2_10),
-                abdk_7_10.mul(abdk_3_10),
-                abdk_3_10
+                abdk_7_10.mul(abdk_7_10).mul(abdk_2_10)
             ];
 
         /*1-28 first 28 days*/

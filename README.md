@@ -6,14 +6,12 @@ The mint schedule was determined when the contract was issued and **cannot be ch
 The schedule is built in such a way that the number of coins minted daily decreases every week. Decrease rate is different at different periods of time. The rates are selected in such a way that no more than **200 million** tokens are minted during the entire NMX mint period (5218 weeks ≈ **100 years**).
 Releases NMX are distributed among four distribution pools:
 1. Primary pool
-2. Bonus pool
-3. Team pool
-4. Nominex pool
+2. Nominex pool (Bonus and Team pools included)
 
 Each distribution pool represents an address in the ethereum network tokens will be credited to. The proportions in which distribution pools receive minted NMX change over time but are also **predefined** by the schedule.
 
 ### Distribution pools
-Bonus, Team and Nominex pools are addresses owned by the Nominex exchange. Tokens are simply credited to them. Further distribution of NMX credited to these three pools is carried out by the Nominex exchange in a centralized manner and is not of interest within the ethereum network. Distribution within the Primary Pool is discussed below.
+Nominex pool is address owned by the Nominex exchange. Tokens are simply credited to it. Further distribution of NMX credited to these pool is carried out by the Nominex exchange in a centralized manner and is not of interest within the ethereum network. Distribution within the Primary Pool is discussed below.
 
 ## Primary distribution pool
 The Primary pool is a set of contracts designed to accrue NMX for staking LP Uniswap tokens. All interaction can be expressed as follows: the contract calls the supplyNMX() ​​method of its NMX supplier, receives an additional amount of tokens and distributes them to its NMX consumers somehow. The NMX suuplier in turn calls a method from its NMX supplier, etc. The contract interaction scheme is presented below:

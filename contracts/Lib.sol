@@ -6,11 +6,9 @@ pragma solidity >=0.7.0 <0.8.0;
  *
  * @param DEFAULT_VALUE - dummy type for null value
  * @param PRIMARY - blockchain based staking. All rules are declared in the  contracts
- * @param BONUS - Nominex platform based staking. All rules are declared and implemented in the Nominex business logic
- * @param TEAM - Nominex partner structure platform based staking. All rules are declared and implemented in the Nominex business logic
- * @param NOMINEX - tokens for Nominex company
+ * @param NOMINEX - tokens for Nominex company (BONUS and TEAM pools included)
  */
-enum MintPool {DEFAULT_VALUE, PRIMARY, BONUS, TEAM, NOMINEX}
+enum MintPool {DEFAULT_VALUE, PRIMARY, NOMINEX}
 
 /**
  * @dev current state of the schedule for each MintPool
