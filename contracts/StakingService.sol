@@ -2,16 +2,12 @@
 pragma solidity >=0.7.0 <0.8.0;
 pragma abicoder v2;
 
-import "./LiquidityWealthEstimator.sol";
-import "./NmxSupplier.sol";
 import "./Nmx.sol";
 import "./PausableByOwner.sol";
 import "./RecoverableByOwner.sol";
-import "abdk-libraries-solidity/ABDKMath64x64.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
-contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthEstimator {
+contract StakingService is PausableByOwner, RecoverableByOwner {
     /**
      * @param totalStaked amount of NMXLP currently staked in the service
      * @param historicalRewardRate how many NMX minted per one NMXLP (<< 40). Never decreases.
@@ -62,7 +58,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
         address _nmx,
         address _stakingToken,
         address _nmxSupplier
-    ) LiquidityWealthEstimator(_nmx, _stakingToken) {
+    ) {
         nmx = _nmx;
         stakingToken = _stakingToken;
         nmxSupplier = _nmxSupplier;
@@ -125,7 +121,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
             );
         require(transferred, "NmxStakingService: LP_FAILED_TRANSFER");
 
-        Staker storage staker = updateStateAndStaker(owner, amount > 0);
+        Staker storage staker = updateStateAndStaker(owner);
 
         emit Staked(owner, amount);
         state.totalStaked += amount;
@@ -137,13 +133,11 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
      @param amount of NMXLP to be unstaked from the service
      */
     function unstake(uint128 amount) external {
-        Staker storage staker = updateStateAndStaker(_msgSender(), false);
-        _unstake(staker, _msgSender(), _msgSender(), amount);
+        _unstake(_msgSender(), _msgSender(), amount);
     }
 
     function unstakeTo(address to, uint128 amount) external {
-        Staker storage staker = updateStateAndStaker(_msgSender(), false);
-        _unstake(staker, _msgSender(), to, amount);
+        _unstake(_msgSender(), to, amount);
     }
 
     function unstakeWithAuthorization(
@@ -166,16 +160,15 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
             r,
             s
         );
-        Staker storage staker = updateStateAndStaker(owner, amount > 0);
-        _unstake(staker, owner, _msgSender(), amount);
+        _unstake(owner, _msgSender(), amount);
     }
 
     function _unstake(
-        Staker storage staker,
         address from,
         address to,
         uint128 amount
     ) private {
+        Staker storage staker = updateStateAndStaker(from);
         require(staker.amount >= amount, "NmxStakingService: NOT_ENOUGH_STAKED");
 
         emit Unstaked(from, to, amount);
@@ -190,14 +183,14 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
      * @dev updates current reward and transfers it to the caller's address
      */
     function claimReward() external returns (uint256) {
-        Staker storage staker = updateStateAndStaker(_msgSender(), false);
+        Staker storage staker = updateStateAndStaker(_msgSender());
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), _msgSender(), unclaimedReward);
         return unclaimedReward;
     }
 
     function claimRewardTo(address to) external returns (uint256) {
-        Staker storage staker = updateStateAndStaker(_msgSender(), false);
+        Staker storage staker = updateStateAndStaker(_msgSender());
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -231,18 +224,14 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
             s
         );
 
-        Staker storage staker = updateStateAndStaker(owner, nmxAmount > 0);
+        Staker storage staker = updateStateAndStaker(owner);
         _claimReward(staker, owner, _msgSender(), nmxAmount);
     }
 
-    function updateStateAndStaker(address stakerAddress, bool ignoreValidation)
+    function updateStateAndStaker(address stakerAddress)
         private
         returns (Staker storage staker)
     {
-        require(
-            ignoreValidation || stakerAddress == _msgSender() || stakerAddress == tx.origin,
-            "NmxStakingService: PERMISSION_DENIED"
-        );
         updateHistoricalRewardRate();
         staker = stakers[stakerAddress];
 
@@ -306,13 +295,14 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
      * @dev updates state and returns unclaimed reward amount. Is supposed to be invoked as call from metamask to display current amount of Nmx available
      */
     function getReward() external returns (uint256 unclaimedReward) {
-        Staker memory staker = updateStateAndStaker(_msgSender(), false);
+        Staker memory staker = updateStateAndStaker(_msgSender());
         unclaimedReward = staker.reward - staker.claimedReward;
     }
 
     function updateHistoricalRewardRate() public {
         uint256 currentNmxSupply = NmxSupplier(nmxSupplier).supplyNmx(uint40(block.timestamp));
-        if (state.totalStaked != 0 && currentNmxSupply != 0) {
+        if (currentNmxSupply == 0) return;
+        if (state.totalStaked != 0) {
             uint128 additionalRewardRate = uint128((currentNmxSupply << 40) / state.totalStaked);
             state.historicalRewardRate += additionalRewardRate;
         } else {
@@ -326,10 +316,6 @@ contract StakingService is PausableByOwner, RecoverableByOwner, LiquidityWealthE
 
     function totalStaked() external view returns (uint128) {
         return state.totalStaked;
-    }
-
-    function _lpToken() internal view override returns (address) {
-        return stakingToken;
     }
 
     function getRecoverableAmount(address tokenAddress) override internal view returns (uint256) {

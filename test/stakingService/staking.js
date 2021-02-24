@@ -310,10 +310,10 @@ contract("StakingService; Group: Staking", (accounts) => {
     }
   );
 
-  makeSuite("Other user can't stakeFrom 0 amount", () => {
+  makeSuite("Other user can stakeFrom 0 amount", () => {
     stakeFrom(0, accounts[1], accounts[3]);
-    checkErrorOccurred("NmxStakingService: PERMISSION_DENIED");
-    checkStakingEventNotEmitted("Staked");
+    errorNotOccurred();
+    checkStakedEventEmitted(accounts[1], 0);
     verifyUserBalanceAndStakedAmount(accounts[1], 1000, 0);
     verifyUserBalanceAndStakedAmount(accounts[3], 100, 0);
     verifyStakingServiceBalanceAndTotalStaked(0);
