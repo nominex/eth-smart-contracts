@@ -20,7 +20,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
     /** @dev dedicated state for every pool to decrease gas consumtion in case of staking/unstaking - no updates related to other mint pools are required to be persisted */
     MintScheduleState[3] public poolMintStates; // 3 - number of MintPool values
 
-    uint40 private constant DISTRIBUTION_START_TIME = 1614232800; // 2021-02-25T06:00:00Z
+    uint40 private constant DISTRIBUTION_START_TIME = 1614319200; // 2021-02-26T06:00:00Z
 
     event PoolOwnershipTransferred(
         address indexed previousOwner,
