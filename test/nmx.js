@@ -1,6 +1,7 @@
 const Nmx = artifacts.require("Nmx");
+const truffleAssert = require("truffle-assertions");
 const MintScheduleStub = artifacts.require("MintScheduleStub");
-const { signData, ZERO } = require("./utils.js");
+const { signData, ZERO, ZERO_ADDRESS } = require("./utils.js");
 
 contract("Nmx - initializing", (accounts) => {
   let nmx;
@@ -45,6 +46,68 @@ contract("Nmx - initializing", (accounts) => {
       `Unexpected nmxSupply ${rewardRate}, schedule states are likely not to be initialized properly`
     );
   });
+});
+
+contract("Nmx - changeSchedule", (accounts) => {
+  let nmx;
+
+  beforeEach(async () => {
+    nmx = await Nmx.new(accounts[0]);
+  });
+
+  it("owner can change schedule address", async () => {
+    await nmx.changeSchedule(accounts[1]);
+    await nmx.changeSchedule(accounts[0]);
+  });
+
+  it("arbitrary sender can not change schedule address", async () => {
+    try {
+      await nmx.changeSchedule(accounts[1], { from: accounts[1] });
+      assert.fail("Error not occurred");
+    } catch (e) {
+      assert(
+        e.message.includes("Ownable: caller is not the owner"),
+        `Unexpected error message: ${e.message}`
+      );
+    }
+  });
+
+  it("can not change to zero address", async () => {
+    try {
+      await nmx.changeSchedule(ZERO_ADDRESS);
+      assert.fail("Error not occurred");
+    } catch (e) {
+      assert(
+        e.message.includes("NMX: new schedule can not have zero address"),
+        `Unexpected error message: ${e.message}`
+      );
+    }
+  });
+
+  it("can not change to the same address", async () => {
+    try {
+      await nmx.changeSchedule(accounts[0]);
+      assert.fail("Error not occurred");
+    } catch (e) {
+      assert(
+        e.message.includes("NMX: new schedule can not be equal to the previous one"),
+        `Unexpected error message: ${e.message}`
+      );
+    }
+  });
+
+  it("event emited on changeSchedule", async () => {
+    const tx = await nmx.changeSchedule(accounts[1]);
+    truffleAssert.eventEmitted(tx, "ScheduleChanged", ev => ev.previousSchedule === accounts[0] && ev.newSchedule === accounts[1]);
+    await nmx.changeSchedule(accounts[0]);
+  });
+
+  it("event emited in constructor", async () => {
+    const contract = await Nmx.new(accounts[0]);
+    const tx = await truffleAssert.createTransactionResult(contract, contract.transactionHash);
+    truffleAssert.eventEmitted(tx, "ScheduleChanged", ev => ev.previousSchedule === ZERO_ADDRESS && ev.newSchedule === accounts[0]);
+  });
+
 });
 
 contract("Nmx - transfer pool ownership", (accounts) => {
