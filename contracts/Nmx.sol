@@ -20,7 +20,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
     /** @dev dedicated state for every pool to decrease gas consumtion in case of staking/unstaking - no updates related to other mint pools are required to be persisted */
     MintScheduleState[3] public poolMintStates; // 3 - number of MintPool values
 
-    uint40 private constant DISTRIBUTION_START_TIME = 1611705600; // 2021-01-27T00:00:00Z
+    uint40 private constant DISTRIBUTION_START_TIME = 1614232800; // 2021-02-25T06:00:00Z
 
     event PoolOwnershipTransferred(
         address indexed previousOwner,
@@ -54,13 +54,17 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
         ) {
             MintScheduleState storage poolMintState = poolMintStates[i];
             poolMintState.nextTickSupply =
-                (10000 * 10**18) /
+                (40000 * 10**18) /
                 uint40(1 days) +
                 1; // +1 - to coupe with rounding error when daily supply is 9999.9999...
             poolMintState.time = DISTRIBUTION_START_TIME;
             poolMintState.weekStartTime = DISTRIBUTION_START_TIME;
         }
-        _mint(_msgSender(), 117000 * 10**18); // amount of Nmx has been distributed or sold already at the moment of contract deployment
+        // amount of Nmx has been distributed or sold already at the moment of contract deployment
+        uint256 alreadyDistributedAmount = 7505656;
+        // airdrops, starts of liquidity mining pools, running other secondary liquidity mining pools
+        uint256 additionalAmount = 20000000;
+        _mint(_msgSender(), (alreadyDistributedAmount + additionalAmount) * 10**18);
     }
 
     function changeSchedule(address _mintSchedule) external onlyOwner {
