@@ -184,6 +184,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner {
      */
     function claimReward() external returns (uint256) {
         Staker storage staker = updateStateAndStaker(_msgSender());
+        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), _msgSender(), unclaimedReward);
         return unclaimedReward;
@@ -191,6 +192,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner {
 
     function claimRewardTo(address to) external returns (uint256) {
         Staker storage staker = updateStateAndStaker(_msgSender());
+        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -198,6 +200,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner {
 
     function claimRewardToWithoutUpdate(address to) external returns (uint256) {
         Staker storage staker = stakers[_msgSender()];
+        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -248,6 +251,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner {
         address to,
         uint128 amount
     ) private {
+        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         require(amount <= unclaimedReward, "NmxStakingService: NOT_ENOUGH_BALANCE");
         emit Rewarded(from, to, amount);
@@ -296,6 +300,7 @@ contract StakingService is PausableByOwner, RecoverableByOwner {
      */
     function getReward() external returns (uint256 unclaimedReward) {
         Staker memory staker = updateStateAndStaker(_msgSender());
+        assert(staker.reward >= staker.claimedReward);
         unclaimedReward = staker.reward - staker.claimedReward;
     }
 
@@ -306,7 +311,8 @@ contract StakingService is PausableByOwner, RecoverableByOwner {
             uint128 additionalRewardRate = uint128((currentNmxSupply << 40) / state.totalStaked);
             state.historicalRewardRate += additionalRewardRate;
         } else {
-            ERC20(nmx).transfer(owner(), currentNmxSupply);
+            bool transferred = ERC20(nmx).transfer(owner(), currentNmxSupply);
+            require(transferred, "NmxStakingService: NMX_FAILED_TRANSFER");
         }
     }
 
