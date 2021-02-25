@@ -14,7 +14,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
         0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     mapping(address => uint256) public nonces;
 
-    address immutable public mintSchedule;
+    address public mintSchedule;
     mapping(address => MintPool) public poolByOwner;
     address[3] public poolOwners; // 3 - number of MintPool values
     /** @dev dedicated state for every pool to decrease gas consumtion in case of staking/unstaking - no updates related to other mint pools are required to be persisted */
@@ -27,6 +27,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
         address indexed newOwner,
         MintPool indexed pool
     );
+    event ScheduleChanged(address previousSchedule, address newSchedule);
 
     constructor(address _mintSchedule) ERC20("Nominex", "NMX") {
         uint256 chainId;
@@ -44,6 +45,7 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
                 address(this)
             )
         );
+        emit ScheduleChanged(mintSchedule, _mintSchedule);
         mintSchedule = _mintSchedule;
         for (
             uint256 i = uint256(MintPool.PRIMARY);
@@ -59,6 +61,13 @@ contract Nmx is ERC20, NmxSupplier, RecoverableByOwner {
             poolMintState.weekStartTime = DISTRIBUTION_START_TIME;
         }
         _mint(_msgSender(), 117000 * 10**18); // amount of Nmx has been distributed or sold already at the moment of contract deployment
+    }
+
+    function changeSchedule(address _mintSchedule) external onlyOwner {
+        require(_mintSchedule != address(0), "NMX: new schedule can not have zero address");
+        require(_mintSchedule != mintSchedule, "NMX: new schedule can not be equal to the previous one");
+        emit ScheduleChanged(mintSchedule, _mintSchedule);
+        mintSchedule = _mintSchedule;
     }
 
     function permit(

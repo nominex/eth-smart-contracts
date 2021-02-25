@@ -22,7 +22,6 @@ contract MintSchedule is RecoverableByOwner {
     uint40 constant WEEK_DURATION = 7 days;
 
     using ABDKMath64x64 for int128;
-    int128 public outputRate = ABDKMath64x64.fromInt(1); /// @dev in case it will be decided to mint Nmx in another blockchain
     ScheduleItem[] public items; /// @dev array of shcedule describing items
 
     constructor() {
@@ -139,16 +138,6 @@ contract MintSchedule is RecoverableByOwner {
         item.poolShares = shares_57_xx;
     }
 
-    /// @dev the owner can decrease outputRate in case of minting some part of Nmx through another blockchain
-    function setOutputRate(int128 _outputRate) external onlyOwner {
-        require(
-            _outputRate <= ABDKMath64x64.fromInt(1),
-            "NMXMINTSCH: outputRate must be le 1<<64"
-        );
-        require(_outputRate >= 0, "NMXMINTSCH: outputRate must be ge 0");
-        outputRate = _outputRate;
-    }
-
     /**
      @dev calculates changes in scheduleState based on the time passed from last update and returns updated state and amount of Nmx to be minted
      */
@@ -167,7 +156,7 @@ contract MintSchedule is RecoverableByOwner {
             uint256 secondsFromLastUpdate = boundary - scheduleState.time;
             nmxSupply +=
                 secondsFromLastUpdate *
-                outputRate.mul(item.poolShares[uint256(pool)]).mulu(
+                item.poolShares[uint256(pool)].mulu(
                     uint256(scheduleState.nextTickSupply)
                 );
             persistStateChange(scheduleState, item, boundary);
