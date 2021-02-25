@@ -4,6 +4,7 @@ const { getAssertBN } = require("./utils.js");
 
 const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
+const fromWei = web3.utils.fromWei;
 
 const DAY = 24 * 60 * 60;
 
@@ -54,7 +55,7 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.9);
+    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.625);
     await test(state, state.time + 1, MINT_POOL_PRIMARY, expectedNmxSupply, {
       time: state.time + 1,
     });
@@ -63,16 +64,16 @@ contract("MintSchedule", (accounts) => {
   it("last second", async () => {
     let state = {
       time: now,
-      itemIndex: 10,
-      weekIndex: 2083,
+      itemIndex: 21,
+      weekIndex: 501,
       weekStartTime: now - DAY * 7 + 1,
       nextTickSupply: 1000000,
     };
 
-    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
+    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.5);
     let expectedState = {
       time: state.time + 1,
-      itemIndex: 11,
+      itemIndex: 22,
       weekIndex: 0,
       weekStartTime: state.time + 1,
       nextTickSupply: Math.floor(state.nextTickSupply * 0.99995),
@@ -89,7 +90,7 @@ contract("MintSchedule", (accounts) => {
   it("after ending", async () => {
     let state = {
       time: now,
-      itemIndex: 11,
+      itemIndex: 22,
       weekIndex: 0,
       weekStartTime: now,
       nextTickSupply: 1000000,
@@ -112,10 +113,10 @@ contract("MintSchedule", (accounts) => {
     let newTime = state.time + 1;
     let defaultPoolValueExpectedNmxSupply = state.nextTickSupply * 0;
     let primaryPoolExpectedNmxSupply = Math.floor(
-      state.nextTickSupply * 0.7 * 0.7 * 0.8
+      state.nextTickSupply * 0.625
     );
     let nominexPoolExpectedNmxSupply = Math.floor(
-      state.nextTickSupply * 0.7 * 0.7 * 0.2
+      state.nextTickSupply * 0.375
     );
 
     await test(
@@ -146,7 +147,7 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let oneSecExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
+    let oneSecExpectedNmxSupply = Math.floor(state.nextTickSupply * 0.5);
 
     await test(
       state,
@@ -194,12 +195,13 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.1);
+    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.375);
     let expectedState = {
       time: state.time + 1,
-      weekIndex: 1,
+      itemIndex: 1,
+      weekIndex: 0,
       weekStartTime: state.time + 1,
-      nextTickSupply: Math.floor(state.nextTickSupply * 0.994),
+      nextTickSupply: Math.floor(state.nextTickSupply * 0.75),
     };
     await test(
       state,
@@ -219,17 +221,18 @@ contract("MintSchedule", (accounts) => {
       nextTickSupply: 1000000,
     };
 
-    let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.8 * 0.1);
+    let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.375);
     let newCycleOneSecNmxSupply = Math.floor(
-      state.nextTickSupply * 0.994 * 0.8 * 0.1
+      state.nextTickSupply * 0.75 * 0.375
     );
     let expectedNmxSupply =
       oldCycleOneSecNmxSupply * 1 + newCycleOneSecNmxSupply * 2;
     let expectedState = {
       time: state.time + 3,
-      weekIndex: 1,
+      itemIndex: 1,
+      weekIndex: 0,
       weekStartTime: state.time + 1,
-      nextTickSupply: Math.floor(state.nextTickSupply * 0.994),
+      nextTickSupply: Math.floor(state.nextTickSupply * 0.75),
     };
     await test(
       state,
@@ -243,26 +246,26 @@ contract("MintSchedule", (accounts) => {
   it("changing two weeks at a time", async () => {
     let state = {
       time: now,
-      itemIndex: 0,
-      weekIndex: 1,
+      itemIndex: 1,
+      weekIndex: 0,
       weekStartTime: now - DAY * 7 + 2,
       nextTickSupply: 1000000,
     };
 
     let firstCycleNextTickSupply = Math.floor(state.nextTickSupply);
-    let secondCycleNextTickSupply = Math.floor(state.nextTickSupply * 0.994);
+    let secondCycleNextTickSupply = Math.floor(state.nextTickSupply * 0.35);
     let thirdCycleNextTickSupply = Math.floor(
-      state.nextTickSupply * 0.994 * 0.994
+      state.nextTickSupply * 0.35 * 1.04
     );
 
     let firstCycleOneSecNmxSupply = Math.floor(
-      firstCycleNextTickSupply * 0.8 * 0.9
+      firstCycleNextTickSupply * 0.625
     );
     let secondCycleOneSecNmxSupply = Math.floor(
-      secondCycleNextTickSupply * 0.8 * 0.9
+      secondCycleNextTickSupply * 0.625
     );
     let thirdCycleOneSecNmxSupply = Math.floor(
-      thirdCycleNextTickSupply * 0.8 * 0.9
+      thirdCycleNextTickSupply * 0.625
     );
 
     let expectedNmxSupply = 0;
@@ -271,7 +274,8 @@ contract("MintSchedule", (accounts) => {
     expectedNmxSupply += thirdCycleOneSecNmxSupply * 3;
     let expectedState = {
       time: state.time + DAY * 7 + 5,
-      weekIndex: 3,
+      itemIndex: 2,
+      weekIndex: 1,
       weekStartTime: state.time + DAY * 7 + 2,
       nextTickSupply: thirdCycleNextTickSupply,
     };
@@ -294,19 +298,19 @@ contract("MintSchedule", (accounts) => {
   it("item change in 1 second", async () => {
     let state = {
       time: now,
-      itemIndex: 2,
-      weekIndex: 17,
+      itemIndex: 3,
+      weekIndex: 3,
       weekStartTime: now - DAY * 7 + 1,
       nextTickSupply: 1000000,
     };
 
-    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
+    let expectedNmxSupply = Math.floor(state.nextTickSupply * 0.4375);
     let expectedState = {
       time: state.time + 1,
-      itemIndex: 3,
+      itemIndex: 4,
       weekIndex: 0,
       weekStartTime: state.time + 1,
-      nextTickSupply: Math.floor(state.nextTickSupply * 0.994),
+      nextTickSupply: Math.floor(state.nextTickSupply * 1.04),
     };
     await test(
       state,
@@ -320,24 +324,24 @@ contract("MintSchedule", (accounts) => {
   it("item change in several seconds", async () => {
     let state = {
       time: now,
-      itemIndex: 2,
-      weekIndex: 17,
+      itemIndex: 3,
+      weekIndex: 3,
       weekStartTime: now - DAY * 7 + 1,
       nextTickSupply: 1000000,
     };
 
-    let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.7 * 0.7 * 0.2);
+    let oldCycleOneSecNmxSupply = Math.floor(state.nextTickSupply * 0.4375);
     let newCycleOneSecNmxSupply = Math.floor(
-      state.nextTickSupply * 0.994 * 0.7 * 0.7 * 0.2
+      state.nextTickSupply * 1.04 * 0.5
     );
     let expectedNmxSupply =
       oldCycleOneSecNmxSupply * 1 + newCycleOneSecNmxSupply * 2;
     let expectedState = {
       time: state.time + 3,
-      itemIndex: 3,
+      itemIndex: 4,
       weekIndex: 0,
       weekStartTime: state.time + 1,
-      nextTickSupply: Math.floor(state.nextTickSupply * 0.994),
+      nextTickSupply: Math.floor(state.nextTickSupply * 1.04),
     };
     await test(
       state,
@@ -402,12 +406,12 @@ contract("MintSchedule#totalSupply", (accounts) => {
       itemIndex: 0,
       weekIndex: 0,
       weekStartTime: now,
-      nextTickSupply: (10000 * 10 ** 18) / DAY + "",
+      nextTickSupply: (40000 * 10 ** 18) / DAY + "",
     };
 
     let totalSupply = toBN(0);
 
-    for (let i = 0; i < 102; i++) {
+    for (let year = 1; year <= 73; year++) {
       let newTime = state.time + DAY * 365;
       let result0 = await mintSchedule.makeProgress(
         state,
@@ -436,17 +440,23 @@ contract("MintSchedule#totalSupply", (accounts) => {
       state.weekStartTime = result0[1].weekStartTime;
       state.nextTickSupply = result0[1].nextTickSupply;
 
-      if (i === 101) {
+      console.log(`${year} year = ${fromWei(result1[0])} + ${fromWei(result2[0])} = ${fromWei(oneYearSupply)}`);
+      if (year === 73) {
         assert(
           oneYearSupply.isZero(),
-          "supply for 102 year = " + oneYearSupply
+          "supply for 73 year = " + oneYearSupply
         );
       }
     }
 
     let alreadyMintedNmx = await nmx.balanceOf(accounts[0]);
     let totalSupplyWithMinted = totalSupply.add(alreadyMintedNmx);
-    console.log(`Total Nmx supply: ${totalSupplyWithMinted}`);
+    let limit = toWei(toBN(200000000))
+    let diff = limit.isub(totalSupplyWithMinted);
+    console.log(`Total Nmx supply by schedule: ${fromWei(totalSupply)}`);
+    console.log(`Already Nmx minted: ${fromWei(alreadyMintedNmx)}`);
+    console.log(`Total Nmx supply: ${fromWei(totalSupplyWithMinted)}`);
+    console.log(`diff: ${fromWei(diff)}`);
     assert(
       totalSupplyWithMinted.lte(toWei(toBN(200000000))),
       `total NMX supply = ${totalSupplyWithMinted}`

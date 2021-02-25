@@ -25,115 +25,159 @@ contract MintSchedule is RecoverableByOwner {
     ScheduleItem[] public items; /// @dev array of shcedule describing items
 
     constructor() {
-        // used in pool shares ABDKMath64x64 consts
-        int128 abdk_1_10 = ABDKMath64x64.divu(1, 10);
-        int128 abdk_15_100 = ABDKMath64x64.divu(15, 100);
-        int128 abdk_2_10 = ABDKMath64x64.divu(2, 10);
-        int128 abdk_25_100 = ABDKMath64x64.divu(25, 100);
-        int128 abdk_3_10 = ABDKMath64x64.divu(3, 10);
-        int128 abdk_7_10 = ABDKMath64x64.divu(7, 10);
-        int128 abdk_75_100 = ABDKMath64x64.divu(75, 100);
-        int128 abdk_8_10 = ABDKMath64x64.divu(8, 10);
-        int128 abdk_85_100 = ABDKMath64x64.divu(85, 100);
-        int128 abdk_9_10 = ABDKMath64x64.divu(9, 10);
-
-        // 0.0, 0.8 * 0.9, 0.8 * 0.1
+        // 0.0, 0.625, 0.375
         int128[3] memory shares_01_28 =
             [
                 0,
-                abdk_8_10.mul(abdk_9_10),
-                abdk_8_10.mul(abdk_1_10)
+                ABDKMath64x64.divu(625, 1000),
+                ABDKMath64x64.divu(375, 1000)
             ];
 
-        // 0.0, 0.85 * 0.75 * 0.85, 0.85 * 0.75 * 0.15
+        // 0.0, 0.5625, 0.4375
         int128[3] memory shares_29_56 =
             [
                 0,
-                abdk_85_100.mul(abdk_75_100).mul(abdk_85_100),
-                abdk_85_100.mul(abdk_75_100).mul(abdk_15_100)
+                ABDKMath64x64.divu(5625, 10000),
+                ABDKMath64x64.divu(4375, 10000)
             ];
 
-        // 0.0, 0.7 * 0.7 * 0.8, 0.7 * 0.7 * 0.2
+        // 0.0, 0.5, 0.5
         int128[3] memory shares_57_xx =
             [
                 0,
-                abdk_7_10.mul(abdk_7_10).mul(abdk_8_10),
-                abdk_7_10.mul(abdk_7_10).mul(abdk_2_10)
+                ABDKMath64x64.divu(5, 10),
+                ABDKMath64x64.divu(5, 10)
             ];
 
-        /*1-28 first 28 days*/
+        /* period 1-7 days | duration 7 days | summary 1 week */
         ScheduleItem storage item = items.push();
-        item.weekCount = 4;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
+        item.weekCount = 1;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(75, 100);
         item.poolShares = shares_01_28;
 
-        /*29-56 second 28 days*/
+        /* period 8-14 days | duration 7 days | summary 2 weeks */
         item = items.push();
+        item.weekCount = 1;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(35, 100);
+        item.poolShares = shares_01_28;
 
+        /* period 15-28 days | 2 weeks | summary 4 weeks */
+        item = items.push();
+        item.weekCount = 2;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(104, 100);
+        item.poolShares = shares_01_28;
+
+        /* period 29-56 days | 4 weeks | summary 8 weeks */
+        item = items.push();
         item.weekCount = 4;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(104, 100);
         item.poolShares = shares_29_56;
 
-        /*57-182 - 0.5 year*/
+        /* period 57-105 days | 7 weeks | summary 15 weeks */
         item = items.push();
-
-        item.weekCount = 18;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(994, 1000);
+        item.weekCount = 7;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(104, 100);
         item.poolShares = shares_57_xx;
 
-        /*183-371 - 1 year*/
+        /* period 106-196 days | duration 3 months | summary 28 weeks */
         item = items.push();
-
-        item.weekCount = 27;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(996, 1000);
+        item.weekCount = 13;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(102, 100);
         item.poolShares = shares_57_xx;
 
-        /*372-735 - 2 year*/
+        /* period 197-287 days | duration 3 months | summary 41 weeks */
         item = items.push();
-
-        item.weekCount = 52;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(998, 1000);
+        item.weekCount = 13;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(101, 100);
         item.poolShares = shares_57_xx;
 
-        /*736-1463 - 4 year*/
+        /* period 288-378 days | duration 3 months | summary 54 weeks */
         item = items.push();
+        item.weekCount = 13;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(1, 1);
+        item.poolShares = shares_57_xx;
 
-        item.weekCount = 104;
+        /* period 379-560 days | duration 6 months | summary 80 weeks */
+        item = items.push();
+        item.weekCount = 26;
         item.weekCompletenessMultiplier = ABDKMath64x64.divu(9995, 10000);
         item.poolShares = shares_57_xx;
 
-        /*1464-2926 - 8 year*/
+        /* period 561-742 days | duration 6 months | summary 106 weeks */
         item = items.push();
-
-        item.weekCount = 209;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9997, 10000);
+        item.weekCount = 26;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(999, 1000);
         item.poolShares = shares_57_xx;
 
-        /*2927-5481 - 15 year*/
+        /* period 743-924 days | duration 6 months | summary 132 weeks */
         item = items.push();
-
-        item.weekCount = 365;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(99985, 100000);
+        item.weekCount = 26;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9985, 10000);
         item.poolShares = shares_57_xx;
 
-        /*5481-10962 - 30 year*/
+        /* period 925-1106 days | duration 6 months | summary 158 weeks */
         item = items.push();
-
-        item.weekCount = 783;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(99992, 100000);
+        item.weekCount = 26;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(998, 1000);
         item.poolShares = shares_57_xx;
 
-        /*10963-21917 - 60 year*/
+        /* period 1107-1470 days | duration 1 year | summary 210 weeks */
         item = items.push();
-
-        item.weekCount = 1565;
-        item.weekCompletenessMultiplier = ABDKMath64x64.divu(99994, 100000);
+        item.weekCount = 52;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9975, 10000);
         item.poolShares = shares_57_xx;
 
-        /*21918-36505 - 100 year*/
+        /* period 1471-1834 days | duration 1 year | summary 262 weeks */
         item = items.push();
+        item.weekCount = 52;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(997, 1000);
+        item.poolShares = shares_57_xx;
 
-        item.weekCount = 2084;
+        /* period 1835-2198 days | duration 1 year | summary 314 weeks */
+        item = items.push();
+        item.weekCount = 52;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9965, 10000);
+        item.poolShares = shares_57_xx;
+
+        /* period 2199-2562 days | duration 1 year | summary 366 weeks */
+        item = items.push();
+        item.weekCount = 52;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(996, 1000);
+        item.poolShares = shares_57_xx;
+
+        /* period 2563-2926 days | duration 1 year | summary 418 weeks */
+        item = items.push();
+        item.weekCount = 52;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(997, 1000);
+        item.poolShares = shares_57_xx;
+
+        /* period 2927-3654 days | duration 2 year | summary 522 weeks */
+        item = items.push();
+        item.weekCount = 104;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(998, 1000);
+        item.poolShares = shares_57_xx;
+
+        /* period 3655-5110 days | duration 4 years | summary 730 weeks */
+        item = items.push();
+        item.weekCount = 208;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(999, 1000);
+        item.poolShares = shares_57_xx;
+
+        /* period 5111-8022 days | duration 8 years | summary 1146 weeks */
+        item = items.push();
+        item.weekCount = 416;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9995, 10000);
+        item.poolShares = shares_57_xx;
+
+        /* period 8023-22582 days | duration 40 years | summary 3226 weeks */
+        item = items.push();
+        item.weekCount = 2080;
+        item.weekCompletenessMultiplier = ABDKMath64x64.divu(9999, 10000);
+        item.poolShares = shares_57_xx;
+
+        /* period 22583-26096 days | duration 10 years (without 18 weeks) | summary 3728 weeks */
+        item = items.push();
+        item.weekCount = 502;
         item.weekCompletenessMultiplier = ABDKMath64x64.divu(99995, 100000);
         item.poolShares = shares_57_xx;
     }
