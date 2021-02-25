@@ -92,6 +92,7 @@ module.exports = {
                 return engine;
             },
             networkCheckTimeout: 1000000,
+	    gasPrice: 15000000000
         },
         development: {
             host: "127.0.0.1",
