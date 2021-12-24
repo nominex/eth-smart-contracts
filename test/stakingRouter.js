@@ -230,6 +230,48 @@ contract("StakingRouter - supplyNmx", (accounts) => {
     );
   });
 
+  it("gas consumption is appropriate with 10 staking services", async () => {
+    const share = (1n << 64n) / 10n;
+    await router.changeStakingServiceShares(
+      [accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5], accounts[6], accounts[7], accounts[8], accounts[9]],
+      [share, share, share, share, share, share, share, share, share, share]
+    );
+    
+    await router.supplyNmx(now, { from: accounts[1] });
+  });
+
+  it("gas consumption is appropriate with 10 staking services (double supply)", async () => {
+    const share = (1n << 64n) / 10n;
+    await router.changeStakingServiceShares(
+      [accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5], accounts[6], accounts[7], accounts[8], accounts[9]],
+      [share, share, share, share, share, share, share, share, share, share]
+    );
+    
+    await router.supplyNmx(now, { from: accounts[1] });
+    await router.supplyNmx(now, { from: accounts[2] });
+  });
+
+  it("gas consumption is appropriate with 13 staking services", async () => {
+    const share = (1n << 64n) / 13n;
+    await router.changeStakingServiceShares(
+      [accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5], accounts[6], accounts[7], accounts[8], accounts[9], accounts[10], accounts[11], accounts[12]],
+      [share, share, share, share, share, share, share, share, share, share, share, share, share]
+    );
+    
+    await router.supplyNmx(now, { from: accounts[1] });
+  });
+
+  it("gas consumption is appropriate with 13 staking services (double supply)", async () => {
+    const share = (1n << 64n) / 13n;
+    await router.changeStakingServiceShares(
+      [accounts[0], accounts[1], accounts[2], accounts[3], accounts[4], accounts[5], accounts[6], accounts[7], accounts[8], accounts[9], accounts[10], accounts[11], accounts[12]],
+      [share, share, share, share, share, share, share, share, share, share, share, share, share]
+    );
+    
+    await router.supplyNmx(now, { from: accounts[1] });
+    await router.supplyNmx(now, { from: accounts[2] });
+  });
+
   it("service actually got supply", async () => {
     await router.changeStakingServiceShares([accounts[0]], [1n << 64n]);
     const initialSupply = await nmxStub.balanceOf(accounts[0]);

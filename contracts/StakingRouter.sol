@@ -82,7 +82,7 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
         private
         returns (uint256 serviceSupply, bool serviceActive)
     {
-        uint256 supply = NmxSupplier(nmx).supplyNmx(maxTime);
+        uint256 supply = receiveSupply(maxTime);
         uint256 activeServicesLength = activeServices.length;
         for (
             uint256 activeServiceIndex = 0;
@@ -101,6 +101,10 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
             }
         }
         return (serviceSupply, serviceActive);
+    }
+
+    function receiveSupply(uint40 maxTime) internal virtual returns (uint256) {
+        return NmxSupplier(nmx).supplyNmx(maxTime);
     }
 
     function getRecoverableAmount(address tokenAddress) override internal view returns (uint256) {
