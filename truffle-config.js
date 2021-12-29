@@ -7,7 +7,17 @@ const web3 = require("web3");
 const nconf = require("nconf");
 
 nconf.argv().env().file({ file: './.config.json' });
-
+function provider(url) {
+    nconf.required(["DEPLOYER_PRIVATE_KEY"]);
+    const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
+    const wallet = new Wallet(Buffer.from(privateKey, "hex"));
+    const engine = new ProviderEngine();
+    engine.addProvider(new WalletSubprovider(wallet, {}));
+    engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider(url, { keepAlive: true, timeout: 1000000 })));
+    engine.on = (block) => { }
+    engine.start();
+    return engine;
+}
 
 
 let testrpcProvider = null;
@@ -19,80 +29,17 @@ module.exports = {
     // for more details on how to specify configuration options!
     //
     networks: {
+        testnet: {
+            network_id: "97",
+            provider: () => provider("https://data-seed-prebsc-1-s1.binance.org:8545/"),
+            networkCheckTimeout: 1000000,
+            gasPrice: 10000000000
+        },
         mainnet: {
-            //  host: "127.0.0.1",
-            //  port: 7545,
-            network_id: "1",
-            provider: () => {
-                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
-                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
-                const wallet = new Wallet(new Buffer(privateKey, "hex"));
-                const engine = new ProviderEngine();
-                engine.addProvider(new WalletSubprovider(wallet, {}));
-                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://127.0.0.1:7545", {
-                    keepAlive: false,
-                    timeout: 1000000
-                })));
-                engine.on = undefined;
-                engine.start();
-                return engine;
-            },
-            networkCheckTimeout: 1000000,
-        },
-        ropsten: {
-            network_id: "3",
-            provider: () => {
-                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
-                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
-                const wallet = new Wallet(new Buffer(privateKey, "hex"));
-                const engine = new ProviderEngine();
-                engine.addProvider(new WalletSubprovider(wallet, {}));
-                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("https://eth-ropsten.alchemyapi.io/v2/eCuq8woAYyIUVB5-CbjKxbRw8R16bp2O", {
-                    keepAlive: false,
-                    timeout: 1000000
-                })));
-                engine.on = undefined;
-                engine.start();
-                return engine;
-            },
-            networkCheckTimeout: 1000000,
-        },
-        rinkeby: {
-            network_id: "4",
-            provider: () => {
-                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
-                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
-                const wallet = new Wallet(new Buffer(privateKey, "hex"));
-                const engine = new ProviderEngine();
-                engine.addProvider(new WalletSubprovider(wallet, {}));
-                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("http://10.0.0.20:8545", {
-                    keepAlive: false,
-                    timeout: 1000000
-                })));
-                engine.on = undefined;
-                engine.start();
-                return engine;
-            },
-            networkCheckTimeout: 1000000,
-        },
-        bsc: {
             network_id: "56",
-            provider: () => {
-                nconf.required(["DEPLOYER_PRIVATE_KEY"]);
-                const privateKey = nconf.get("DEPLOYER_PRIVATE_KEY");
-                const wallet = new Wallet(new Buffer(privateKey, "hex"));
-                const engine = new ProviderEngine();
-                engine.addProvider(new WalletSubprovider(wallet, {}));
-                engine.addProvider(new Web3Subprovider(new web3.providers.HttpProvider("https://bsc-dataseed.binance.org", {
-                    keepAlive: false,
-                    timeout: 1000000
-                })));
-                engine.on = undefined;
-                engine.start();
-                return engine;
-            },
+            provider: () => provider("https://bsc-dataseed3.binance.org/"),
             networkCheckTimeout: 1000000,
-	    gasPrice: 15000000000
+            gasPrice: 5000000000
         },
         development: {
             host: "127.0.0.1",
@@ -104,7 +51,7 @@ module.exports = {
             network_id: "*",
             provider: () => {
                 if (testrpcProvider == null) {
-                    testrpcProvider = ganache.provider({gasLimit: "0x8000000", secure: false});
+                    testrpcProvider = ganache.provider({ gasLimit: "0x8000000", secure: false });
                 }
                 return testrpcProvider;
             },
@@ -132,7 +79,7 @@ module.exports = {
         enableTimeouts: false,
         before_timeout: 120000, // Here is 2min but can be whatever timeout is suitable for you.
         reporter: 'eth-gas-reporter',
-        reporterOptions : {}
+        reporterOptions: {}
     },
 
     plugins: [
