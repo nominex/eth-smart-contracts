@@ -28,7 +28,11 @@ contract FarmingHelper {
         DoubleSupplyStakingRouter r = DoubleSupplyStakingRouter(router);
         FixedRateNmxSupplier additionalSupplier = FixedRateNmxSupplier(r.additionalSupplier());
         if (additionalSupplier.fromTime() > block.timestamp) return 0;
-        return additionalSupplier.nmxPerSecond();
+        IERC20 nmx = IERC20(r.nmx());
+        uint256 balance = nmx.balanceOf(address(additionalSupplier));
+        uint256 result = additionalSupplier.nmxPerSecond();
+        if (balance < result) result = balance;
+        return result;
     }
 
     function currentSupplyRate(address reciever) public view returns (uint256) {
