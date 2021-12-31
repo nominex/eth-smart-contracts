@@ -33,16 +33,17 @@ contract FixedRateNmxSupplier is NmxSupplier, RecoverableByOwner {
         uint128 _nmxPerSecond = nmxPerSecond;
         if (_nmxPerSecond == 0) return 0;
         if (uint40(block.timestamp) < maxTime) maxTime = uint40(block.timestamp);
-        uint40 secondsPassed = maxTime - fromTime;
-        if (secondsPassed <= 0) return 0;
-        uint256 amount = nmxPerSecond * secondsPassed;
+        uint40 _fromTime = fromTime;
+        if (_fromTime >= maxTime) return 0;
+        uint40 secondsPassed = maxTime - _fromTime;
+        uint256 amount = _nmxPerSecond * secondsPassed;
         uint256 balance = IERC20(nmx).balanceOf(address(this));
         if (balance < amount) amount = balance;
         if (amount > 0) {
             bool transferred = IERC20(nmx).transfer(msg.sender, amount);
             require(transferred, "FixedRateNmxSupplier: NMX_FAILED_TRANSFER");
+            fromTime = maxTime;
         }
-        fromTime = maxTime;
         return amount;
     }
 
