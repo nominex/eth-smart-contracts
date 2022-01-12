@@ -48,6 +48,6 @@
     "prettier-plugin-solidity": "^1.0.0-beta.3",
     "remixd": "^0.2.4-alpha.0",
     "truffle-assertions": "^0.9.2",
-    "truffle-plugin-verify": "^0.5.4"
+    "truffle-plugin-verify": "^0.5.20"
   }
 }
