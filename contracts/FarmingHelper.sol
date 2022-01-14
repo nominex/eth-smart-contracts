@@ -21,7 +21,8 @@ contract FarmingHelper {
         (state.time, state.itemIndex, state.weekIndex, state.weekStartTime, state.nextTickSupply) = nmx.poolMintStates(uint256(MintPool.PRIMARY));
 
         (, MintScheduleState memory state2) = schedule.makeProgress(state, uint40(block.timestamp), MintPool.PRIMARY);
-        return state2.nextTickSupply;
+        (uint256 nmxSupply,) = schedule.makeProgress(state2, uint40(block.timestamp) + 1, MintPool.PRIMARY);
+        return nmxSupply * 3 / 2;
     }
 
     function additionalSupplierNextTickSupply() public view returns (uint256) {
