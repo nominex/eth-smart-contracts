@@ -6,7 +6,7 @@ import "./RecoverableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
-contract StakingRouter is RecoverableByOwner, NmxSupplier {
+contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
     using ABDKMath64x64 for int128;
     address immutable public nmx;
 
@@ -17,7 +17,7 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
     }
 
     address[] activeServices;
-    uint256 totalSupply;
+    uint256 public totalSupply;
 
     mapping(address => ServiceSupplyState) public supplyStates;
 
@@ -50,19 +50,46 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
         );
 
         totalSupply += NmxSupplier(nmx).supplyNmx(uint40(block.timestamp));
-
+        uint256 _totalSupply = totalSupply;
         uint256 activeServicesLength = activeServices.length;
         for (uint256 i = 0; i < activeServicesLength; i++) {
             address service = activeServices[i];
             ServiceSupplyState storage state = supplyStates[service];
-            state.pendingSupply += state.share.mulu(totalSupply - state.processedSupply);
+            state.pendingSupply += state.share.mulu(_totalSupply - state.processedSupply);
+            state.processedSupply = _totalSupply;
             state.share = 0;
         }
 
         for (uint256 i = 0; i < shares.length; i++) {
             address service = addresses[i];
-            supplyStates[service].share = shares[i];
+            ServiceSupplyState storage state = supplyStates[service];
+            state.share = shares[i];
+            state.processedSupply = _totalSupply;
         }
+
+        for (uint256 i = 0; i < activeServicesLength; i++) {
+            address service = activeServices[i];
+            ServiceSupplyState storage state = supplyStates[service];
+            if (state.share == 0) {
+                _totalSupply -= state.pendingSupply;
+                state.pendingSupply = 0;
+            }
+        }
+
+        totalSupply = _totalSupply;
+
+        for (uint256 i = 0; i < activeServicesLength; i++) {
+            address service = activeServices[i];
+            ServiceSupplyState storage state = supplyStates[service];
+            state.processedSupply = _totalSupply;
+        }
+
+        for (uint256 i = 0; i < shares.length; i++) {
+            address service = addresses[i];
+            ServiceSupplyState storage state = supplyStates[service];
+            state.processedSupply = _totalSupply;
+        }
+
         activeServices = addresses;
     }
 
@@ -84,14 +111,19 @@ contract StakingRouter is RecoverableByOwner, NmxSupplier {
         return activeServices;
     }
 
+    function getRA(address tokenAddress) public view returns (uint256) {
+        return getRecoverableAmount(tokenAddress);
+    }
+
     function getRecoverableAmount(address tokenAddress) override internal view returns (uint256) {
         if (tokenAddress != nmx) return RecoverableByOwner.getRecoverableAmount(tokenAddress);
 
         uint256 pendingSupply = 0;
         address[] memory _activeServices = activeServices;
+        uint256 _totalSupply = totalSupply;
         for(uint256 i = 0; i < _activeServices.length; i++) {
             ServiceSupplyState storage supplyState = supplyStates[_activeServices[i]];
-            pendingSupply += supplyState.share.mulu(totalSupply - supplyState.processedSupply) + supplyState.pendingSupply;
+            pendingSupply += supplyState.share.mulu(_totalSupply - supplyState.processedSupply) + supplyState.pendingSupply;
         }
         uint256 balance = IERC20(nmx).balanceOf(address(this));
         require(balance >= pendingSupply, "NmxStakingRouter: NMX_NEGATIVE_RECOVERABLE_AMOUNT");
