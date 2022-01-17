@@ -11,7 +11,6 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
     address immutable public nmx;
 
     struct ServiceSupplyState {
-        uint256 pendingSupply;
         uint256 processedSupply;
         int128 share;
     }
@@ -49,13 +48,12 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
             "NmxStakingRouter: shares must be le 1<<64 in total"
         );
 
-        totalSupply += NmxSupplier(nmx).supplyNmx(uint40(block.timestamp));
         uint256 _totalSupply = totalSupply;
+
         uint256 activeServicesLength = activeServices.length;
         for (uint256 i = 0; i < activeServicesLength; i++) {
             address service = activeServices[i];
             ServiceSupplyState storage state = supplyStates[service];
-            state.pendingSupply += state.share.mulu(_totalSupply - state.processedSupply);
             state.processedSupply = _totalSupply;
             state.share = 0;
         }
@@ -67,29 +65,6 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
             state.processedSupply = _totalSupply;
         }
 
-        for (uint256 i = 0; i < activeServicesLength; i++) {
-            address service = activeServices[i];
-            ServiceSupplyState storage state = supplyStates[service];
-            if (state.share == 0) {
-                _totalSupply -= state.pendingSupply;
-                state.pendingSupply = 0;
-            }
-        }
-
-        totalSupply = _totalSupply;
-
-        for (uint256 i = 0; i < activeServicesLength; i++) {
-            address service = activeServices[i];
-            ServiceSupplyState storage state = supplyStates[service];
-            state.processedSupply = _totalSupply;
-        }
-
-        for (uint256 i = 0; i < shares.length; i++) {
-            address service = addresses[i];
-            ServiceSupplyState storage state = supplyStates[service];
-            state.processedSupply = _totalSupply;
-        }
-
         activeServices = addresses;
     }
 
@@ -98,9 +73,8 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
         totalSupply += NmxSupplier(nmx).supplyNmx(maxTime);
 
         ServiceSupplyState storage supplyState = supplyStates[_msgSender()];
-        supply = supplyState.share.mulu(totalSupply - supplyState.processedSupply) + supplyState.pendingSupply;
+        supply = supplyState.share.mulu(totalSupply - supplyState.processedSupply);
         supplyState.processedSupply = totalSupply;
-        supplyState.pendingSupply = 0;
 
         bool transferred = IERC20(nmx).transfer(_msgSender(), supply);
         require(transferred, "NmxStakingRouter: NMX_FAILED_TRANSFER");
@@ -111,10 +85,6 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
         return activeServices;
     }
 
-    function getRA(address tokenAddress) public view returns (uint256) {
-        return getRecoverableAmount(tokenAddress);
-    }
-
     function getRecoverableAmount(address tokenAddress) override internal view returns (uint256) {
         if (tokenAddress != nmx) return RecoverableByOwner.getRecoverableAmount(tokenAddress);
 
@@ -123,11 +93,20 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
         uint256 _totalSupply = totalSupply;
         for(uint256 i = 0; i < _activeServices.length; i++) {
             ServiceSupplyState storage supplyState = supplyStates[_activeServices[i]];
-            pendingSupply += supplyState.share.mulu(_totalSupply - supplyState.processedSupply) + supplyState.pendingSupply;
+            pendingSupply += supplyState.share.mulu(_totalSupply - supplyState.processedSupply);
         }
         uint256 balance = IERC20(nmx).balanceOf(address(this));
         require(balance >= pendingSupply, "NmxStakingRouter: NMX_NEGATIVE_RECOVERABLE_AMOUNT");
         return balance - pendingSupply;
+    }
+
+    function pendingSupplies(address service) external view returns (uint256) {
+        ServiceSupplyState storage supplyState = supplyStates[service];
+        return supplyState.share.mulu(totalSupply - supplyState.processedSupply);
+    }
+
+    function serviceShares(address service) external view returns (int128) {
+        return supplyStates[service].share;
     }
 
 }

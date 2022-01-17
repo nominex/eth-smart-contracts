@@ -40,7 +40,14 @@ module.exports = {
             provider: () => provider("https://bsc-dataseed4.ninicoin.io/"),
             networkCheckTimeout: 1000000,
             gasPrice: 0000000000,
-	    gas: 1000000
+	        gas: 1000000
+        },
+        develop: {
+            host: "127.0.0.1",
+            port: 9545,
+            network_id: "5777",
+            networkCheckTimeout: 100000,
+            accounts: 13,
         },
         development: {
             host: "127.0.0.1",

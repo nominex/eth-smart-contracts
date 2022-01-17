@@ -1,14 +1,14 @@
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const MockedPayable = artifacts.require("MockedPayable");
-const StakingRouter = artifacts.require("StakingRouter2");
+const StakingRouter2 = artifacts.require("StakingRouter2");
 const { rpcCommand, ZERO_ADDRESS } = require("../utils.js");
 
 const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
-contract('StakingRouter - recoverable', (accounts) => {
+contract('StakingRouter2 - recoverable', (accounts) => {
 
     let nmx;
     let usdtToken;
@@ -21,18 +21,15 @@ contract('StakingRouter - recoverable', (accounts) => {
     before(async () => {
         nmx = await MockedNmxToken.new();
         usdtToken = await MockedUsdtToken.new();
-        router = await StakingRouter.new(nmx.address);
+        router = await StakingRouter2.new(nmx.address);
         payable = await MockedPayable.new(router.address);
 
-        await nmx.setSupply(toWei(toBN(0)));
-        assert.equal(0, fromWei(await router.totalSupply()));
-        await router.changeStakingServiceShares([accounts[2]], [1n << 64n]);
         await nmx.setSupply(toWei(toBN(10)));
-        assert.equal(0, fromWei(await router.totalSupply()));
+        await router.changeStakingServiceShares([accounts[2]], [1n << 64n]);
+        await router.supplyNmx(1);
         await router.changeStakingServiceShares([accounts[3]], [1n << 64n]);
-        assert.equal(0, fromWei(await router.totalSupply()));
+        await router.supplyNmx(1);
         await router.supplyNmx(now);
-        assert.equal(10, fromWei(await router.totalSupply()));
     });
 
     beforeEach(async () => {
@@ -68,8 +65,6 @@ contract('StakingRouter - recoverable', (accounts) => {
         assert.equal(30, fromWei(await nmx.balanceOf(router.address)));
         assert.equal(0, fromWei(await nmx.balanceOf(accounts[5])));
 
-        assert.equal(20, fromWei(await router.totalSupply()));
-        assert.equal(10, fromWei(await router.getRA(nmx.address)));
         try {
             await router.recoverFunds(nmx.address, toWei(toBN(11)), accounts[5]);
             assert.fail("Error not occurred");
