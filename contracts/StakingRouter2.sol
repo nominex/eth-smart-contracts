@@ -70,11 +70,12 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
 
     function supplyNmx(uint40 maxTime) external override returns (uint256 supply) {
 
-        totalSupply += NmxSupplier(nmx).supplyNmx(maxTime);
+        uint256 _totalSupply = receiveSupply(maxTime) + totalSupply;
+        totalSupply = _totalSupply;
 
         ServiceSupplyState storage supplyState = supplyStates[_msgSender()];
-        supply = supplyState.share.mulu(totalSupply - supplyState.processedSupply);
-        supplyState.processedSupply = totalSupply;
+        supply = supplyState.share.mulu(_totalSupply - supplyState.processedSupply);
+        supplyState.processedSupply = _totalSupply;
 
         bool transferred = IERC20(nmx).transfer(_msgSender(), supply);
         require(transferred, "NmxStakingRouter: NMX_FAILED_TRANSFER");
@@ -98,6 +99,10 @@ contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
         uint256 balance = IERC20(nmx).balanceOf(address(this));
         require(balance >= pendingSupply, "NmxStakingRouter: NMX_NEGATIVE_RECOVERABLE_AMOUNT");
         return balance - pendingSupply;
+    }
+
+    function receiveSupply(uint40 maxTime) internal virtual returns (uint256) {
+        return NmxSupplier(nmx).supplyNmx(maxTime);
     }
 
     function pendingSupplies(address service) external view returns (uint256) {

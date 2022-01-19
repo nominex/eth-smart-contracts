@@ -26,9 +26,9 @@ contract('StakingRouter2 - recoverable', (accounts) => {
 
         await nmx.setSupply(toWei(toBN(10)));
         await router.changeStakingServiceShares([accounts[2]], [1n << 64n]);
-        await router.supplyNmx(1);
+        await router.supplyNmx(now);
         await router.changeStakingServiceShares([accounts[3]], [1n << 64n]);
-        await router.supplyNmx(1);
+        await router.supplyNmx(now);
         await router.supplyNmx(now);
     });
 
