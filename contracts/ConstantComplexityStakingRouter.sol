@@ -6,7 +6,7 @@ import "./RecoverableByOwner.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "abdk-libraries-solidity/ABDKMath64x64.sol";
 
-contract StakingRouter2 is RecoverableByOwner, NmxSupplier {
+contract ConstantComplexityStakingRouter is RecoverableByOwner, NmxSupplier {
     using ABDKMath64x64 for int128;
     address immutable public nmx;
 

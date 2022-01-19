@@ -1,5 +1,5 @@
 const Nmx = artifacts.require("Nmx");
-const StakingRouter = artifacts.require("StakingRouter2");
+const ConstantComplexityStakingRouter = artifacts.require("ConstantComplexityStakingRouter");
 const StakingService = artifacts.require("StakingService");
 const { rpcCommand, getAssertBN } = require("../utils.js");
 const truffleAssert = require("truffle-assertions");
@@ -23,7 +23,7 @@ contract("StakingService; Group: Staking", (accounts) => {
   before(async () => {
     nmx = await Nmx.deployed();
 
-    stakingRouter = await StakingRouter.new(nmx.address);
+    stakingRouter = await ConstantComplexityStakingRouter.new(nmx.address);
     nmx.transferPoolOwnership(1, stakingRouter.address);
 
     stakingService = await StakingService.new(

@@ -1,14 +1,14 @@
-const StakingRouter2 = artifacts.require("StakingRouter2");
+const ConstantComplexityStakingRouter = artifacts.require("ConstantComplexityStakingRouter");
 const NmxStub = artifacts.require("NmxStub");
 const { ZERO_ADDRESS } = require("./utils.js");
 
 contract(
-  "StakingRouter2 - changeStakingServiceShares - validation",
+  "ConstantComplexityStakingRouter - changeStakingServiceShares - validation",
   (accounts) => {
     let router;
     before(async () => {
       nmxStub = await NmxStub.new();
-      router = await StakingRouter2.new(nmxStub.address);
+      router = await ConstantComplexityStakingRouter.new(nmxStub.address);
 
       //router = await router.deployed();
     });
@@ -153,15 +153,15 @@ contract(
 );
 
 contract(
-  "StakingRouter2 - changeStakingServiceShares - persistence",
+  "ConstantComplexityStakingRouter - changeStakingServiceShares - persistence",
   (accounts) => {
     let router;
 
     before(async () => {
       nmxStub = await NmxStub.new();
-      router = await StakingRouter2.new(nmxStub.address);
+      router = await ConstantComplexityStakingRouter.new(nmxStub.address);
 
-      //router = await StakingRouter2.deployed();
+      //router = await ConstantComplexityStakingRouter.deployed();
     });
 
     it("new values saved", async () => {
@@ -181,14 +181,14 @@ contract(
   }
 );
 
-contract("StakingRouter2 - changeStakingServiceShares - stubbed", (accounts) => {
+contract("ConstantComplexityStakingRouter - changeStakingServiceShares - stubbed", (accounts) => {
   let nmxStub;
   let router;
   let now = Math.floor(new Date().getTime() / 1000);
 
   before(async () => {
     nmxStub = await NmxStub.new();
-    router = await StakingRouter2.new(nmxStub.address);
+    router = await ConstantComplexityStakingRouter.new(nmxStub.address);
     await router.changeStakingServiceShares([accounts[0]], [1n << 64n]);
   });
 
@@ -210,14 +210,14 @@ contract("StakingRouter2 - changeStakingServiceShares - stubbed", (accounts) => 
   });
 });
 
-contract("StakingRouter2 - supplyNmx", (accounts) => {
+contract("ConstantComplexityStakingRouter - supplyNmx", (accounts) => {
   let nmxStub;
   let router;
   let now = Math.floor(new Date().getTime() / 1000);
 
   beforeEach(async () => {
     nmxStub = await NmxStub.new();
-    router = await StakingRouter2.new(nmxStub.address);
+    router = await ConstantComplexityStakingRouter.new(nmxStub.address);
   });
 
   it("pending supply of all active services updates", async () => {

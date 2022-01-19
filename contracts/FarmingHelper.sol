@@ -14,7 +14,7 @@ contract FarmingHelper {
     }
 
     function mintScheduleNextTickSupply() public view returns (uint256) {
-        StakingRouter r = StakingRouter(router);
+        ConstantComplexityStakingRouter r = ConstantComplexityStakingRouter(router);
         Nmx nmx = Nmx(r.nmx());
         MintSchedule schedule = MintSchedule(nmx.mintSchedule());
         MintScheduleState memory state;
