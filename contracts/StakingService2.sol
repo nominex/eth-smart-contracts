@@ -7,7 +7,7 @@ import "./PausableByOwner.sol";
 import "./RecoverableByOwner.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 
-contract StakingService is PausableByOwner, RecoverableByOwner {
+contract StakingService2 is PausableByOwner, RecoverableByOwner {
     /**
      * @param totalStaked amount of NMXLP currently staked in the service
      * @param historicalRewardRate how many NMX minted per one NMXLP (<< 40). Never decreases.
