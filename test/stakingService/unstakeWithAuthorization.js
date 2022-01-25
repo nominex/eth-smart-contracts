@@ -1,13 +1,13 @@
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedUsdtToken = artifacts.require("MockedUsdtToken");
-const StakingService = artifacts.require("StakingService");
+const StakingService2 = artifacts.require("StakingService2");
 const { rpcCommand, signData, getAssertBN } = require("../utils.js");
 const truffleAssert = require("truffle-assertions");
 const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
 
-contract("StakingService#unstakeWithAuthorization", async (accounts) => {
+contract("StakingService2#unstakeWithAuthorization", async (accounts) => {
   const assertBN = getAssertBN(0);
 
   let nmx;
@@ -22,7 +22,7 @@ contract("StakingService#unstakeWithAuthorization", async (accounts) => {
     nmx = await MockedNmxToken.new();
     let usdtToken = await MockedUsdtToken.new();
     stakingToken = await MockedStakingToken.new(usdtToken.address);
-    stakingService = await StakingService.new(
+    stakingService = await StakingService2.new(
       nmx.address,
       stakingToken.address,
       nmx.address
@@ -65,7 +65,7 @@ contract("StakingService#unstakeWithAuthorization", async (accounts) => {
             */
       // chainId: await web3.eth.getChainId(),
       chainId: 1,
-      name: "StakingService",
+      name: "StakingService2",
       version: "1",
     };
   }

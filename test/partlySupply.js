@@ -3,7 +3,7 @@ const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const MockedBinaryMintSchedule = artifacts.require("MockedBinaryMintSchedule");
 const StakingRouter = artifacts.require("StakingRouter");
-const StakingService = artifacts.require("StakingService");
+const StakingService2 = artifacts.require("StakingService2");
 const { rpcCommand } = require("./utils.js");
 
 contract('Integration', (accounts) => {
@@ -26,7 +26,7 @@ contract('Integration', (accounts) => {
         stakingRouter = await StakingRouter.new(nmx.address);
         nmx.transferPoolOwnership(1, stakingRouter.address);
 
-        stakingService = await StakingService.new(nmx.address, stakingToken.address, stakingRouter.address);
+        stakingService = await StakingService2.new(nmx.address, stakingToken.address, stakingRouter.address);
         await stakingRouter.changeStakingServiceShares([stakingService.address], [1n << 64n]);
 
         await stakingToken.transfer(accounts[3], 500);

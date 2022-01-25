@@ -1,7 +1,7 @@
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const MockedNmxToken = artifacts.require("MockedNmxToken");
-const StakingService = artifacts.require("StakingService");
+const StakingService2 = artifacts.require("StakingService2");
 const { rpcCommand, signData, ZERO, getAssertBN } = require("../utils.js");
 const truffleAssert = require("truffle-assertions");
 
@@ -9,7 +9,7 @@ const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
-contract("StakingService#claimReward", (accounts) => {
+contract("StakingService2#claimReward", (accounts) => {
   const assertBN = getAssertBN(toWei(toBN(100), "mwei"));
 
   let nmx;
@@ -22,7 +22,7 @@ contract("StakingService#claimReward", (accounts) => {
     nmx = await MockedNmxToken.new();
     let usdtToken = await MockedUsdtToken.new();
     let stakingToken = await MockedStakingToken.new(usdtToken.address);
-    stakingService = await StakingService.new(
+    stakingService = await StakingService2.new(
       nmx.address,
       stakingToken.address,
       nmx.address
@@ -149,7 +149,7 @@ contract("StakingService#claimReward", (accounts) => {
   }
 });
 
-contract("StakingService#claimRewardTo", (accounts) => {
+contract("StakingService2#claimRewardTo", (accounts) => {
   const assertBN = getAssertBN(toWei(toBN(10), "mwei"));
 
   let nmx;
@@ -163,7 +163,7 @@ contract("StakingService#claimRewardTo", (accounts) => {
     nmx = await MockedNmxToken.new();
     let usdtToken = await MockedUsdtToken.new();
     let stakingToken = await MockedStakingToken.new(usdtToken.address);
-    stakingService = await StakingService.new(
+    stakingService = await StakingService2.new(
       nmx.address,
       stakingToken.address,
       nmx.address
@@ -274,7 +274,7 @@ contract("StakingService#claimRewardTo", (accounts) => {
   }
 });
 
-contract("StakingService#claimWithAuthorization", async (accounts) => {
+contract("StakingService2#claimWithAuthorization", async (accounts) => {
   const assertBN = getAssertBN(0);
 
   let nmx;
@@ -288,7 +288,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
     nmx = await MockedNmxToken.new();
     let usdtToken = await MockedUsdtToken.new();
     let stakingToken = await MockedStakingToken.new(usdtToken.address);
-    stakingService = await StakingService.new(
+    stakingService = await StakingService2.new(
       nmx.address,
       stakingToken.address,
       nmx.address
@@ -346,7 +346,7 @@ contract("StakingService#claimWithAuthorization", async (accounts) => {
             */
       // chainId: await web3.eth.getChainId(),
       chainId: 1,
-      name: "StakingService",
+      name: "StakingService2",
       version: "1",
     };
   }
