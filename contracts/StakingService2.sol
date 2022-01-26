@@ -48,6 +48,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
     address public nmxSupplier;
     State public state; /// @dev internal service state
     mapping(address => Staker) public stakers; /// @dev mapping of staker's address to its state
+    bool public claimRewardPaused = false;
 
     event Staked(address indexed owner, uint128 amount); /// @dev someone is staked NMXLP
     event Unstaked(address indexed from, address indexed to, uint128 amount); /// @dev someone unstaked NMXLP
@@ -187,6 +188,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
      * @dev updates current reward and transfers it to the caller's address
      */
     function claimReward() external returns (uint256) {
+        require(!claimRewardPaused, "NmxStakingService: CLAIM_REWARD_PAUSED");
         Staker storage staker = updateStateAndStaker(_msgSender());
         assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
@@ -340,4 +342,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
         return RecoverableByOwner.getRecoverableAmount(tokenAddress);
     }
 
+    function setClaimRewardPaused(bool _claimRewardPaused) external onlyOwner {
+        claimRewardPaused = _claimRewardPaused;
+    }
 }
