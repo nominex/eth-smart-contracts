@@ -188,7 +188,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
      * @dev updates current reward and transfers it to the caller's address
      */
     function claimReward() external returns (uint256) {
-        require(!claimRewardPaused, "NmxStakingService: CLAIM_REWARD_PAUSED");
         Staker storage staker = updateStateAndStaker(_msgSender());
         assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
@@ -257,6 +256,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
         address to,
         uint128 amount
     ) private whenNotPaused {
+        require(!claimRewardPaused, "NmxStakingService: CLAIM_REWARD_PAUSED");
         assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         require(amount <= unclaimedReward, "NmxStakingService: NOT_ENOUGH_BALANCE");
