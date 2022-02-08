@@ -114,7 +114,7 @@ contract("StakingService2; Group: claimRewardPause", (accounts) => {
     checkErrorOccurred("NmxStakingService: CLAIM_REWARD_PAUSED");
   });
 
-  makeSuite("User can not claim reward when claim reward unpaused", () => {
+  makeSuite("User can claim reward when claim reward unpaused", () => {
     setClaimRewardPaused(true);
     stake(10, accounts[1]);
     setClaimRewardPaused(false);

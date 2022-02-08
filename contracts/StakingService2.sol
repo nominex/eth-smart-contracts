@@ -255,7 +255,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
         address from,
         address to,
         uint128 amount
-    ) private whenNotPaused {
+    ) private {
         require(!claimRewardPaused, "NmxStakingService: CLAIM_REWARD_PAUSED");
         assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
