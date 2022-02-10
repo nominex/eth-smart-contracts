@@ -3,14 +3,14 @@ const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedPayable = artifacts.require("MockedPayable");
 const StakingRouter = artifacts.require("StakingRouter");
-const StakingService = artifacts.require("StakingService");
+const StakingService2 = artifacts.require("StakingService2");
 const { rpcCommand, ZERO_ADDRESS } = require("../utils.js");
 
 const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
-contract('StakingService - recoverable', (accounts) => {
+contract('StakingService2 - recoverable', (accounts) => {
 
     let nmx;
     let usdtToken;
@@ -25,7 +25,7 @@ contract('StakingService - recoverable', (accounts) => {
         usdtToken = await MockedUsdtToken.new();
         stakingToken = await MockedStakingToken.new(usdtToken.address);
         router = await StakingRouter.new(nmx.address);
-        stakingService = await StakingService.new(
+        stakingService = await StakingService2.new(
             nmx.address,
             stakingToken.address,
             router.address

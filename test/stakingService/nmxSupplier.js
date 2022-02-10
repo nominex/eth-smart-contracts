@@ -1,10 +1,10 @@
-const StakingService = artifacts.require("StakingService");
+const StakingService2 = artifacts.require("StakingService2");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const { rpcCommand } = require("../utils.js");
 const { step } = require("mocha-steps");
 
-contract("StakingService; Group: NmxSupplier", (accounts) => {
+contract("StakingService2; Group: NmxSupplier", (accounts) => {
   let stakingService;
   let snapshotId;
 
@@ -13,7 +13,7 @@ contract("StakingService; Group: NmxSupplier", (accounts) => {
   before(async () => {
     let usdtToken = await MockedUsdtToken.new();
     let stakingToken = await MockedStakingToken.new(usdtToken.address);
-    stakingService = await StakingService.new(
+    stakingService = await StakingService2.new(
       accounts[1],
       stakingToken.address,
       accounts[3]

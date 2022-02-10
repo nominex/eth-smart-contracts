@@ -49,6 +49,13 @@ module.exports = {
             networkCheckTimeout: 100000,
             accounts: 13,
         },
+        develop: {
+            host: "127.0.0.1",
+            port: 9545,
+            network_id: "5777",
+            networkCheckTimeout: 100000,
+            accounts: 13,
+        },
         development: {
             host: "127.0.0.1",
             port: 7545,

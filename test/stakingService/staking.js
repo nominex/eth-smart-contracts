@@ -2,7 +2,7 @@ const Nmx = artifacts.require("Nmx");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedUsdtToken = artifacts.require("MockedUsdtToken");
 const StakingRouter = artifacts.require("StakingRouter");
-const StakingService = artifacts.require("StakingService");
+const StakingService2 = artifacts.require("StakingService2");
 const { rpcCommand, getAssertBN } = require("../utils.js");
 const truffleAssert = require("truffle-assertions");
 const { step } = require("mocha-steps");
@@ -11,7 +11,7 @@ const toBN = web3.utils.toBN;
 const toWei = web3.utils.toWei;
 const fromWei = web3.utils.fromWei;
 
-contract("StakingService; Group: Staking", (accounts) => {
+contract("StakingService2; Group: Staking", (accounts) => {
   const assertBN = getAssertBN(0);
 
   let nmx;
@@ -32,7 +32,7 @@ contract("StakingService; Group: Staking", (accounts) => {
     stakingRouter = await StakingRouter.new(nmx.address);
     nmx.transferPoolOwnership(1, stakingRouter.address);
 
-    stakingService = await StakingService.new(
+    stakingService = await StakingService2.new(
       nmx.address,
       stakingToken.address,
       stakingRouter.address
@@ -93,7 +93,7 @@ contract("StakingService; Group: Staking", (accounts) => {
     verifyStakingServiceBalanceAndTotalStaked(50);
   });
 
-  makeSuite("Staking is not available when StakingService paused", () => {
+  makeSuite("Staking is not available when StakingService2 paused", () => {
     pauseStakingService();
     stake(15, accounts[1]);
     checkErrorOccurred("Pausable: paused");
@@ -103,7 +103,7 @@ contract("StakingService; Group: Staking", (accounts) => {
   });
 
   makeSuite(
-    "Staking is available when StakingService unpaused after pause",
+    "Staking is available when StakingService2 unpaused after pause",
     () => {
       pauseStakingService();
       unpauseStakingService();
@@ -188,7 +188,7 @@ contract("StakingService; Group: Staking", (accounts) => {
     verifyStakingServiceBalanceAndTotalStaked(0);
   });
 
-  makeSuite("Unstaking is available when StakingService paused", () => {
+  makeSuite("Unstaking is available when StakingService2 paused", () => {
     stake(20, accounts[1]);
     pauseStakingService();
     unstake(15, accounts[1]);
@@ -275,7 +275,7 @@ contract("StakingService; Group: Staking", (accounts) => {
     }
   );
 
-  makeSuite("StakeFrom is not available when StakingService paused", () => {
+  makeSuite("StakeFrom is not available when StakingService2 paused", () => {
     pauseStakingService();
     stakeFrom(5, accounts[1], accounts[3]);
     checkErrorOccurred("Pausable: paused");

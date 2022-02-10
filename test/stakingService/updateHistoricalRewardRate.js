@@ -1,7 +1,7 @@
 const MockedNmxToken = artifacts.require("MockedNmxToken");
 const MockedStakingToken = artifacts.require("MockedStakingToken");
 const MockedUsdtToken = artifacts.require("MockedUsdtToken");
-const StakingService = artifacts.require("StakingService");
+const StakingService2 = artifacts.require("StakingService2");
 const { rpcCommand, getAssertBN } = require("../utils.js");
 
 const toBN = web3.utils.toBN;
@@ -18,7 +18,7 @@ contract("updateHistoricalRewardRate", (accounts) => {
     nmx = await MockedNmxToken.new();
     let usdtToken = await MockedUsdtToken.new();
     let stakingToken = await MockedStakingToken.new(usdtToken.address);
-    stakingService = await StakingService.new(
+    stakingService = await StakingService2.new(
       nmx.address,
       stakingToken.address,
       nmx.address
