@@ -20,6 +20,11 @@ contract ConstantComplexityStakingRouter is RecoverableByOwner, NmxSupplier {
 
     mapping(address => ServiceSupplyState) public supplyStates;
 
+    event StakingServiceSharesChanged(
+        address[] addresses,
+        int128[] shares
+    );
+
     constructor(address _nmx) {
         nmx = _nmx;
     }
@@ -66,6 +71,7 @@ contract ConstantComplexityStakingRouter is RecoverableByOwner, NmxSupplier {
         }
 
         activeServices = addresses;
+        emit StakingServiceSharesChanged(addresses, shares);
     }
 
     function supplyNmx(uint40 maxTime) external override returns (uint256 supply) {

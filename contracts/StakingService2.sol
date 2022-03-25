@@ -54,6 +54,8 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
     event Unstaked(address indexed from, address indexed to, uint128 amount); /// @dev someone unstaked NMXLP
     event Rewarded(address indexed from, address indexed to, uint128 amount); /// @dev someone transferred Nmx from the service
     event StakingBonusAccrued(address indexed staker, uint128 amount); /// @dev Nmx accrued to the staker
+    event NmxSupplierChanged(address nmxSupplier);
+    event ClaimRewardPaused(bool state);
 
     constructor(
         address _nmx,
@@ -80,6 +82,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
                 address(this)
             )
         );
+        emit NmxSupplierChanged(_nmxSupplier);
     }
 
     /**
@@ -324,6 +327,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function changeNmxSupplier(address newNmxSupplier) external onlyOwner {
         nmxSupplier = newNmxSupplier;
+        emit NmxSupplierChanged(newNmxSupplier);
     }
 
     function totalStaked() external view returns (uint128) {
@@ -344,5 +348,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function setClaimRewardPaused(bool _claimRewardPaused) external onlyOwner {
         claimRewardPaused = _claimRewardPaused;
+        emit ClaimRewardPaused(_claimRewardPaused);
     }
 }
