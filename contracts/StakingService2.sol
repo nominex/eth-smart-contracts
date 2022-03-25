@@ -48,7 +48,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
     address public nmxSupplier;
     State public state; /// @dev internal service state
     mapping(address => Staker) public stakers; /// @dev mapping of staker's address to its state
-    bool public claimRewardPaused = false;
+    bool public claimRewardPaused;
 
     event Staked(address indexed owner, uint128 amount); /// @dev someone is staked NMXLP
     event Unstaked(address indexed from, address indexed to, uint128 amount); /// @dev someone unstaked NMXLP
