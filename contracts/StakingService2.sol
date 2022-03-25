@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.7.0 <0.8.0;
+pragma solidity 0.7.6;
 pragma abicoder v2;
 
 import "./Nmx.sol";
@@ -54,6 +54,8 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
     event Unstaked(address indexed from, address indexed to, uint128 amount); /// @dev someone unstaked NMXLP
     event Rewarded(address indexed from, address indexed to, uint128 amount); /// @dev someone transferred Nmx from the service
     event StakingBonusAccrued(address indexed staker, uint128 amount); /// @dev Nmx accrued to the staker
+    event NmxSupplierChanged(address nmxSupplier);
+    event ClaimRewardPaused(bool state);
 
     constructor(
         address _nmx,
@@ -80,6 +82,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
                 address(this)
             )
         );
+        emit NmxSupplierChanged(_nmxSupplier);
     }
 
     /**
@@ -189,7 +192,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
      */
     function claimReward() external returns (uint256) {
         Staker storage staker = updateStateAndStaker(_msgSender());
-        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), _msgSender(), unclaimedReward);
         return unclaimedReward;
@@ -197,7 +199,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function claimRewardTo(address to) external returns (uint256) {
         Staker storage staker = updateStateAndStaker(_msgSender());
-        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -205,7 +206,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function claimRewardToWithoutUpdate(address to) external returns (uint256) {
         Staker storage staker = stakers[_msgSender()];
-        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -257,7 +257,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
         uint128 amount
     ) private {
         require(!claimRewardPaused, "NmxStakingService: CLAIM_REWARD_PAUSED");
-        assert(staker.reward >= staker.claimedReward);
+        require(staker.reward >= staker.claimedReward, 'NmxStakingService: INSUFFICIENT_REWARD');
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         require(amount <= unclaimedReward, "NmxStakingService: NOT_ENOUGH_BALANCE");
         emit Rewarded(from, to, amount);
@@ -306,7 +306,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
      */
     function getReward() external returns (uint256 unclaimedReward) {
         Staker memory staker = updateStateAndStaker(_msgSender());
-        assert(staker.reward >= staker.claimedReward);
+        require(staker.reward >= staker.claimedReward, 'NmxStakingService: INSUFFICIENT_REWARD');
         unclaimedReward = staker.reward - staker.claimedReward;
     }
 
@@ -324,6 +324,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function changeNmxSupplier(address newNmxSupplier) external onlyOwner {
         nmxSupplier = newNmxSupplier;
+        emit NmxSupplierChanged(newNmxSupplier);
     }
 
     function totalStaked() external view returns (uint128) {
@@ -336,7 +337,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
         if (tokenAddress == stakingToken) {
             uint256 _totalStaked = state.totalStaked;
             uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
-            assert(balance >= _totalStaked);
+            require(balance >= _totalStaked, 'NmxStakingService: INSUFFICIENT_FUNDS_TO_RECOVER');
             return balance - _totalStaked;
         }
         return RecoverableByOwner.getRecoverableAmount(tokenAddress);
@@ -344,5 +345,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function setClaimRewardPaused(bool _claimRewardPaused) external onlyOwner {
         claimRewardPaused = _claimRewardPaused;
+        emit ClaimRewardPaused(_claimRewardPaused);
     }
 }

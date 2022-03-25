@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.7.0 <0.8.0;
+pragma solidity 0.7.6;
 
 import "./Nmx.sol";
 import "./RecoverableByOwner.sol";
@@ -19,6 +19,11 @@ contract ConstantComplexityStakingRouter is RecoverableByOwner, NmxSupplier {
     uint256 public totalSupply;
 
     mapping(address => ServiceSupplyState) public supplyStates;
+
+    event StakingServiceSharesChanged(
+        address[] addresses,
+        int128[] shares
+    );
 
     constructor(address _nmx) {
         nmx = _nmx;
@@ -66,6 +71,7 @@ contract ConstantComplexityStakingRouter is RecoverableByOwner, NmxSupplier {
         }
 
         activeServices = addresses;
+        emit StakingServiceSharesChanged(addresses, shares);
     }
 
     function supplyNmx(uint40 maxTime) external override returns (uint256 supply) {
