@@ -189,7 +189,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
      */
     function claimReward() external returns (uint256) {
         Staker storage staker = updateStateAndStaker(_msgSender());
-        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), _msgSender(), unclaimedReward);
         return unclaimedReward;
@@ -197,7 +196,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function claimRewardTo(address to) external returns (uint256) {
         Staker storage staker = updateStateAndStaker(_msgSender());
-        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -205,7 +203,6 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
 
     function claimRewardToWithoutUpdate(address to) external returns (uint256) {
         Staker storage staker = stakers[_msgSender()];
-        assert(staker.reward >= staker.claimedReward);
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         _claimReward(staker, _msgSender(), to, unclaimedReward);
         return unclaimedReward;
@@ -257,7 +254,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
         uint128 amount
     ) private {
         require(!claimRewardPaused, "NmxStakingService: CLAIM_REWARD_PAUSED");
-        assert(staker.reward >= staker.claimedReward);
+        require(staker.reward >= staker.claimedReward, 'NmxStakingService: INSUFFICIENT_REWARD');
         uint128 unclaimedReward = staker.reward - uint128(staker.claimedReward);
         require(amount <= unclaimedReward, "NmxStakingService: NOT_ENOUGH_BALANCE");
         emit Rewarded(from, to, amount);
@@ -306,7 +303,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
      */
     function getReward() external returns (uint256 unclaimedReward) {
         Staker memory staker = updateStateAndStaker(_msgSender());
-        assert(staker.reward >= staker.claimedReward);
+        require(staker.reward >= staker.claimedReward, 'NmxStakingService: INSUFFICIENT_REWARD');
         unclaimedReward = staker.reward - staker.claimedReward;
     }
 
@@ -336,7 +333,7 @@ contract StakingService2 is PausableByOwner, RecoverableByOwner {
         if (tokenAddress == stakingToken) {
             uint256 _totalStaked = state.totalStaked;
             uint256 balance = IERC20(tokenAddress).balanceOf(address(this));
-            assert(balance >= _totalStaked);
+            require(balance >= _totalStaked, 'NmxStakingService: INSUFFICIENT_FUNDS_TO_RECOVER');
             return balance - _totalStaked;
         }
         return RecoverableByOwner.getRecoverableAmount(tokenAddress);
